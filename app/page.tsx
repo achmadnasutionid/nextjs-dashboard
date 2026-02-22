@@ -286,15 +286,12 @@ export default function Home() {
                     </p>
                   </div>
                 </Card>
-                <Card
-                  className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
-                  onClick={() => handleNavigate("/special-case/gear-expenses")}
-                >
+                <Card className="transition-all">
                   <div className="p-6">
-                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                       <Wallet className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">Gear + Big Expenses</h3>
+                    <h3 className="font-semibold text-lg mb-2">Expenses</h3>
                     <p className="text-2xl font-semibold">
                       {(gearTotals || bigTotals) ? formatCurrency(gearDisplayAmount + bigDisplayAmount) : "—"}
                     </p>
