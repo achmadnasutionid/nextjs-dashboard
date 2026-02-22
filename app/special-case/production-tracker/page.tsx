@@ -87,6 +87,7 @@ export default function ProductionTrackerPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedYear, setSelectedYear] = useState<string>("all")
+  const [selectedStatus, setSelectedStatus] = useState<string>("all")
   const [editingCell, setEditingCell] = useState<{rowId: string, field: string} | null>(null)
   const [editValue, setEditValue] = useState<any>("")
   const [creating, setCreating] = useState(false)
@@ -189,7 +190,7 @@ export default function ProductionTrackerPage() {
     return Array.from(years).sort((a, b) => b - a) // Sort descending (newest first)
   }, [trackers])
 
-  // Filter by year first, then by search query
+  // Filter by year, then by status, then by search query
   const filteredTrackers = useMemo(() => {
     let filtered = trackers
 
@@ -199,6 +200,11 @@ export default function ProductionTrackerPage() {
         const year = new Date(tracker.date).getFullYear()
         return year.toString() === selectedYear
       })
+    }
+
+    // Filter by status
+    if (selectedStatus !== "all") {
+      filtered = filtered.filter(tracker => tracker.status === selectedStatus)
     }
 
     // Then filter by search query (expense ID or project name)
@@ -216,7 +222,7 @@ export default function ProductionTrackerPage() {
       const bPaid = b.status === "paid" ? 1 : 0
       return aPaid - bPaid
     })
-  }, [trackers, selectedYear, searchQuery])
+  }, [trackers, selectedYear, selectedStatus, searchQuery])
 
   // Calculate totals for filtered trackers
   const totals = useMemo(() => {
@@ -536,6 +542,19 @@ export default function ProductionTrackerPage() {
                   {availableYears.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
