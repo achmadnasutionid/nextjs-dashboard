@@ -210,7 +210,12 @@ export default function ProductionTrackerPage() {
       )
     }
 
-    return filtered
+    // Sort: paid status always at the bottom
+    return [...filtered].sort((a, b) => {
+      const aPaid = a.status === "paid" ? 1 : 0
+      const bPaid = b.status === "paid" ? 1 : 0
+      return aPaid - bPaid
+    })
   }, [trackers, selectedYear, searchQuery])
 
   // Calculate totals for filtered trackers
