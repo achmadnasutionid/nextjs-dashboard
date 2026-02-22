@@ -166,6 +166,7 @@ interface ParagonQuotationPDFProps {
     companyEmail?: string
     quotationDate: string
     billTo: string
+    projectName?: string
     contactPerson: string
     contactPosition: string
     productionDate: string
@@ -194,6 +195,12 @@ interface ParagonQuotationPDFProps {
 }
 
 export const ParagonQuotationPDF: React.FC<ParagonQuotationPDFProps> = ({ data }) => {
+  // Sign section: use only bill to (company/client), not project name
+  const signBillTo =
+    data.projectName && data.billTo.endsWith(" - " + data.projectName)
+      ? data.billTo.slice(0, -(data.projectName.length + 3)).trim()
+      : data.billTo
+
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -452,12 +459,12 @@ const parseHTMLToTextBlocks = (html: string) => {
           </View>
         )}
 
-        {/* Footer with Signatures */}
+        {/* Footer with Signatures - bill to only in sign section */}
         <View style={styles.footer} wrap={false}>
           {/* Left: Client Approval */}
           <View style={styles.footerLeft}>
             <Text style={{ fontSize: 10, marginBottom: 5 }}>Menyetujui,</Text>
-            <Text style={{ fontSize: 10, marginBottom: 5 }}>{data.billTo}</Text>
+            <Text style={{ fontSize: 10, marginBottom: 5 }}>{signBillTo}</Text>
             <View style={{ height: 40 }} />
             <Text style={styles.footerName}>{data.contactPerson}</Text>
             <Text style={styles.footerRole}>{data.contactPosition}</Text>
@@ -466,7 +473,7 @@ const parseHTMLToTextBlocks = (html: string) => {
           {/* Right: Company Signature */}
           <View style={styles.footerRight}>
             <Text style={{ fontSize: 10, marginBottom: 5 }}>Best Regards,</Text>
-            <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{data.billTo}</Text>
+            <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{signBillTo}</Text>
             {data.signatureImageData ? (
               <Image src={data.signatureImageData} style={styles.signatureImage} />
             ) : (

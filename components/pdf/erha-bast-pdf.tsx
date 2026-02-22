@@ -217,6 +217,12 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
   const contactPerson = data.bastContactPerson ?? data.contactPerson
   const contactPosition = data.bastContactPosition ?? data.contactPosition
 
+  // Sign section: use only bill to (company/client), not project name
+  const signBillTo =
+    data.projectName && data.billTo.endsWith(" - " + data.projectName)
+      ? data.billTo.slice(0, -(data.projectName.length + 3)).trim()
+      : data.billTo
+
   const formatCurrency = (amount: number) => {
     return `Rp${new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
@@ -370,13 +376,13 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
           Demikian berita acara penyelesaian dan serah terima pekerjaan ini kami buat dan ditanda tangani oleh kedua belah pihak untuk dapat dipergunakan sebagaimana mestinya.
         </Text>
 
-        {/* Signatures */}
+        {/* Signatures - bill to only (company/client), no project name */}
         <View style={styles.footer} wrap={false}>
           {/* Left: Pihak Kedua (Client) */}
           <View style={styles.footerLeft}>
             <Text style={styles.footerLabel}>Pihak Kedua</Text>
             <View style={styles.signaturePlaceholder} />
-            <Text style={styles.footerCompany}>{data.billTo}</Text>
+            <Text style={styles.footerCompany}>{signBillTo}</Text>
             <Text style={styles.footerName}>{contactPerson}</Text>
           </View>
 

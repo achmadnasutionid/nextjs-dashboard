@@ -139,6 +139,12 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
   const contactPerson = data.bastContactPerson ?? data.contactPerson
   const contactPosition = data.bastContactPosition ?? data.contactPosition
 
+  // Sign section: use only bill to (company/client), not project name
+  const signBillTo =
+    data.projectName && data.billTo.endsWith(" - " + data.projectName)
+      ? data.billTo.slice(0, -(data.projectName.length + 3)).trim()
+      : data.billTo
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("id-ID", {
       day: "numeric",
@@ -223,12 +229,12 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
           </Text>
         </View>
 
-        {/* Signatures */}
+        {/* Signatures - bill to only (company/client), no project name */}
         <View style={styles.footer} wrap={false}>
           {/* Left: Company Representative */}
           <View style={styles.footerLeft}>
             <Text style={styles.footerLabel}>Hormat Saya,</Text>
-            <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{data.billTo}</Text>
+            <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{signBillTo}</Text>
             {data.signatureImageData ? (
               <Image
                 src={data.signatureImageData}
@@ -244,7 +250,7 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
           {/* Right: Client Representative */}
           <View style={styles.footerRight}>
             <Text style={styles.footerLabel}>Perwakilan</Text>
-            <Text style={styles.footerCompany}>{data.billTo}</Text>
+            <Text style={styles.footerCompany}>{signBillTo}</Text>
             <View style={{ height: 40, marginTop: 5, marginBottom: 5 }} />
             <Text style={styles.footerName}>{contactPerson}</Text>
             <Text style={styles.footerRole}>{contactPosition}</Text>
