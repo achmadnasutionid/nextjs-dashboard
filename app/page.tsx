@@ -246,7 +246,7 @@ export default function Home() {
                   </Select>
                 </div>
               </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 sm:grid-cols-2">
                 <Card
                   className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
                   onClick={() => handleNavigate("/invoice?status=pending")}
@@ -269,23 +269,9 @@ export default function Home() {
                     <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                       <Wallet className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">Gear Expenses</h3>
+                    <h3 className="font-semibold text-lg mb-2">Gear + Big Expenses</h3>
                     <p className="text-2xl font-semibold">
-                      {gearTotals ? formatCurrency(gearDisplayAmount) : "—"}
-                    </p>
-                  </div>
-                </Card>
-                <Card
-                  className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
-                  onClick={() => handleNavigate("/special-case/big-expenses")}
-                >
-                  <div className="p-6">
-                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                      <Wallet className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">Big Expenses</h3>
-                    <p className="text-2xl font-semibold">
-                      {bigTotals ? formatCurrency(bigDisplayAmount) : "—"}
+                      {(gearTotals || bigTotals) ? formatCurrency(gearDisplayAmount + bigDisplayAmount) : "—"}
                     </p>
                   </div>
                 </Card>
