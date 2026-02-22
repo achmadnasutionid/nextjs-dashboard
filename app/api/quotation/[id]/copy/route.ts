@@ -1,32 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-// Helper function to generate Quotation ID in format QTN-YYYY-NNNN
-async function generateQuotationId() {
-  const year = new Date().getFullYear()
-  const prefix = `QTN-${year}-`
-  
-  const lastQuotation = await prisma.quotation.findFirst({
-    where: {
-      quotationId: {
-        startsWith: prefix
-      }
-    },
-    orderBy: {
-      quotationId: "desc"
-    }
-  })
-
-  let nextNumber = 1
-  if (lastQuotation) {
-    const lastNumber = parseInt(lastQuotation.quotationId.split("-")[2])
-    nextNumber = lastNumber + 1
-  }
-
-  return `${prefix}${nextNumber.toString().padStart(4, "0")}`
+function extractIdNumber(id: string | null | undefined): number {
+  if (!id) return 0
+  const parts = id.split("-")
+  const num = parseInt(parts[2])
+  return isNaN(num) ? 0 : num
 }
 
-// POST copy quotation
+// POST copy quotation (generates new quotationId from max of quotation + paragon + erha)
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -54,13 +36,39 @@ export async function POST(
       )
     }
 
-    // Generate new quotation ID
-    const newQuotationId = await generateQuotationId()
+    const year = new Date().getFullYear()
 
-    // Create a copy with "- Copy" appended to billTo
-    const copiedQuotation = await prisma.quotation.create({
-      data: {
-        quotationId: newQuotationId,
+    // Generate new quotation ID from max across Quotation, Paragon, Erha (same as Paragon/Erha copy)
+    const copiedQuotation = await prisma.$transaction(async (tx) => {
+      const [latestQuotation, latestParagonQuotation, latestErhaQuotation] = await Promise.all([
+        tx.quotation.findFirst({
+          where: { quotationId: { startsWith: `QTN-${year}-` } },
+          orderBy: { quotationId: "desc" },
+          select: { quotationId: true }
+        }),
+        tx.paragonTicket.findFirst({
+          where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
+          orderBy: { quotationId: "desc" },
+          select: { quotationId: true }
+        }),
+        tx.erhaTicket.findFirst({
+          where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
+          orderBy: { quotationId: "desc" },
+          select: { quotationId: true }
+        })
+      ])
+
+      const nextQuotationNum = Math.max(
+        extractIdNumber(latestQuotation?.quotationId),
+        extractIdNumber(latestParagonQuotation?.quotationId),
+        extractIdNumber(latestErhaQuotation?.quotationId)
+      ) + 1
+
+      const newQuotationId = `QTN-${year}-${nextQuotationNum.toString().padStart(4, "0")}`
+
+      return tx.quotation.create({
+        data: {
+          quotationId: newQuotationId,
         companyName: originalQuotation.companyName,
         companyAddress: originalQuotation.companyAddress,
         companyCity: originalQuotation.companyCity,
@@ -111,6 +119,7 @@ export async function POST(
         },
         remarks: true
       }
+    })
     })
 
     return NextResponse.json(copiedQuotation, { status: 201 })

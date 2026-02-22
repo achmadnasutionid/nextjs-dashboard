@@ -1,32 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-// Helper function to generate Invoice ID in format INV-YYYY-NNNN
-async function generateInvoiceId() {
-  const year = new Date().getFullYear()
-  const prefix = `INV-${year}-`
-  
-  const lastInvoice = await prisma.invoice.findFirst({
-    where: {
-      invoiceId: {
-        startsWith: prefix
-      }
-    },
-    orderBy: {
-      invoiceId: "desc"
-    }
-  })
-
-  let nextNumber = 1
-  if (lastInvoice) {
-    const lastNumber = parseInt(lastInvoice.invoiceId.split("-")[2])
-    nextNumber = lastNumber + 1
-  }
-
-  return `${prefix}${nextNumber.toString().padStart(4, "0")}`
+function extractIdNumber(id: string | null | undefined): number {
+  if (!id) return 0
+  const parts = id.split("-")
+  const num = parseInt(parts[2])
+  return isNaN(num) ? 0 : num
 }
 
-// POST copy invoice
+// POST copy invoice (generates new invoiceId from max of invoice + paragon + erha)
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -54,13 +36,39 @@ export async function POST(
       )
     }
 
-    // Generate new invoice ID
-    const newInvoiceId = await generateInvoiceId()
+    const year = new Date().getFullYear()
 
-    // Create a copy with "- Copy" appended to billTo
-    const copiedInvoice = await prisma.invoice.create({
-      data: {
-        invoiceId: newInvoiceId,
+    // Generate new invoice ID from max across Invoice, Paragon, Erha (same as Paragon/Erha copy)
+    const copiedInvoice = await prisma.$transaction(async (tx) => {
+      const [latestInvoice, latestParagonInvoice, latestErhaInvoice] = await Promise.all([
+        tx.invoice.findFirst({
+          where: { invoiceId: { startsWith: `INV-${year}-` } },
+          orderBy: { invoiceId: "desc" },
+          select: { invoiceId: true }
+        }),
+        tx.paragonTicket.findFirst({
+          where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
+          orderBy: { invoiceId: "desc" },
+          select: { invoiceId: true }
+        }),
+        tx.erhaTicket.findFirst({
+          where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
+          orderBy: { invoiceId: "desc" },
+          select: { invoiceId: true }
+        })
+      ])
+
+      const nextInvoiceNum = Math.max(
+        extractIdNumber(latestInvoice?.invoiceId),
+        extractIdNumber(latestParagonInvoice?.invoiceId),
+        extractIdNumber(latestErhaInvoice?.invoiceId)
+      ) + 1
+
+      const newInvoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
+
+      return tx.invoice.create({
+        data: {
+          invoiceId: newInvoiceId,
         companyName: originalInvoice.companyName,
         companyAddress: originalInvoice.companyAddress,
         companyCity: originalInvoice.companyCity,
@@ -112,6 +120,7 @@ export async function POST(
         },
         remarks: true
       }
+    })
     })
 
     return NextResponse.json(copiedInvoice, { status: 201 })
