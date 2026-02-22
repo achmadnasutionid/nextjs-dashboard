@@ -259,15 +259,6 @@ export default function EditQuotationPage() {
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
     ]).then(([quotationData, companiesData, billingsData, signaturesData, productsData]) => {
-      // Check if quotation is finalized
-      if (quotationData.status === "accepted") {
-        toast.error("Cannot edit accepted quotation", {
-          description: "This quotation has been accepted and cannot be edited."
-        })
-        router.push("/quotation")
-        return
-      }
-
       setQuotationNumber(quotationData.quotationId)
       setQuotationStatus(quotationData.status)
       

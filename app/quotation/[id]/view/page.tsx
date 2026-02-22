@@ -394,17 +394,15 @@ export default function ViewQuotationPage() {
                 </Button>
               )}
               
-              {/* Edit button - shown for draft and pending */}
-              {(quotation.status === "draft" || quotation.status === "pending") && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/quotation/${quotationId}/edit`)}
-                  size="icon"
-                  title="Edit"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
+              {/* Edit button - shown for all statuses */}
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/quotation/${quotationId}/edit`)}
+                size="icon"
+                title="Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
               
               {/* Copy, WhatsApp, and Download buttons - shown for all non-draft statuses */}
               {quotation.status !== "draft" && (
@@ -484,8 +482,7 @@ export default function ViewQuotationPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Accept Quotation?</AlertDialogTitle>
             <AlertDialogDescription>
-              Once accepted, this quotation <strong>cannot be edited anymore</strong>. 
-              You can then generate an invoice from this quotation. Are you sure you want to continue?
+              Accept this quotation? You can then generate an invoice and you can still edit the quotation later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

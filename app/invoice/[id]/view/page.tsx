@@ -281,17 +281,15 @@ export default function ViewInvoicePage() {
                 </Button>
               )}
               
-              {/* Edit button - shown for draft and pending */}
-              {(Invoice.status === "draft" || Invoice.status === "pending") && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/invoice/${InvoiceId}/edit`)}
-                  size="icon"
-                  title="Edit"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
+              {/* Edit button - shown for all statuses */}
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/invoice/${InvoiceId}/edit`)}
+                size="icon"
+                title="Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
               
               {/* Copy, WhatsApp, and Download buttons - shown for all non-draft statuses */}
               {Invoice.status !== "draft" && (
@@ -371,8 +369,7 @@ export default function ViewInvoicePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Mark Invoice as Paid?</AlertDialogTitle>
             <AlertDialogDescription>
-              Once marked as paid, this invoice <strong>cannot be edited anymore</strong>. 
-              An expense record will be created automatically. Are you sure you want to continue?
+              Mark this invoice as paid? You can still edit the invoice later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

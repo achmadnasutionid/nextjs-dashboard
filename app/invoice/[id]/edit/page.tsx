@@ -260,15 +260,6 @@ export default function EditInvoicePage() {
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
     ]).then(([InvoiceData, companiesData, billingsData, signaturesData, productsData]) => {
-      // Check if Invoice is finalized
-      if (InvoiceData.status === "paid") {
-        toast.error("Cannot edit paid Invoice", {
-          description: "This Invoice has been paid and cannot be edited."
-        })
-        router.push("/invoice")
-        return
-      }
-
       setInvoiceNumber(InvoiceData.invoiceId)
       setInvoiceStatus(InvoiceData.status)
       
