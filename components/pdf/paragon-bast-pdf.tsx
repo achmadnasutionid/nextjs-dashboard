@@ -36,16 +36,6 @@ const styles = StyleSheet.create({
   boldText: {
     fontWeight: "bold",
   },
-  productList: {
-    marginLeft: 20,
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  productItem: {
-    fontSize: 10,
-    marginBottom: 3,
-    lineHeight: 1.4,
-  },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -115,6 +105,7 @@ interface ParagonBASTPDFProps {
     companyEmail?: string
     invoiceBastDate: string // BAST date
     billTo: string
+    projectName: string
     contactPerson: string
     contactPosition: string
     bastContactPerson?: string | null
@@ -156,15 +147,6 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
     })
   }
 
-  // Combine all products and details
-  const getProductList = () => {
-    return data.items.map(item => {
-      // Combine product name with all its details
-      const detailsText = item.details.map(d => d.detail).join(" ")
-      return `${item.productName} ${detailsText}`
-    })
-  }
-
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -195,15 +177,18 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
           </View>
         </View>
 
-        {/* Work Description */}
+        {/* Work Description - Bill To & Project Name */}
         <View style={styles.section}>
           <Text style={{ fontSize: 10, marginBottom: 5 }}>Menerangkan Bahwa Pekerjaan Berupa :</Text>
-          <View style={styles.productList}>
-            {getProductList().map((productText, index) => (
-              <Text key={index} style={styles.productItem}>
-                {productText}
-              </Text>
-            ))}
+          <View style={styles.row}>
+            <Text style={styles.label}>Bill To</Text>
+            <Text style={styles.colon}>:</Text>
+            <Text style={styles.value}>{data.billTo || "-"}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Nama Proyek</Text>
+            <Text style={styles.colon}>:</Text>
+            <Text style={styles.value}>{data.projectName || "-"}</Text>
           </View>
         </View>
 

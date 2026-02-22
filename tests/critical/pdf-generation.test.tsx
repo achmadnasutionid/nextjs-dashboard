@@ -645,6 +645,7 @@ describe('PDF Generation Integration Tests', () => {
       companyProvince: 'DKI Jakarta',
       invoiceBastDate: new Date().toISOString(),
       billTo: 'Client',
+      projectName: 'Test Project',
       productionDate: new Date().toISOString(),
       signatureName: 'Director',
       signatureImageData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',

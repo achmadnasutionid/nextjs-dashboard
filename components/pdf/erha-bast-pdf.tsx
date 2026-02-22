@@ -181,6 +181,7 @@ interface ErhaBASTPDFProps {
     companyEmail?: string
     invoiceBastDate: string
     billTo: string
+    projectName: string
     billToAddress?: string
     contactPerson: string
     contactPosition: string
@@ -261,14 +262,6 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
 
   const amountInWords = numberToWords(Math.floor(data.totalAmount)) + " rupiah"
 
-  // Get work name from items
-  const getWorkName = () => {
-    return data.items.map(item => {
-      const detailsText = item.details.map(d => d.detail).join(" - ")
-      return item.productName + (detailsText ? " - " + detailsText : "")
-    }).join(", ")
-  }
-
   // Build full address for first party (signer)
   const getSignerAddress = () => {
     let address = data.companyAddress
@@ -342,12 +335,17 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
           </Text>
         </View>
 
-        {/* Work Details */}
+        {/* Work Details - Bill To & Project Name */}
         <View style={styles.workSection}>
           <View style={styles.workRow}>
-            <Text style={styles.workLabel}>Nama Pekerjaan</Text>
+            <Text style={styles.workLabel}>Bill To</Text>
             <Text style={styles.colon}>:</Text>
-            <Text style={styles.workValue}>{getWorkName()}</Text>
+            <Text style={styles.workValue}>{data.billTo || "-"}</Text>
+          </View>
+          <View style={styles.workRow}>
+            <Text style={styles.workLabel}>Nama Proyek</Text>
+            <Text style={styles.colon}>:</Text>
+            <Text style={styles.workValue}>{data.projectName || "-"}</Text>
           </View>
           <View style={styles.workRow}>
             <Text style={styles.workLabel}>Total Nominal Pekerjaan</Text>

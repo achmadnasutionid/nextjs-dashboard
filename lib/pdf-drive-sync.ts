@@ -182,6 +182,7 @@ function toParagonPdfData(t: {
   quotationDate: Date
   invoiceBastDate: Date
   billTo: string
+  projectName: string
   contactPerson: string
   contactPosition: string
   bastContactPerson: string | null
@@ -215,6 +216,7 @@ function toParagonPdfData(t: {
     quotationDate: t.quotationDate.toISOString(),
     invoiceBastDate: t.invoiceBastDate.toISOString(),
     billTo: t.billTo,
+    projectName: t.projectName,
     contactPerson: t.contactPerson,
     contactPosition: t.contactPosition,
     bastContactPerson: t.bastContactPerson ?? undefined,
@@ -255,6 +257,7 @@ function toErhaPdfData(t: {
   quotationDate: Date
   invoiceBastDate: Date
   billTo: string
+  projectName: string
   billToAddress: string
   contactPerson: string
   contactPosition: string
@@ -295,6 +298,7 @@ function toErhaPdfData(t: {
     quotationDate: t.quotationDate.toISOString(),
     invoiceBastDate: t.invoiceBastDate.toISOString(),
     billTo: t.billTo,
+    projectName: t.projectName,
     billToAddress: t.billToAddress ?? undefined,
     contactPerson: t.contactPerson,
     contactPosition: t.contactPosition,
