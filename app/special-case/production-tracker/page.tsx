@@ -568,9 +568,15 @@ export default function ProductionTrackerPage() {
                     Date
                   </th>
                   
-                  {/* Status Column - Left Sticky - Red */}
-                  <th className="sticky left-[402px] z-40 border-r border-b border-border p-1.5 text-center font-semibold w-[90px] min-w-[90px] bg-red-50 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
-                    Status
+                  {/* Total, Expense, PHOTOGRAPHER - Left Sticky after Date */}
+                  <th className="sticky left-[402px] z-40 border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-green-50 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
+                    Total
+                  </th>
+                  <th className="sticky left-[532px] z-40 border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-amber-50">
+                    Expense
+                  </th>
+                  <th className="sticky left-[662px] z-40 border-l border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-amber-50 whitespace-nowrap">
+                    PHOTOGRAPHER
                   </th>
                   
                   {/* Product Columns - Purple */}
@@ -583,19 +589,10 @@ export default function ProductionTrackerPage() {
                     </th>
                   ))}
                   
-                  {/* Financial Summary - Right Sticky - Green */}
-                  <th className="sticky right-[320px] z-40 border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-green-50 shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
-                    Total
+                  {/* Status - Right Sticky - Red */}
+                  <th className="sticky right-[60px] z-40 border-l border-r border-b border-border p-1.5 text-center font-semibold w-[90px] min-w-[90px] bg-red-50 shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
+                    Status
                   </th>
-                  
-                  {/* Calculated Columns - Right Sticky - Yellow/Orange */}
-                  <th className="sticky right-[190px] z-40 border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-amber-50">
-                    Expense
-                  </th>
-                  <th className="sticky right-[60px] z-40 border-l border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-amber-50 whitespace-nowrap">
-                    PHOTOGRAPHER
-                  </th>
-                  
                   {/* Action Column - Right Sticky - Red */}
                   <th className="sticky right-0 z-40 border-b border-border p-2 text-center font-semibold w-[60px] min-w-[60px] bg-red-50">
                     Action
@@ -619,9 +616,15 @@ export default function ProductionTrackerPage() {
                       <td className="sticky left-[292px] z-20 border-r border-b border-border p-1.5 bg-blue-50 w-[110px] min-w-[110px]">
                         <Skeleton className="h-4 w-full" />
                       </td>
-                      {/* Status Column - Left Sticky - Red */}
-                      <td className="sticky left-[402px] z-20 border-r border-b border-border p-1.5 bg-red-50 w-[90px] min-w-[90px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
-                        <Skeleton className="h-4 w-full" />
+                      {/* Total, Expense, PHOTOGRAPHER - Left Sticky */}
+                      <td className="sticky left-[402px] z-20 border-r border-b border-border p-2 bg-green-50 w-[130px] min-w-[130px] max-w-[130px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                        <Skeleton className="h-5 w-full" />
+                      </td>
+                      <td className="sticky left-[532px] z-20 border-b border-border p-2 bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]">
+                        <Skeleton className="h-5 w-full" />
+                      </td>
+                      <td className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]">
+                        <Skeleton className="h-5 w-full" />
                       </td>
                       {/* Product Columns - Purple */}
                       {PRODUCT_COLUMNS.slice(1).map((product, idx) => (
@@ -632,17 +635,9 @@ export default function ProductionTrackerPage() {
                           <Skeleton className="h-5 w-full" />
                         </td>
                       ))}
-                      {/* Total - Right Sticky - Green */}
-                      <td className="sticky right-[320px] z-20 border-r border-b border-border p-2 bg-green-50 w-[130px] min-w-[130px] max-w-[130px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
-                        <Skeleton className="h-5 w-full" />
-                      </td>
-                      {/* Expense - Right Sticky - Amber */}
-                      <td className="sticky right-[190px] z-20 border-b border-border p-2 bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]">
-                        <Skeleton className="h-5 w-full" />
-                      </td>
-                      {/* PHOTOGRAPHER - Right Sticky - Amber */}
-                      <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-2 bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]">
-                        <Skeleton className="h-5 w-full" />
+                      {/* Status - Right Sticky - Red */}
+                      <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
+                        <Skeleton className="h-4 w-full" />
                       </td>
                       {/* Action Column - Right Sticky - Red */}
                       <td className="sticky right-0 z-20 border-b border-border p-2 bg-red-50 w-[60px] min-w-[60px]">
@@ -770,25 +765,45 @@ export default function ProductionTrackerPage() {
                           </Popover>
                         </td>
                         
-                        {/* Status Column - Left Sticky - Red */}
-                        <td className="sticky left-[402px] z-20 border-r border-b border-border p-1.5 text-center bg-red-50 w-[90px] min-w-[90px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
-                          <Select value={tracker.status} onValueChange={(value) => handleStatusChange(tracker.id, value)}>
-                            <SelectTrigger className={cn(
-                              "h-7 text-xs border w-full min-w-0",
-                              STATUS_OPTIONS.find(s => s.value === tracker.status)?.color
-                            )}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="z-[100]" position="popper" sideOffset={4}>
-                              {STATUS_OPTIONS.map((status) => (
-                                <SelectItem key={status.value} value={status.value}>
-                                  <span className={cn("px-2 py-1 rounded", status.color)}>
-                                    {status.label}
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        {/* Total, Expense, PHOTOGRAPHER - Left Sticky */}
+                        <td 
+                          className="sticky left-[402px] z-20 border-r border-b border-border p-2 text-right bg-green-50 cursor-pointer hover:bg-green-100 w-[130px] min-w-[130px] max-w-[130px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            handleCellClick(tracker, 'totalAmount')
+                          }}
+                        >
+                          {editingCell?.rowId === tracker.id && editingCell?.field === 'totalAmount' ? (
+                            <NumericFormat
+                              value={editValue}
+                              onValueChange={(values) => setEditValue(values.value)}
+                              onBlur={handleBlur}
+                              onKeyDown={handleKeyDown}
+                              thousandSeparator="."
+                              decimalSeparator=","
+                              decimalScale={0}
+                              allowNegative={false}
+                              placeholder="0"
+                              className="flex h-7 w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-right ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="text-xs font-medium">{formatCurrency(tracker.totalAmount)}</span>
+                          )}
+                        </td>
+                        <td 
+                          className="sticky left-[532px] z-20 border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]"
+                        >
+                          <span className="text-xs font-medium text-amber-700">
+                            {formatCurrency(calculateExpense(tracker.productAmounts || {}))}
+                          </span>
+                        </td>
+                        <td 
+                          className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]"
+                        >
+                          <span className="text-xs font-medium text-amber-700">
+                            {formatCurrency(calculatePhotographer(tracker.totalAmount, tracker.productAmounts || {}))}
+                          </span>
                         </td>
                         
                         {/* Scrollable Product Columns - Purple */}
@@ -832,49 +847,25 @@ export default function ProductionTrackerPage() {
                           )
                         })}
                         
-                        {/* Total Amount - Right Sticky - Green */}
-                        <td 
-                          className="sticky right-[320px] z-20 border-r border-b border-border p-2 text-right bg-green-50 cursor-pointer hover:bg-green-100 w-[130px] min-w-[130px] max-w-[130px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]"
-                          onMouseDown={(e) => {
-                            e.preventDefault()
-                            handleCellClick(tracker, 'totalAmount')
-                          }}
-                        >
-                          {editingCell?.rowId === tracker.id && editingCell?.field === 'totalAmount' ? (
-                            <NumericFormat
-                              value={editValue}
-                              onValueChange={(values) => setEditValue(values.value)}
-                              onBlur={handleBlur}
-                              onKeyDown={handleKeyDown}
-                              thousandSeparator="."
-                              decimalSeparator=","
-                              decimalScale={0}
-                              allowNegative={false}
-                              placeholder="0"
-                              className="flex h-7 w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-right ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                              autoFocus
-                            />
-                          ) : (
-                            <span className="text-xs font-medium">{formatCurrency(tracker.totalAmount)}</span>
-                          )}
-                        </td>
-                        
-                        {/* Expense - Right Sticky - Amber */}
-                        <td 
-                          className="sticky right-[190px] z-20 border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]"
-                        >
-                          <span className="text-xs font-medium text-amber-700">
-                            {formatCurrency(calculateExpense(tracker.productAmounts || {}))}
-                          </span>
-                        </td>
-                        
-                        {/* PHOTOGRAPHER - Right Sticky - Amber */}
-                        <td 
-                          className="sticky right-[60px] z-20 border-l border-r border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]"
-                        >
-                          <span className="text-xs font-medium text-amber-700">
-                            {formatCurrency(calculatePhotographer(tracker.totalAmount, tracker.productAmounts || {}))}
-                          </span>
+                        {/* Status - Right Sticky - Red */}
+                        <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 text-center bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
+                          <Select value={tracker.status} onValueChange={(value) => handleStatusChange(tracker.id, value)}>
+                            <SelectTrigger className={cn(
+                              "h-7 text-xs border w-full min-w-0",
+                              STATUS_OPTIONS.find(s => s.value === tracker.status)?.color
+                            )}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-[100]" position="popper" sideOffset={4}>
+                              {STATUS_OPTIONS.map((status) => (
+                                <SelectItem key={status.value} value={status.value}>
+                                  <span className={cn("px-2 py-1 rounded", status.color)}>
+                                    {status.label}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         
                         {/* Action Column - Right Sticky - Red */}
@@ -912,9 +903,15 @@ export default function ProductionTrackerPage() {
                     <span className="text-xs text-slate-600">-</span>
                   </td>
                   
-                  {/* Status Column - Gray */}
-                  <td className="sticky left-[402px] z-40 border-r border-slate-300 p-1.5 text-center bg-slate-100 w-[90px] min-w-[90px] shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
-                    <span className="text-xs text-slate-600">-</span>
+                  {/* Total, Expense, PHOTOGRAPHER - Left Sticky - Gray */}
+                  <td className="sticky left-[402px] z-40 border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px] shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
+                    <span className="text-sm text-green-700 font-bold">{formatCurrency(totals.totalAmount)}</span>
+                  </td>
+                  <td className="sticky left-[532px] z-40 border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px]">
+                    <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.expense)}</span>
+                  </td>
+                  <td className="sticky left-[662px] z-40 border-l border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px]">
+                    <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.photographer)}</span>
                   </td>
                   
                   {/* Product Columns - Gray */}
@@ -929,19 +926,9 @@ export default function ProductionTrackerPage() {
                     </td>
                   ))}
                   
-                  {/* Total Amount - Right Sticky - Gray with Green Accent */}
-                  <td className="sticky right-[320px] z-40 border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px] shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
-                    <span className="text-sm text-green-700 font-bold">{formatCurrency(totals.totalAmount)}</span>
-                  </td>
-                  
-                  {/* Expense - Right Sticky - Gray with Orange Accent */}
-                  <td className="sticky right-[190px] z-40 border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px]">
-                    <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.expense)}</span>
-                  </td>
-                  
-                  {/* PHOTOGRAPHER - Right Sticky - Gray with Orange Accent */}
-                  <td className="sticky right-[60px] z-40 border-l border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px]">
-                    <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.photographer)}</span>
+                  {/* Status - Right Sticky - Gray */}
+                  <td className="sticky right-[60px] z-40 border-l border-r border-slate-300 p-1.5 text-center bg-slate-100 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
+                    <span className="text-xs text-slate-600">-</span>
                   </td>
                   
                   {/* Action Column - Right Sticky - Gray */}
