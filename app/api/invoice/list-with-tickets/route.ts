@@ -49,7 +49,6 @@ export async function GET(request: Request) {
           productionDate: true,
           totalAmount: true,
           status: true,
-          generatedExpenseId: true,
           updatedAt: true
         },
         orderBy: { updatedAt: orderBy },
@@ -100,7 +99,6 @@ export async function GET(request: Request) {
       status: string
       updatedAt: Date
       viewHref: string
-      generatedExpenseId?: string | null
     }
 
     const rows: Row[] = [
@@ -113,8 +111,7 @@ export async function GET(request: Request) {
         totalAmount: inv.totalAmount,
         status: inv.status,
         updatedAt: inv.updatedAt,
-        viewHref: `/invoice/${inv.id}/view`,
-        generatedExpenseId: inv.generatedExpenseId
+        viewHref: `/invoice/${inv.id}/view`
       })),
       ...paragonTickets.map((t) => {
         const docId = (t.invoiceId && t.invoiceId.trim()) ? t.invoiceId : "—"
@@ -127,8 +124,7 @@ export async function GET(request: Request) {
           totalAmount: t.totalAmount,
           status: t.status,
           updatedAt: t.updatedAt,
-          viewHref: `/special-case/paragon/${t.id}/view`,
-          generatedExpenseId: null as string | null
+          viewHref: `/special-case/paragon/${t.id}/view`
         }
       }),
       ...erhaTickets.map((t) => {
@@ -142,8 +138,7 @@ export async function GET(request: Request) {
           totalAmount: t.totalAmount,
           status: t.status,
           updatedAt: t.updatedAt,
-          viewHref: `/special-case/erha/${t.id}/view`,
-          generatedExpenseId: null as string | null
+          viewHref: `/special-case/erha/${t.id}/view`
         }
       })
     ]

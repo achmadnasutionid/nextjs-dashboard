@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Pencil, Trash2, Eye, Search, CheckCircle, FileText, Loader2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Eye, Search, CheckCircle, Loader2 } from "lucide-react"
 import { ListCardSkeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Pagination } from "@/components/ui/pagination"
@@ -43,7 +43,6 @@ type InvoiceListItem =
       status: string
       updatedAt: string
       viewHref: string
-      generatedExpenseId?: string | null
     }
   | {
       source: "paragon" | "erha"
@@ -55,7 +54,6 @@ type InvoiceListItem =
       status: string
       updatedAt: string
       viewHref: string
-      generatedExpenseId?: string | null
     }
 
 function InvoicePageContent() {
@@ -205,26 +203,7 @@ function InvoicePageContent() {
       })
 
       if (response.ok) {
-        // Then create expense and redirect
-        const expenseResponse = await fetch(`/api/invoice/${invoiceId}/create-expense`, {
-          method: "POST"
-        })
-
-        if (expenseResponse.ok) {
-          const expense = await expenseResponse.json()
-          toast.success("Invoice marked as paid!", {
-            description: "Redirecting to expense form..."
-          })
-          // Redirect to expense edit page
-          router.push(`/expense/${expense.id}/edit`)
-        } else {
-          // Revert optimistic update on error
-          setInvoices(previousInvoices)
-          const errorData = await expenseResponse.json()
-          toast.error("Failed to create expense", {
-            description: errorData.error || "An error occurred."
-          })
-        }
+        toast.success("Invoice marked as paid!")
       } else {
         // Revert optimistic update on error
         setInvoices(previousInvoices)
@@ -242,54 +221,6 @@ function InvoicePageContent() {
       })
     } finally {
       setMarkingPaid(null)
-    }
-  }
-
-  const handleViewExpense = async (invoiceId: string, expenseId: string) => {
-    try {
-      const response = await fetch(`/api/expense/${expenseId}`)
-      if (response.ok) {
-        const expense = await response.json()
-        if (expense.status === "final") {
-          router.push(`/expense/${expenseId}/view`)
-        } else {
-          router.push(`/expense/${expenseId}/edit`)
-        }
-        return
-      }
-      if (response.status === 404) {
-        toast.error("Linked expense not found", {
-          description: "The expense may have been deleted. Create a new one from this invoice?",
-          action: {
-            label: "Regenerate",
-            onClick: async () => {
-              try {
-                const res = await fetch(`/api/invoice/${invoiceId}/create-expense`, { method: "POST" })
-                if (res.ok) {
-                  const newExpense = await res.json()
-                  toast.success("Expense created")
-                  if (newExpense.status === "final") {
-                    router.push(`/expense/${newExpense.id}/view`)
-                  } else {
-                    router.push(`/expense/${newExpense.id}/edit`)
-                  }
-                } else {
-                  const data = await res.json()
-                  toast.error(data.error || "Failed to create expense")
-                }
-              } catch (e) {
-                console.error(e)
-                toast.error("Failed to create expense")
-              }
-            }
-          }
-        })
-        return
-      }
-      toast.error("Failed to load expense")
-    } catch (error) {
-      console.error("Error fetching expense:", error)
-      toast.error("Failed to load expense")
     }
   }
 
@@ -484,16 +415,6 @@ function InvoicePageContent() {
                               disabled={markingPaid === row.id}
                             >
                               <CheckCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {isInvoice && row.status === "paid" && row.generatedExpenseId && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              onClick={() => handleViewExpense(row.id, row.generatedExpenseId!)}
-                            >
-                              <FileText className="h-4 w-4" />
                             </Button>
                           )}
                           <Link href={row.viewHref}>

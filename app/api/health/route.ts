@@ -39,10 +39,9 @@ export async function GET(request: Request) {
     }
     
     // Get database statistics
-    const [invoiceCount, quotationCount, expenseCount] = await Promise.all([
+    const [invoiceCount, quotationCount] = await Promise.all([
       prisma.invoice.count({ where: { deletedAt: null } }),
       prisma.quotation.count({ where: { deletedAt: null } }),
-      prisma.expense.count({ where: { deletedAt: null } }),
     ])
     
     const totalDuration = Date.now() - startTime
@@ -70,8 +69,7 @@ export async function GET(request: Request) {
       stats: {
         invoices: invoiceCount,
         quotations: quotationCount,
-        expenses: expenseCount,
-        total: invoiceCount + quotationCount + expenseCount,
+        total: invoiceCount + quotationCount,
       },
       performance: {
         responseTime: `${totalDuration}ms`,

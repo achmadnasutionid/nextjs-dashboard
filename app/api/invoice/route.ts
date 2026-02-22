@@ -64,7 +64,6 @@ export async function GET(request: Request) {
           productionDate: true,
           totalAmount: true,
           status: true,
-          generatedExpenseId: true,
           createdAt: true,
           updatedAt: true,
           // Only fetch item summaries, not full details

@@ -199,9 +199,8 @@ function ParagonTicketPageContent() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        toast.success("Ticket finalized and draft expense created!", {
-          description: `Expense ${data.expense.expenseId} has been created.`
+        toast.success("Ticket finalized", {
+          description: "Ticket status has been set to final."
         })
         // Refresh to get updated data (invoice ID, etc.)
         fetchTickets()

@@ -34,10 +34,8 @@ export async function GET(request: Request) {
     const [
       invoiceStats,
       quotationStats,
-      expenseStats,
       pendingInvoicesCount,
       pendingQuotationsCount,
-      draftExpensesCount,
     ] = await Promise.all([
       // Invoice aggregations
       prisma.invoice.groupBy({
@@ -61,20 +59,6 @@ export async function GET(request: Request) {
         _count: { id: true }
       }),
       
-      // Expense aggregations
-      prisma.expense.aggregate({
-        where: {
-          deletedAt: null,
-          productionDate: { gte: yearStart, lt: yearEnd }
-        },
-        _sum: {
-          clientBudget: true,
-          paidAmount: true,
-          totalItemDifferences: true,
-        },
-        _count: { id: true }
-      }),
-      
       // Action items - pending invoices count
       prisma.invoice.count({
         where: {
@@ -91,13 +75,6 @@ export async function GET(request: Request) {
         }
       }),
       
-      // Action items - draft expenses count
-      prisma.expense.count({
-        where: {
-          deletedAt: null,
-          status: 'draft'
-        }
-      }),
     ])
     
     // Transform grouped results into simple stats
@@ -133,18 +110,9 @@ export async function GET(request: Request) {
           sum + (s.status !== 'draft' ? (s._sum?.totalAmount || 0) : 0), 0
         )
       },
-      expenses: {
-        count: expenseStats._count?.id || 0,
-        totalBudget: expenseStats._sum?.clientBudget || 0,
-        totalPaid: expenseStats._sum?.paidAmount || 0,
-        totalDifferences: expenseStats._sum?.totalItemDifferences || 0,
-        netProfit: (expenseStats._sum?.paidAmount || 0) - 
-                   Math.abs(expenseStats._sum?.totalItemDifferences || 0)
-      },
       actionItems: {
         pendingInvoices: pendingInvoicesCount,
         pendingQuotations: pendingQuotationsCount,
-        draftExpenses: draftExpensesCount,
       },
       year: selectedYear,
       timestamp: new Date().toISOString(),

@@ -1,31 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-// Helper function to generate Expense ID in format EXP-YYYY-NNNN
-async function generateExpenseId() {
-  const year = new Date().getFullYear()
-  const prefix = `EXP-${year}-`
-  
-  const lastExpense = await prisma.expense.findFirst({
-    where: {
-      expenseId: {
-        startsWith: prefix
-      }
-    },
-    orderBy: {
-      expenseId: "desc"
-    }
-  })
-
-  let nextNumber = 1
-  if (lastExpense) {
-    const lastNumber = parseInt(lastExpense.expenseId.split("-")[2])
-    nextNumber = lastNumber + 1
-  }
-
-  return `${prefix}${nextNumber.toString().padStart(4, "0")}`
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -33,16 +8,8 @@ export async function POST(
   try {
     const { id } = await params
 
-    // Get the Erha ticket
     const ticket = await prisma.erhaTicket.findUnique({
-      where: { id },
-      include: {
-        items: {
-          include: {
-            details: true
-          }
-        }
-      }
+      where: { id }
     })
 
     if (!ticket) {
@@ -52,7 +19,6 @@ export async function POST(
       )
     }
 
-    // Check if already finalized
     if (ticket.status === "final") {
       return NextResponse.json(
         { error: "Ticket is already finalized" },
@@ -60,62 +26,23 @@ export async function POST(
       )
     }
 
-    // Update ticket status to final
     await prisma.erhaTicket.update({
       where: { id },
       data: { status: "final" }
     })
 
-    // Generate expense ID
-    const expenseId = await generateExpenseId()
-
-    // Prepare expense items from Erha ticket items
-    // Group by product name and sum the totals (including all details)
-    const expenseItems = ticket.items.map(item => ({
-      productName: item.productName,
-      budgeted: item.total, // Total includes all details
-      actual: 0, // Leave actual as 0
-      difference: item.total // difference = budgeted - actual (item.total - 0)
-    }))
-
-    // Calculate totals
-    const totalBudgeted = expenseItems.reduce((sum, item) => sum + item.budgeted, 0)
-
-    // Create draft expense
-    const expense = await prisma.expense.create({
-      data: {
-        expenseId,
-        projectName: ticket.projectName,
-        productionDate: ticket.productionDate, // Production Date
-        clientBudget: ticket.totalAmount, // Total -> Client Budget
-        paidAmount: ticket.totalAmount, // Total -> Paid Amount
-        totalItemBudgeted: totalBudgeted,
-        totalItemDifferences: 0,
-        notes: "ERHA", // Auto-filled with ERHA
-        status: "draft",
-        items: {
-          create: expenseItems
-        }
-      },
-      include: {
-        items: true
-      }
-    })
-
     return NextResponse.json({
       success: true,
-      ticket: { id: ticket.id, status: "final" },
-      expense: expense
+      ticket: { id: ticket.id, status: "final" }
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error finalizing Erha ticket:", error)
     return NextResponse.json(
-      { 
-        error: "Failed to finalize ticket and create expense",
-        details: error.message || "Unknown error"
+      {
+        error: "Failed to finalize ticket",
+        details: error instanceof Error ? error.message : "Unknown error"
       },
       { status: 500 }
     )
   }
 }
-

@@ -23,10 +23,6 @@ export function RecentActivitySection({
         return `/invoice/${activity.id}/view`
       case "quotation":
         return `/quotation/${activity.id}/view`
-      case "expense":
-        return activity.action === "finalized"
-          ? `/expense/${activity.id}/view`
-          : `/expense/${activity.id}/edit`
       default:
         return "#"
     }

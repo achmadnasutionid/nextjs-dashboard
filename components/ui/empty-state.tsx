@@ -10,7 +10,6 @@ import {
   FileSignature,
   FileText,
   Receipt,
-  Calculator,
   Ticket,
   Search,
   Plus,
@@ -24,8 +23,9 @@ export type EmptyStateType =
   | "signatures" 
   | "quotations" 
   | "invoices" 
-  | "expenses" 
   | "paragon-tickets"
+  | "gear-expenses"
+  | "big-expenses"
   | "erha-tickets"
   | "templates"
   | "search"
@@ -106,14 +106,23 @@ const emptyStateConfig: Record<EmptyStateType, {
     gradient: "from-rose-500/10 to-pink-500/10",
     iconColor: "text-rose-500"
   },
-  expenses: {
-    icon: Calculator,
-    defaultTitle: "No expenses yet",
-    defaultDescription: "Expenses will appear here when invoices are paid.",
-    searchTitle: "No expenses found",
-    searchDescription: "Try adjusting your search or filter criteria.",
-    gradient: "from-lime-500/10 to-green-500/10",
-    iconColor: "text-lime-600"
+  "gear-expenses": {
+    icon: Receipt,
+    defaultTitle: "No gear expenses yet",
+    defaultDescription: "Add your first gear expense for this year.",
+    searchTitle: "No gear expenses found",
+    searchDescription: "Try adjusting your search or filter.",
+    gradient: "from-amber-500/10 to-orange-500/10",
+    iconColor: "text-amber-500"
+  },
+  "big-expenses": {
+    icon: Receipt,
+    defaultTitle: "No big expenses yet",
+    defaultDescription: "Add your first big expense for this year.",
+    searchTitle: "No big expenses found",
+    searchDescription: "Try adjusting your search or filter.",
+    gradient: "from-rose-500/10 to-pink-500/10",
+    iconColor: "text-rose-500"
   },
   "paragon-tickets": {
     icon: Ticket,

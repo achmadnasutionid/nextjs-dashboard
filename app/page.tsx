@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useMemo, useEffect } from "react"
-import useSWR from "swr"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Card } from "@/components/ui/card"
@@ -12,7 +11,6 @@ import { Search } from "lucide-react"
 
 // Dashboard components
 import { QuickActionSection, CardsSection } from "@/components/dashboard/cards-section"
-import { YearlyProfitSection } from "@/components/dashboard/yearly-profit-section"
 
 // Types
 import type { DashboardCard } from "@/types"
@@ -23,8 +21,7 @@ const ALL_CARDS: DashboardCard[] = [
   // Quick Action
   { id: "quotation", section: "Quick Action", title: "Quotation", keywords: "quotation quote qtn", route: "/quotation", icon: "file-check" },
   { id: "invoice", section: "Quick Action", title: "Invoice", keywords: "invoice inv payment bill", route: "/invoice", icon: "receipt" },
-  { id: "expenses", section: "Quick Action", title: "Expenses", keywords: "expenses expense exp cost", route: "/expense", icon: "wallet" },
-  { id: "production-tracker", section: "Quick Action", title: "Tracker", keywords: "tracker production entry expenses actual", route: "/special-case/production-tracker", icon: "table" },
+  { id: "production-tracker", section: "Quick Action", title: "Tracker", keywords: "tracker production entry actual", route: "/special-case/production-tracker", icon: "table" },
   
   // Special Case
   { id: "paragon", section: "Special Case", title: "Paragon", keywords: "paragon special", route: "/special-case/paragon", icon: "building" },
@@ -45,15 +42,11 @@ export default function Home() {
   
   // State management
   const [searchQuery, setSearchQuery] = useState("")
-  const [currentYear, setCurrentYear] = useState<string>("")
-  const [availableYears, setAvailableYears] = useState<number[]>([])
   const [isClient, setIsClient] = useState(false)
 
   // Initialize client-side state
   useEffect(() => {
     setIsClient(true)
-    const year = new Date().getFullYear().toString()
-    setCurrentYear(year)
   }, [])
 
   // First landing: trigger backup if not run in last 24h; cache 1 day so we don't call every visit.
@@ -77,38 +70,6 @@ export default function Home() {
       })
       .catch(() => {})
   }, [isClient])
-
-  // Fetch profit data with SWR for automatic caching and deduplication
-  const { data: profitData, isLoading } = useSWR(
-    isClient && currentYear ? `/api/yearly-profit?year=${currentYear}` : null,
-    (url: string) => fetch(url).then(res => res.json()),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 10000, // Dedupe requests within 10 seconds
-    }
-  )
-
-  // Update available years when profit data changes
-  useEffect(() => {
-    if (profitData?.availableYears) {
-      setAvailableYears(profitData.availableYears)
-    }
-  }, [profitData])
-
-  const grossProfit = profitData?.grossProfit || 0
-  const netProfit = profitData?.netProfit || 0
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    if (!isClient) return "Rp 0"
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }
 
   // Navigation handler
   const handleNavigate = (path: string) => {
@@ -189,19 +150,6 @@ export default function Home() {
             <QuickActionSection
               cards={cardsBySection["Quick Action"]}
               onNavigate={handleNavigate}
-            />
-          )}
-
-          {/* Yearly Profit Section */}
-          {!searchQuery && isClient && (
-            <YearlyProfitSection
-              grossProfit={grossProfit}
-              netProfit={netProfit}
-              selectedYear={currentYear}
-              availableYears={availableYears}
-              onYearChange={setCurrentYear}
-              loading={isLoading}
-              formatCurrency={formatCurrency}
             />
           )}
 

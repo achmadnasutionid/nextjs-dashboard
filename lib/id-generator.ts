@@ -37,7 +37,6 @@ function getIdField(modelName: string): string {
   const fieldMap: Record<string, string> = {
     'quotation': 'quotationId',
     'invoice': 'invoiceId',
-    'expense': 'expenseId',
     'paragonTicket': 'ticketId',
     'erhaTicket': 'ticketId',
     'productionTracker': 'trackerId'
@@ -101,8 +100,8 @@ async function ensureSequence(prefix: string, year: number, modelName: string): 
  * Uses PostgreSQL sequences for true atomicity
  */
 export async function generateId(
-  prefix: 'QTN' | 'INV' | 'EXP' | 'PRG' | 'ERH' | 'PT',
-  modelName: 'quotation' | 'invoice' | 'expense' | 'paragonTicket' | 'erhaTicket' | 'productionTracker'
+  prefix: 'QTN' | 'INV' | 'PRG' | 'ERH' | 'PT',
+  modelName: 'quotation' | 'invoice' | 'paragonTicket' | 'erhaTicket' | 'productionTracker'
 ): Promise<string> {
   const year = new Date().getFullYear()
   const sequenceName = getSequenceName(prefix, year)

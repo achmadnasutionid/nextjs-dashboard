@@ -98,28 +98,3 @@ export const createTestQuotation = async (options: {
   // Note: Tracker is only created when using API routes, not direct Prisma calls
   return quotation
 }
-
-export const createTestExpense = async (options?: {
-  projectName?: string
-  productionDate?: Date
-  clientBudget?: number
-  paidAmount?: number
-  notes?: string
-  status?: string
-}) => {
-  const expenseId = await generateId('EXP', 'expense')
-  
-  return await prisma.expense.create({
-    data: {
-      expenseId,
-      projectName: options?.projectName || `Test Expense ${Date.now()}`,
-      productionDate: options?.productionDate || new Date(),
-      clientBudget: options?.clientBudget || 10000000,
-      paidAmount: options?.paidAmount || 9500000,
-      totalItemBudgeted: 10000000,
-      totalItemDifferences: -500000,
-      notes: options?.notes || 'Test expense notes',
-      status: options?.status || 'draft'
-    }
-  })
-}

@@ -9,7 +9,7 @@ import { cache, cacheKeys } from './redis'
 
 /**
  * Invalidate dashboard stats cache
- * Call this after ANY change to invoices, quotations, expenses, or gear/big expenses
+ * Call this after ANY change to invoices, quotations, or gear/big expenses
  * Clears cache for all years since we don't know which year was affected
  */
 export async function invalidateDashboardCache(): Promise<void> {
@@ -50,24 +50,6 @@ export async function invalidateQuotationCaches(quotationId?: string): Promise<v
   
   if (quotationId) {
     promises.push(cache.delete(cacheKeys.quotation(quotationId)))
-  }
-  
-  await Promise.all(promises)
-}
-
-/**
- * Invalidate all expense-related caches
- * Call after: create, update, delete expense
- */
-export async function invalidateExpenseCaches(expenseId?: string): Promise<void> {
-  const promises = [
-    cache.delete(cacheKeys.dashboardStats()),
-    cache.delete('quick-stats:*'), // Quick stats cache (year-based)
-    cache.delete('expense:list:*'), // All expense list caches
-  ]
-  
-  if (expenseId) {
-    promises.push(cache.delete(cacheKeys.expense(expenseId)))
   }
   
   await Promise.all(promises)

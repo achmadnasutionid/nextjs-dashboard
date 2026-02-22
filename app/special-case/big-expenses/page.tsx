@@ -529,7 +529,7 @@ export default function BigExpensesPage() {
                         <TableRow>
                           <TableCell colSpan={4} className="h-32">
                             <EmptyState
-                              type="expenses"
+                              type="big-expenses"
                               onAction={() => setIsAdding(true)}
                               actionLabel="Add Expense"
                             />

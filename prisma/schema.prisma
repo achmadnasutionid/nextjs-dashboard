@@ -219,8 +219,6 @@ model Invoice {
   adjustmentNotes        String?
   termsAndConditions     String?
   status                 String             @default("draft")
-  generatedExpenseId     String?            @unique
-  generatedExpense       Expense?           @relation("GeneratedFromInvoice")
   sourceQuotationId      String?            @unique
   sourceQuotation        Quotation?         @relation("GeneratedFromQuotation", fields: [sourceQuotationId], references: [id], onDelete: SetNull)
   deletedAt              DateTime?
@@ -238,7 +236,6 @@ model Invoice {
   @@index([status, updatedAt, deletedAt])
   @@index([companyName])
   @@index([paidDate, status, deletedAt])
-  @@index([generatedExpenseId])
   @@index([sourceQuotationId])
   // NEW: Optimized indexes for dashboard queries
   @@index([status, productionDate, deletedAt]) // Pending/paid invoices by year
@@ -302,66 +299,6 @@ model InvoiceSignature {
 
   @@index([invoiceId])
   @@index([invoiceId, order])
-}
-
-model Expense {
-  id                    String        @id @default(cuid())
-  expenseId             String        @unique
-  invoiceId             String?
-  // Snapshot fields for invoice reference (no FK cascade)
-  invoiceNumber         String?
-  invoiceProductionDate DateTime?
-  invoiceTotalAmount    Float?
-  invoicePaidDate       DateTime?
-  // Expense data
-  projectName           String
-  productionDate        DateTime
-  clientBudget          Float         @default(0)
-  paidAmount            Float         @default(0)
-  totalItemBudgeted     Float         @default(0)
-  totalItemDifferences  Float         @default(0)
-  notes                 String?
-  status                String        @default("draft")
-  deletedAt             DateTime?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  sourceInvoiceId       String?       @unique
-  sourceInvoice         Invoice?      @relation("GeneratedFromInvoice", fields: [sourceInvoiceId], references: [id], onDelete: SetNull)
-  items                 ExpenseItem[]
-
-  @@index([status, deletedAt])
-  @@index([expenseId])
-  @@index([productionDate])
-  @@index([updatedAt])
-  @@index([productionDate, status, deletedAt])
-  @@index([status, updatedAt, deletedAt])
-  @@index([invoiceId])
-  @@index([invoiceNumber])
-  @@index([sourceInvoiceId])
-  // NEW: Optimized indexes for dashboard and financial calculations
-  @@index([deletedAt, productionDate])          // Year-based expense queries
-  @@index([deletedAt, updatedAt])               // Recent activity queries
-  @@index([status, productionDate, deletedAt])  // Draft expenses by year
-  @@index([productionDate, deletedAt, status])  // Monthly trends calculation
-}
-
-model ExpenseItem {
-  id          String   @id @default(cuid())
-  expenseId   String
-  productName String
-  budgeted    Float
-  actual      Float
-  difference  Float
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-
-  @@index([expenseId])
-  @@index([productName])
-  @@index([expenseId, order])
-  // NEW: Optimized index for product expense aggregations
-  @@index([expenseId, productName]) // Product-based expense calculations
 }
 
 model ParagonTicket {

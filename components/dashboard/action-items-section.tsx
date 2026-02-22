@@ -19,22 +19,15 @@ export function ActionItemsSection({
 
   const totalItems =
     actionItems.pendingInvoices.count +
-    actionItems.pendingQuotations.count +
-    actionItems.draftExpenses.count
+    actionItems.pendingQuotations.count
 
   if (totalItems === 0) return null
 
   const activeCount =
     (actionItems.pendingInvoices.count > 0 ? 1 : 0) +
-    (actionItems.pendingQuotations.count > 0 ? 1 : 0) +
-    (actionItems.draftExpenses.count > 0 ? 1 : 0)
+    (actionItems.pendingQuotations.count > 0 ? 1 : 0)
 
-  const gridCols =
-    activeCount === 1
-      ? "grid-cols-1"
-      : activeCount === 2
-      ? "grid-cols-1 lg:grid-cols-2"
-      : "grid-cols-1 lg:grid-cols-3"
+  const gridCols = activeCount === 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"
 
   return (
     <div className="space-y-6">
@@ -120,37 +113,6 @@ export function ActionItemsSection({
                     +{actionItems.pendingQuotations.count - 2} more
                   </p>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Draft Expenses */}
-        {actionItems.draftExpenses.count > 0 && (
-          <Card
-            className="group cursor-pointer transition-all hover:shadow-lg hover:border-orange-500/50"
-            onClick={() => onNavigate("/expense?status=draft")}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileX className="h-5 w-5 text-orange-600" />
-                  <CardTitle className="text-base">Draft Expenses</CardTitle>
-                </div>
-                <span className="text-2xl font-bold text-orange-600">
-                  {actionItems.draftExpenses.count}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  {actionItems.draftExpenses.count}{" "}
-                  {actionItems.draftExpenses.count === 1
-                    ? "expense"
-                    : "expenses"}{" "}
-                  not yet finalized
-                </p>
               </div>
             </CardContent>
           </Card>

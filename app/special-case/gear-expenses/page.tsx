@@ -529,7 +529,7 @@ export default function GearExpensesPage() {
                         <TableRow>
                           <TableCell colSpan={4} className="h-32">
                             <EmptyState
-                              type="expenses"
+                              type="gear-expenses"
                               onAction={() => setIsAdding(true)}
                               actionLabel="Add Expense"
                             />

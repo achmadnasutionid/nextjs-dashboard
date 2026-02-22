@@ -109,9 +109,8 @@ export default function ViewErhaTicketPage() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        toast.success("Ticket finalized and draft expense created!", {
-          description: `Expense ${data.expense.expenseId} has been created.`
+        toast.success("Ticket finalized", {
+          description: "Ticket status has been set to final."
         })
         // Redirect to list page
         router.push("/special-case/erha")
@@ -458,7 +457,7 @@ export default function ViewErhaTicketPage() {
             <AlertDialogTitle>Finalize Ticket?</AlertDialogTitle>
             <AlertDialogDescription>
               Once finalized, you can still edit this ticket if needed. 
-              A draft expense will be created automatically. Are you sure you want to continue?
+              Ticket status will be set to final. Are you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

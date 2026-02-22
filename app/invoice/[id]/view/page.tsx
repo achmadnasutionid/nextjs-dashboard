@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { useFetch } from "@/hooks/use-fetch"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
-import { Download, MessageCircle, CheckCircle, FileText, Copy, Edit, Trash2 } from "lucide-react"
+import { Download, MessageCircle, CheckCircle, Copy, Edit, Trash2 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { PDFDownloadLink, pdf } from "@react-pdf/renderer"
 import { InvoicePDF } from "@/components/pdf/invoice-pdf"
@@ -45,7 +45,6 @@ interface Invoice {
   pph: string
   totalAmount: number
   status: string
-  generatedExpenseId?: string
   remarks?: Array<{
     text: string
     isCompleted: boolean
@@ -179,23 +178,8 @@ export default function ViewInvoicePage() {
       })
 
       if (response.ok) {
-        // Then create expense and redirect
-        const expenseResponse = await fetch(`/api/invoice/${InvoiceId}/create-expense`, {
-          method: "POST"
-        })
-
-        if (expenseResponse.ok) {
-          const expense = await expenseResponse.json()
-          toast.success("Invoice marked as paid!", {
-            description: "Redirecting to expense form..."
-          })
-          // Redirect to expense edit page
-          router.push(`/expense/${expense.id}/edit`)
-        } else {
-          toast.error("Failed to create expense", {
-            description: "An error occurred while creating the expense."
-          })
-        }
+        toast.success("Invoice marked as paid!")
+        mutate()
       } else {
         const data = await response.json()
         toast.error("Failed to mark invoice as paid", {
@@ -209,63 +193,6 @@ export default function ViewInvoicePage() {
       })
     } finally {
       setMarkingPaid(false)
-    }
-  }
-
-  const [regeneratingExpense, setRegeneratingExpense] = useState(false)
-
-  const handleViewExpense = async () => {
-    if (!Invoice?.generatedExpenseId) return
-
-    try {
-      const response = await fetch(`/api/expense/${Invoice.generatedExpenseId}`)
-      if (response.ok) {
-        const expense = await response.json()
-        if (expense.status === "final") {
-          router.push(`/expense/${Invoice.generatedExpenseId}/view`)
-        } else {
-          router.push(`/expense/${Invoice.generatedExpenseId}/edit`)
-        }
-        return
-      }
-      // Linked expense not found (e.g. deleted) – offer to regenerate
-      if (response.status === 404) {
-        toast.error("Linked expense not found", {
-          description: "The expense may have been deleted. Create a new one from this invoice?",
-          action: {
-            label: "Regenerate",
-            onClick: async () => {
-              setRegeneratingExpense(true)
-              try {
-                const res = await fetch(`/api/invoice/${InvoiceId}/create-expense`, { method: "POST" })
-                if (res.ok) {
-                  const newExpense = await res.json()
-                  mutate()
-                  toast.success("Expense created")
-                  if (newExpense.status === "final") {
-                    router.push(`/expense/${newExpense.id}/view`)
-                  } else {
-                    router.push(`/expense/${newExpense.id}/edit`)
-                  }
-                } else {
-                  const data = await res.json()
-                  toast.error(data.error || "Failed to create expense")
-                }
-              } catch (e) {
-                console.error(e)
-                toast.error("Failed to create expense")
-              } finally {
-                setRegeneratingExpense(false)
-              }
-            }
-          }
-        })
-        return
-      }
-      toast.error("Failed to load expense")
-    } catch (error) {
-      console.error("Error fetching expense:", error)
-      toast.error("Failed to load expense")
     }
   }
 
@@ -351,19 +278,6 @@ export default function ViewInvoicePage() {
                   title={markingPaid ? "Marking..." : "Mark as Paid"}
                 >
                   <CheckCircle className="h-4 w-4" />
-                </Button>
-              )}
-              
-              {/* View Expense button - shown only for paid with expense */}
-              {Invoice.status === "paid" && Invoice.generatedExpenseId && (
-                <Button
-                  variant="outline"
-                  onClick={handleViewExpense}
-                  disabled={regeneratingExpense}
-                  size="icon"
-                  title={regeneratingExpense ? "Creating…" : "View Expense"}
-                >
-                  <FileText className="h-4 w-4" />
                 </Button>
               )}
               

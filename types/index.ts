@@ -82,7 +82,6 @@ export interface Invoice {
   pph: string
   totalAmount: number
   status: DocumentStatus
-  generatedExpenseId: string | null
   deletedAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -141,41 +140,6 @@ export interface QuotationSignature {
   updatedAt: Date
 }
 
-export interface ExpenseItem {
-  id: string
-  expenseId: string
-  productName: string
-  budgeted: number
-  actual: number
-  difference: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-export interface Expense {
-  id: string
-  expenseId: string
-  invoiceId: string | null
-  // Snapshot fields (no FK relationships)
-  invoiceNumber: string | null
-  invoiceProductionDate: Date | null
-  invoiceTotalAmount: number | null
-  invoicePaidDate: Date | null
-  // Expense data
-  projectName: string
-  productionDate: Date
-  clientBudget: number
-  paidAmount: number
-  totalItemBudgeted: number
-  totalItemDifferences: number
-  notes: string | null
-  status: DocumentStatus
-  deletedAt: Date | null
-  createdAt: Date
-  updatedAt: Date
-  items: ExpenseItem[]
-}
-
 export interface GearExpense {
   id: string
   name: string
@@ -216,15 +180,6 @@ export interface QuotationStats {
   accepted: number
 }
 
-export interface ExpenseStats {
-  totalUnderBudget: number
-  totalOverBudget: number
-  averageEfficiency: number
-  grossProfit: number
-  netProfit: number
-  marginPercentage: number
-}
-
 export interface ExtraExpenses {
   gearTotal: number
   bigTotal: number
@@ -255,12 +210,9 @@ export interface ActionItems {
     count: number
     items: (Quotation & { daysSinceUpdate: number })[]
   }
-  draftExpenses: {
-    count: number
-  }
 }
 
-export type ActivityType = 'invoice' | 'quotation' | 'expense'
+export type ActivityType = 'invoice' | 'quotation'
 export type ActivityIcon = 'receipt' | 'file-check' | 'wallet' | 'calendar'
 export type ActivityColor = 'green' | 'blue' | 'yellow' | 'orange' | 'gray'
 
@@ -302,7 +254,6 @@ export interface DashboardCard {
 export interface DashboardStatsResponse {
   invoices: Invoice[]
   quotations: Quotation[]
-  expenses: Expense[]
   products: Product[]
   gearExpenses: GearExpense[]
   bigExpenses: BigExpense[]

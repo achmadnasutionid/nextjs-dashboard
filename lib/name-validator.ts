@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma"
 export type EntityType = 
   | 'quotation' 
   | 'invoice' 
-  | 'expense' 
   | 'paragon' 
   | 'erha' 
   | 'productionTracker'
@@ -17,7 +16,6 @@ export type EntityType =
 type FieldNameMap = {
   quotation: 'billTo'
   invoice: 'billTo'
-  expense: 'projectName'
   paragon: 'billTo'
   erha: 'billTo'
   productionTracker: 'projectName'
@@ -53,7 +51,6 @@ export async function generateUniqueName(
   const modelNameMap: Record<EntityType, string> = {
     quotation: 'quotation',
     invoice: 'invoice',
-    expense: 'expense',
     paragon: 'paragonTicket',
     erha: 'erhaTicket',
     productionTracker: 'productionTracker'
@@ -63,7 +60,6 @@ export async function generateUniqueName(
   const fieldNameMap: FieldNameMap = {
     quotation: 'billTo',
     invoice: 'billTo',
-    expense: 'projectName',
     paragon: 'billTo',
     erha: 'billTo',
     productionTracker: 'projectName'
@@ -130,7 +126,6 @@ export async function checkNameConflicts(
   const modelNameMap: Record<EntityType, string> = {
     quotation: 'quotation',
     invoice: 'invoice',
-    expense: 'expense',
     paragon: 'paragonTicket',
     erha: 'erhaTicket',
     productionTracker: 'productionTracker'
@@ -139,7 +134,6 @@ export async function checkNameConflicts(
   const fieldNameMap: FieldNameMap = {
     quotation: 'billTo',
     invoice: 'billTo',
-    expense: 'projectName',
     paragon: 'billTo',
     erha: 'billTo',
     productionTracker: 'projectName'

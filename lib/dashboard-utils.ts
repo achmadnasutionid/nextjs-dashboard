@@ -1,16 +1,11 @@
 import type {
   Invoice,
   Quotation,
-  Expense,
-  Product,
   GearExpense,
   BigExpense,
   InvoiceStats,
   QuotationStats,
-  ExpenseStats,
   ExtraExpenses,
-  MonthlyTrend,
-  ProductExpense,
   ActionItems,
   RecentActivity,
   ThisMonthSummary,
@@ -88,65 +83,6 @@ export function calculateStats(
 }
 
 /**
- * Calculate expense statistics
- */
-export function calculateExpenseStats(
-  expenses: Expense[],
-  year: string
-): ExpenseStats {
-  const filteredExpenses =
-    year === "all"
-      ? expenses
-      : expenses.filter(
-          (exp) =>
-            exp.productionDate &&
-            new Date(exp.productionDate).getFullYear().toString() === year
-        )
-
-  const finalExpenses = filteredExpenses.filter((exp) => exp.status === "final")
-
-  let totalUnderBudget = 0
-  let totalOverBudget = 0
-  let totalEfficiency = 0
-  let countWithPaid = 0
-  let grossProfit = 0
-  let totalActualExpenses = 0
-
-  finalExpenses.forEach((exp) => {
-    const totalPaid = exp.paidAmount || 0
-    const totalActual = exp.items.reduce((sum, item) => sum + item.actual, 0)
-    const difference = totalPaid - totalActual
-
-    grossProfit += totalPaid
-    totalActualExpenses += totalActual
-
-    if (difference >= 0) {
-      totalUnderBudget += difference
-    } else {
-      totalOverBudget += Math.abs(difference)
-    }
-
-    if (totalPaid > 0) {
-      const efficiency = (difference / totalPaid) * 100
-      totalEfficiency += efficiency
-      countWithPaid++
-    }
-  })
-
-  const netProfit = grossProfit - totalActualExpenses
-  const marginPercentage = grossProfit > 0 ? (netProfit / grossProfit) * 100 : 0
-
-  return {
-    totalUnderBudget,
-    totalOverBudget,
-    averageEfficiency: countWithPaid > 0 ? totalEfficiency / countWithPaid : 0,
-    grossProfit,
-    netProfit,
-    marginPercentage,
-  }
-}
-
-/**
  * Calculate extra expenses (gear and big expenses)
  */
 export function calculateExtraExpenses(
@@ -171,151 +107,11 @@ export function calculateExtraExpenses(
 }
 
 /**
- * Calculate monthly trends
- */
-export function calculateMonthlyTrends(
-  expenses: Expense[],
-  year: string
-): MonthlyTrend[] {
-  const filteredExpenses =
-    year === "all"
-      ? expenses.filter((exp) => exp.status === "final")
-      : expenses.filter((exp) => {
-          if (!exp.productionDate) return false
-          const expYear = new Date(exp.productionDate).getFullYear().toString()
-          return expYear === year && exp.status === "final"
-        })
-
-  const monthlyData: { [key: number]: MonthlyTrend } = {}
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ]
-
-  months.forEach((month, index) => {
-    monthlyData[index + 1] = {
-      month,
-      grossProfit: 0,
-      netProfit: 0,
-      projectCount: 0,
-      totalInvoiceValue: 0,
-      averageValue: 0,
-    }
-  })
-
-  filteredExpenses.forEach((exp) => {
-    const month = exp.productionDate
-      ? new Date(exp.productionDate).getMonth() + 1
-      : new Date(exp.createdAt).getMonth() + 1
-
-    const totalPaid = exp.paidAmount || 0
-    const totalActual = exp.items.reduce((sum, item) => sum + item.actual, 0)
-    const difference = totalPaid - totalActual
-
-    monthlyData[month].grossProfit += totalPaid / 1000000
-    monthlyData[month].netProfit += difference / 1000000
-    monthlyData[month].projectCount += 1
-    monthlyData[month].totalInvoiceValue += totalPaid
-  })
-
-  Object.keys(monthlyData).forEach((monthKey) => {
-    const data = monthlyData[parseInt(monthKey)]
-    data.averageValue =
-      data.projectCount > 0 ? data.totalInvoiceValue / data.projectCount / 1000000 : 0
-  })
-
-  return Object.values(monthlyData)
-}
-
-/**
- * Calculate product expenses
- */
-export function calculateProductExpenses(
-  expenses: Expense[],
-  products: Product[],
-  year: string
-): { productExpenses: ProductExpense[]; etcExpenses: ProductExpense[] } {
-  const filteredExpenses =
-    year === "all"
-      ? expenses.filter((exp) => exp.status === "final")
-      : expenses.filter((exp) => {
-          if (!exp.productionDate) return false
-          const expYear = new Date(exp.productionDate).getFullYear().toString()
-          return expYear === year && exp.status === "final"
-        })
-
-  // Exclude "PHOTOGRAPHER" from master products
-  const masterProductNames = products
-    .filter((p) => p.name.toUpperCase() !== "PHOTOGRAPHER")
-    .map((p) => p.name)
-  const productTotals: { [key: string]: number } = {}
-  const etcTotals: { [key: string]: number } = {}
-
-  filteredExpenses.forEach((exp) => {
-    exp.items.forEach((item) => {
-      const actual = item.actual || 0
-      const productName = item.productName
-
-      // Skip PHOTOGRAPHER items entirely
-      if (productName.toUpperCase() === "PHOTOGRAPHER") {
-        return
-      }
-
-      if (masterProductNames.includes(productName)) {
-        productTotals[productName] = (productTotals[productName] || 0) + actual
-      } else {
-        etcTotals[productName] = (etcTotals[productName] || 0) + actual
-      }
-    })
-  })
-
-  const productArray = Object.entries(productTotals)
-    .map(([name, amount]) => ({
-      name,
-      amount: amount / 1000000,
-      percentage: 0,
-    }))
-    .sort((a, b) => b.amount - a.amount)
-
-  const etcArray = Object.entries(etcTotals)
-    .map(([name, amount]) => ({
-      name,
-      amount: amount / 1000000,
-      percentage: 0,
-    }))
-    .sort((a, b) => b.amount - a.amount)
-
-  const totalProductExpense = productArray.reduce((sum, p) => sum + p.amount, 0)
-  const totalEtcExpense = etcArray.reduce((sum, p) => sum + p.amount, 0)
-
-  productArray.forEach((p) => {
-    p.percentage = totalProductExpense > 0 ? (p.amount / totalProductExpense) * 100 : 0
-  })
-
-  etcArray.forEach((p) => {
-    p.percentage = totalEtcExpense > 0 ? (p.amount / totalEtcExpense) * 100 : 0
-  })
-
-  return { productExpenses: productArray, etcExpenses: etcArray }
-}
-
-/**
  * Calculate action items
  */
 export function calculateActionItems(
   invoices: Invoice[],
-  quotations: Quotation[],
-  expenses: Expense[]
+  quotations: Quotation[]
 ): ActionItems {
   const pendingInvoicesList = invoices.filter((inv) => inv.status === "pending")
   const pendingInvoicesTotal = pendingInvoicesList.reduce(
@@ -338,8 +134,6 @@ export function calculateActionItems(
     })
     .sort((a, b) => b.daysSinceUpdate - a.daysSinceUpdate)
 
-  const draftExpensesCount = expenses.filter((exp) => exp.status === "draft").length
-
   return {
     pendingInvoices: {
       count: pendingInvoicesList.length,
@@ -350,9 +144,6 @@ export function calculateActionItems(
       count: pendingQuotationsList.length,
       items: pendingQuotationsList,
     },
-    draftExpenses: {
-      count: draftExpensesCount,
-    },
   }
 }
 
@@ -361,8 +152,7 @@ export function calculateActionItems(
  */
 export function calculateRecentActivities(
   invoices: Invoice[],
-  quotations: Quotation[],
-  expenses: Expense[]
+  quotations: Quotation[]
 ): RecentActivity[] {
   const activities: RecentActivity[] = []
 
@@ -414,30 +204,13 @@ export function calculateRecentActivities(
     })
   })
 
-  expenses.forEach((exp) => {
-    const updatedAt = new Date(exp.updatedAt)
-    activities.push({
-      type: "expense",
-      id: exp.id,
-      displayId: exp.expenseId,
-      action: exp.status === "final" ? "finalized" : "created",
-      timestamp: updatedAt.getTime(),
-      date: updatedAt.toISOString(),
-      icon: "wallet",
-      color: exp.status === "final" ? "green" : "orange",
-    })
-  })
-
   return activities.sort((a, b) => b.timestamp - a.timestamp).slice(0, 6)
 }
 
 /**
  * Calculate this month summary
  */
-export function calculateThisMonthSummary(
-  invoices: Invoice[],
-  expenses: Expense[]
-): ThisMonthSummary {
+export function calculateThisMonthSummary(invoices: Invoice[]): ThisMonthSummary {
   const now = new Date()
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
@@ -464,46 +237,18 @@ export function calculateThisMonthSummary(
     0
   )
 
-  const thisMonthExpenses = expenses.filter((exp) => {
-    if (exp.status !== "final") return false
-    const expDate = new Date(exp.updatedAt)
-    return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear
-  })
-  const thisMonthTotalPaid = thisMonthExpenses.reduce(
-    (sum, exp) => sum + (exp.paidAmount || 0),
-    0
-  )
-  const thisMonthActualExpenses = thisMonthExpenses.reduce((sum, exp) => {
-    return sum + exp.items.reduce((itemSum, item) => itemSum + item.actual, 0)
-  }, 0)
-  const thisMonthNetProfit = thisMonthTotalPaid - thisMonthActualExpenses
-
-  const lastMonthExpenses = expenses.filter((exp) => {
-    if (exp.status !== "final") return false
-    const expDate = new Date(exp.updatedAt)
-    return expDate.getMonth() === lastMonth && expDate.getFullYear() === lastMonthYear
-  })
-  const lastMonthTotalPaid = lastMonthExpenses.reduce(
-    (sum, exp) => sum + (exp.paidAmount || 0),
-    0
-  )
-  const lastMonthActualExpenses = lastMonthExpenses.reduce((sum, exp) => {
-    return sum + exp.items.reduce((itemSum, item) => itemSum + item.actual, 0)
-  }, 0)
-  const lastMonthNetProfit = lastMonthTotalPaid - lastMonthActualExpenses
-
   const revenueChange =
     lastMonthRevenue > 0
       ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : 0
   const profitChange =
-    lastMonthNetProfit > 0
-      ? ((thisMonthNetProfit - lastMonthNetProfit) / lastMonthNetProfit) * 100
+    lastMonthRevenue > 0
+      ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : 0
 
   return {
     revenue: thisMonthRevenue,
-    netProfit: thisMonthNetProfit,
+    netProfit: thisMonthRevenue,
     revenueChange,
     profitChange,
   }
@@ -514,8 +259,7 @@ export function calculateThisMonthSummary(
  */
 export function extractAvailableYears(
   invoices: Invoice[],
-  quotations: Quotation[],
-  expenses: Expense[]
+  quotations: Quotation[]
 ): number[] {
   const years = new Set<number>()
   years.add(new Date().getFullYear())
@@ -529,12 +273,6 @@ export function extractAvailableYears(
   quotations.forEach((q) => {
     if (q.productionDate) {
       years.add(new Date(q.productionDate).getFullYear())
-    }
-  })
-
-  expenses.forEach((exp) => {
-    if (exp.productionDate) {
-      years.add(new Date(exp.productionDate).getFullYear())
     }
   })
 

@@ -19,8 +19,6 @@ const BACKUP_MODEL_NAMES = [
   "invoiceItemDetail",
   "invoiceRemark",
   "invoiceSignature",
-  "expense",
-  "expenseItem",
   "paragonTicket",
   "paragonTicketItem",
   "paragonTicketItemDetail",
