@@ -347,14 +347,16 @@ export async function PUT(
             originalTicket.projectName,
             ticket.projectName,
             ticket.productionDate,
-            ticket.totalAmount
+            ticket.totalAmount,
+            ticket.invoiceId || null
           )
         } else {
           await syncTracker({
             projectName: ticket.projectName,
             date: ticket.productionDate,
             totalAmount: ticket.totalAmount,
-            subtotal: ticket.items?.reduce((sum, item) => sum + item.total, 0) || 0
+            subtotal: ticket.items?.reduce((sum, item) => sum + item.total, 0) || 0,
+            invoiceId: ticket.invoiceId || null
           })
         }
       } catch (trackerError) {

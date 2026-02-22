@@ -270,7 +270,8 @@ export async function POST(request: Request) {
           projectName: projectNameStored,
           date: body.productionDate ? new Date(body.productionDate) : new Date(),
           totalAmount: body.totalAmount ? parseFloat(body.totalAmount) : 0,
-          subtotal: subtotal
+          subtotal: subtotal,
+          invoiceId: ticket.invoiceId || null
         })
       } catch (trackerError) {
         console.error("Error syncing tracker:", trackerError)
