@@ -684,9 +684,9 @@ export default function ProductionTrackerPage() {
                                   type="button"
                                   className="text-[11px] leading-tight text-blue-600 underline hover:no-underline truncate text-left flex-1 min-w-0"
                                   onClick={() => handleInvoiceLink(tracker.invoiceId!)}
-                                  title="View Invoice"
+                                  title={`${tracker.invoiceId} – View Invoice`}
                                 >
-                                  {tracker.invoiceId}
+                                  {tracker.invoiceId.length > 4 ? tracker.invoiceId.slice(-4) : tracker.invoiceId}
                                 </button>
                               ) : (
                                 <span className="text-[11px] text-muted-foreground flex-1">-</span>
