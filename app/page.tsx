@@ -281,7 +281,7 @@ export default function Home() {
                       <TrendingUp className="h-6 w-6 text-primary" />
                     </div>
                     <h3 className="font-semibold text-lg mb-2">Profit</h3>
-                    <p className="text-2xl font-semibold">
+                    <p className={`text-2xl font-semibold ${profitTotals ? (profitDisplayAmount > gearDisplayAmount + bigDisplayAmount ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400") : ""}`}>
                       {profitTotals ? formatCurrency(profitDisplayAmount) : "—"}
                     </p>
                   </div>
