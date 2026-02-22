@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, Search, Loader2, ExternalLink, Calendar } from "lucide-react"
+import { Plus, Trash2, Search, Loader2, ExternalLink, Calendar, Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
@@ -549,26 +549,21 @@ export default function ProductionTrackerPage() {
             <table className="w-full border-collapse text-xs border-separate border-spacing-0">
               <thead className="sticky top-0 z-30 bg-muted">
                 <tr>
-                  {/* Invoice ID Column - Gray */}
-                  <th className="sticky left-0 z-40 border-r border-b border-border p-2 text-left font-semibold min-w-[110px] bg-gray-100 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
+                  {/* Invoice ID + Link (merged) - Gray */}
+                  <th className="sticky left-0 z-40 border-r border-b border-border p-2 text-left font-semibold min-w-[130px] bg-gray-100 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
                     Invoice ID
                   </th>
                   
-                  {/* Link Column - Gray */}
-                  <th className="sticky left-[110px] z-40 border-r border-b border-border p-2 text-center font-semibold min-w-[50px] bg-gray-100">
-                    Link
-                  </th>
-                  
                   {/* Project Info - Blue */}
-                  <th className="sticky left-[160px] z-40 border-r border-b border-border p-2 text-left font-semibold min-w-[300px] bg-blue-50">
+                  <th className="sticky left-[130px] z-40 border-r border-b border-border p-2 text-left font-semibold min-w-[300px] bg-blue-50">
                     Project Name
                   </th>
-                  <th className="sticky left-[460px] z-40 border-r border-b border-border p-2 text-left font-semibold w-[110px] min-w-[110px] bg-blue-50">
+                  <th className="sticky left-[430px] z-40 border-r border-b border-border p-2 text-left font-semibold w-[110px] min-w-[110px] bg-blue-50">
                     Date
                   </th>
                   
                   {/* Status Column - Left Sticky - Red */}
-                  <th className="sticky left-[570px] z-40 border-r border-b border-border p-2 text-center font-semibold min-w-[140px] bg-red-50 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
+                  <th className="sticky left-[540px] z-40 border-r border-b border-border p-2 text-center font-semibold min-w-[140px] bg-red-50 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
                     Status
                   </th>
                   
@@ -606,24 +601,20 @@ export default function ProductionTrackerPage() {
                   // Skeleton loading rows
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={`skeleton-${index}`}>
-                      {/* Invoice ID - Gray */}
+                      {/* Invoice ID (merged) - Gray */}
                       <td className="sticky left-0 z-20 border-r border-b border-border p-2 bg-gray-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                         <Skeleton className="h-5 w-full" />
                       </td>
-                      {/* Link - Gray */}
-                      <td className="sticky left-[110px] z-20 border-r border-b border-border p-2 bg-gray-50">
-                        <Skeleton className="h-5 w-5 mx-auto" />
-                      </td>
                       {/* Project Name - Blue */}
-                      <td className="sticky left-[160px] z-20 border-r border-b border-border p-2 bg-blue-50 min-w-[300px]">
+                      <td className="sticky left-[130px] z-20 border-r border-b border-border p-2 bg-blue-50 min-w-[300px]">
                         <Skeleton className="h-5 w-full" />
                       </td>
                       {/* Date - Blue */}
-                      <td className="sticky left-[460px] z-20 border-r border-b border-border p-2 bg-blue-50 w-[110px] min-w-[110px]">
+                      <td className="sticky left-[430px] z-20 border-r border-b border-border p-2 bg-blue-50 w-[110px] min-w-[110px]">
                         <Skeleton className="h-5 w-full" />
                       </td>
                       {/* Status Column - Left Sticky - Red */}
-                      <td className="sticky left-[570px] z-20 border-r border-b border-border p-2 bg-red-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                      <td className="sticky left-[540px] z-20 border-r border-b border-border p-2 bg-red-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                         <Skeleton className="h-5 w-full" />
                       </td>
                       {/* Product Columns - Purple */}
@@ -655,7 +646,7 @@ export default function ProductionTrackerPage() {
                   ))
                 ) : trackers.length === 0 ? (
                   <tr>
-                    <td colSpan={PRODUCT_COLUMNS.length + 8} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={PRODUCT_COLUMNS.length + 7} className="p-8 text-center text-muted-foreground">
                       No data yet. Click "New Row" to start.
                     </td>
                   </tr>
@@ -663,14 +654,8 @@ export default function ProductionTrackerPage() {
                   filteredTrackers.map((tracker) => {
                     return (
                       <tr key={tracker.id} className="transition-colors hover:bg-muted/30">
-                        {/* Invoice ID - Editable - Gray */}
-                        <td 
-                          className="sticky left-0 z-20 border-r border-b border-border p-2 bg-gray-50 cursor-pointer hover:bg-gray-100 shadow-[2px_0_4px_rgba(0,0,0,0.05)]"
-                          onMouseDown={(e) => {
-                            e.preventDefault()
-                            handleCellClick(tracker, 'invoiceId')
-                          }}
-                        >
+                        {/* Invoice ID + Link (merged) - Gray: link opens invoice, pencil edits */}
+                        <td className="sticky left-0 z-20 border-r border-b border-border p-2 bg-gray-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                           {editingCell?.rowId === tracker.id && editingCell?.field === 'invoiceId' ? (
                             <Input
                               value={editValue}
@@ -681,30 +666,38 @@ export default function ProductionTrackerPage() {
                               autoFocus
                             />
                           ) : (
-                            <span className="text-xs">{tracker.invoiceId || "-"}</span>
-                          )}
-                        </td>
-                        
-                        {/* Link - Gray (Only show if invoice ID exists) */}
-                        <td className="sticky left-[110px] z-20 border-r border-b border-border p-2 text-center bg-gray-50">
-                          {tracker.invoiceId ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 hover:bg-gray-200"
-                              onClick={() => handleInvoiceLink(tracker.invoiceId!)}
-                              title="View Invoice"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5 text-blue-600" />
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
+                            <div className="flex items-center gap-1 min-w-0">
+                              {tracker.invoiceId ? (
+                                <button
+                                  type="button"
+                                  className="text-xs text-blue-600 underline hover:no-underline truncate text-left flex-1 min-w-0"
+                                  onClick={() => handleInvoiceLink(tracker.invoiceId!)}
+                                  title="View Invoice"
+                                >
+                                  {tracker.invoiceId}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground flex-1">-</span>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 shrink-0 hover:bg-gray-200"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleCellClick(tracker, 'invoiceId')
+                                }}
+                                title="Edit Invoice ID"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                              </Button>
+                            </div>
                           )}
                         </td>
                         
                         {/* Project Name - Editable - Blue */}
                         <td 
-                          className="sticky left-[160px] z-20 border-r border-b border-border p-2 bg-blue-50 cursor-pointer hover:bg-blue-100 min-w-[300px]"
+                          className="sticky left-[130px] z-20 border-r border-b border-border p-2 bg-blue-50 cursor-pointer hover:bg-blue-100 min-w-[300px]"
                           onMouseDown={(e) => {
                             e.preventDefault()
                             handleCellClick(tracker, 'projectName')
@@ -726,7 +719,7 @@ export default function ProductionTrackerPage() {
                         
                         {/* Date - Click to pick - Blue */}
                         <td 
-                          className="sticky left-[460px] z-20 border-r border-b border-border p-2 bg-blue-50 w-[110px] min-w-[110px]"
+                          className="sticky left-[430px] z-20 border-r border-b border-border p-2 bg-blue-50 w-[110px] min-w-[110px]"
                         >
                           <Popover>
                             <PopoverTrigger asChild>
@@ -772,7 +765,7 @@ export default function ProductionTrackerPage() {
                         </td>
                         
                         {/* Status Column - Left Sticky - Red */}
-                        <td className="sticky left-[570px] z-20 border-r border-b border-border p-2 text-center bg-red-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                        <td className="sticky left-[540px] z-20 border-r border-b border-border p-2 text-center bg-red-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                           <Select value={tracker.status} onValueChange={(value) => handleStatusChange(tracker.id, value)}>
                             <SelectTrigger className={cn(
                               "h-7 text-xs border",
@@ -898,28 +891,23 @@ export default function ProductionTrackerPage() {
               {/* Totals Footer - Sticky Bottom */}
               <tfoot className="sticky bottom-0 z-30 bg-slate-100 border-t-2 border-slate-300">
                 <tr className="font-semibold">
-                  {/* Invoice ID Column - Gray */}
+                  {/* Invoice ID (merged) - Gray */}
                   <td className="sticky left-0 z-40 border-r border-slate-300 p-2.5 bg-slate-100 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
                     <span className="text-sm text-slate-700 uppercase tracking-wide">TOTAL</span>
                   </td>
                   
-                  {/* Link Column - Gray */}
-                  <td className="sticky left-[110px] z-40 border-r border-slate-300 p-2.5 text-center bg-slate-100">
-                    <span className="text-sm text-slate-600">-</span>
-                  </td>
-                  
                   {/* Project Name - Gray */}
-                  <td className="sticky left-[160px] z-40 border-r border-slate-300 p-2.5 bg-slate-100 min-w-[300px]">
+                  <td className="sticky left-[130px] z-40 border-r border-slate-300 p-2.5 bg-slate-100 min-w-[300px]">
                     <span className="text-sm text-slate-600">{filteredTrackers.length} row(s)</span>
                   </td>
                   
                   {/* Date - Gray */}
-                  <td className="sticky left-[460px] z-40 border-r border-slate-300 p-2.5 bg-slate-100 w-[110px] min-w-[110px]">
+                  <td className="sticky left-[430px] z-40 border-r border-slate-300 p-2.5 bg-slate-100 w-[110px] min-w-[110px]">
                     <span className="text-sm text-slate-600">-</span>
                   </td>
                   
                   {/* Status Column - Gray */}
-                  <td className="sticky left-[570px] z-40 border-r border-slate-300 p-2.5 text-center bg-slate-100 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
+                  <td className="sticky left-[540px] z-40 border-r border-slate-300 p-2.5 text-center bg-slate-100 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
                     <span className="text-sm text-slate-600">-</span>
                   </td>
                   
