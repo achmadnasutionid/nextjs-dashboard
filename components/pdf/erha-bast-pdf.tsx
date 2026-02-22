@@ -341,13 +341,8 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
           </Text>
         </View>
 
-        {/* Work Details - Bill To & Project Name */}
+        {/* Work Details - Project Name only */}
         <View style={styles.workSection}>
-          <View style={styles.workRow}>
-            <Text style={styles.workLabel}>Bill To</Text>
-            <Text style={styles.colon}>:</Text>
-            <Text style={styles.workValue}>{data.billTo || "-"}</Text>
-          </View>
           <View style={styles.workRow}>
             <Text style={styles.workLabel}>Nama Proyek</Text>
             <Text style={styles.colon}>:</Text>

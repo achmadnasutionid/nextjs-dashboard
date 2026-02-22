@@ -183,14 +183,9 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
           </View>
         </View>
 
-        {/* Work Description - Bill To & Project Name */}
+        {/* Work Description - Project Name only */}
         <View style={styles.section}>
           <Text style={{ fontSize: 10, marginBottom: 5 }}>Menerangkan Bahwa Pekerjaan Berupa :</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Bill To</Text>
-            <Text style={styles.colon}>:</Text>
-            <Text style={styles.value}>{data.billTo || "-"}</Text>
-          </View>
           <View style={styles.row}>
             <Text style={styles.label}>Nama Proyek</Text>
             <Text style={styles.colon}>:</Text>
