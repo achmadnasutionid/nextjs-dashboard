@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/footer"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Receipt, Wallet } from "lucide-react"
+import { Search, Receipt, Wallet, TrendingUp } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -53,6 +53,7 @@ export default function Home() {
   const [pendingTotals, setPendingTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [gearTotals, setGearTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [bigTotals, setBigTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
+  const [profitTotals, setProfitTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [selectedFinanceYear, setSelectedFinanceYear] = useState<string>("")
 
   // Initialize client-side state
@@ -60,20 +61,23 @@ export default function Home() {
     setIsClient(true)
   }, [])
 
-  // Fetch Finance Overview data: pending invoices, gear expense, big expense totals by year
+  // Fetch Finance Overview data: pending, profit, gear, big expense totals by year
   useEffect(() => {
     if (!isClient) return
     Promise.all([
       fetch("/api/invoice/pending-totals-by-year").then((r) => r.json()),
+      fetch("/api/invoice/profit-totals-by-year").then((r) => r.json()),
       fetch("/api/gear-expenses/totals-by-year").then((r) => r.json()),
       fetch("/api/big-expenses/totals-by-year").then((r) => r.json()),
-    ]).then(([pending, gear, big]) => {
+    ]).then(([pending, profit, gear, big]) => {
       if (pending?.years && pending?.byYear) setPendingTotals({ years: pending.years, byYear: pending.byYear })
+      if (profit?.years && profit?.byYear) setProfitTotals({ years: profit.years, byYear: profit.byYear })
       if (gear?.years && gear?.byYear) setGearTotals({ years: gear.years, byYear: gear.byYear })
       if (big?.years && big?.byYear) setBigTotals({ years: big.years, byYear: big.byYear })
       const allYears = [
         ...new Set([
           ...(pending?.years ?? []),
+          ...(profit?.years ?? []),
           ...(gear?.years ?? []),
           ...(big?.years ?? []),
         ]),
@@ -85,10 +89,11 @@ export default function Home() {
   const financeYears = useMemo(() => {
     const set = new Set<number>()
     pendingTotals?.years.forEach((y) => set.add(y))
+    profitTotals?.years.forEach((y) => set.add(y))
     gearTotals?.years.forEach((y) => set.add(y))
     bigTotals?.years.forEach((y) => set.add(y))
     return Array.from(set).sort((a, b) => b - a)
-  }, [pendingTotals, gearTotals, bigTotals])
+  }, [pendingTotals, profitTotals, gearTotals, bigTotals])
 
   const pendingDisplayAmount = useMemo(() => {
     if (!pendingTotals?.byYear) return 0
@@ -107,6 +112,12 @@ export default function Home() {
     if (selectedFinanceYear === "all") return Object.values(bigTotals.byYear).reduce((a, b) => a + b, 0)
     return bigTotals.byYear[selectedFinanceYear] ?? 0
   }, [bigTotals, selectedFinanceYear])
+
+  const profitDisplayAmount = useMemo(() => {
+    if (!profitTotals?.byYear) return 0
+    if (selectedFinanceYear === "all") return Object.values(profitTotals.byYear).reduce((a, b) => a + b, 0)
+    return profitTotals.byYear[selectedFinanceYear] ?? 0
+  }, [profitTotals, selectedFinanceYear])
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
@@ -246,7 +257,7 @@ export default function Home() {
                   </Select>
                 </div>
               </div>
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <Card
                   className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
                   onClick={() => handleNavigate("/invoice?status=pending")}
@@ -258,6 +269,20 @@ export default function Home() {
                     <h3 className="font-semibold text-lg mb-2">Pending Invoices</h3>
                     <p className="text-2xl font-semibold">
                       {pendingTotals ? formatCurrency(pendingDisplayAmount) : "—"}
+                    </p>
+                  </div>
+                </Card>
+                <Card
+                  className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
+                  onClick={() => handleNavigate("/invoice?status=paid")}
+                >
+                  <div className="p-6">
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <TrendingUp className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">Profit</h3>
+                    <p className="text-2xl font-semibold">
+                      {profitTotals ? formatCurrency(profitDisplayAmount) : "—"}
                     </p>
                   </div>
                 </Card>
