@@ -654,7 +654,7 @@ export default function ProductionTrackerPage() {
                 ) : (
                   filteredTrackers.map((tracker) => {
                     return (
-                      <tr key={tracker.id} className="transition-colors hover:bg-muted/30">
+                      <tr key={tracker.id} className="transition-colors hover:bg-muted/30 focus-within:bg-amber-50/80 focus-within:shadow-[inset_2px_0_0_0_hsl(var(--primary))]">
                         {/* ID + Link (merged) - Gray: link opens invoice, pencil edits */}
                         <td className="sticky left-0 z-20 border-r border-b border-border p-1.5 bg-gray-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)] w-[92px] min-w-[92px]">
                           {editingCell?.rowId === tracker.id && editingCell?.field === 'invoiceId' ? (
