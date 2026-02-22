@@ -124,69 +124,76 @@ export async function POST(request: Request) {
 
     // Use transaction for atomic ID generation and creation
     const ticket = await prisma.$transaction(async (tx) => {
-      // Fetch all latest IDs in parallel for better performance
+      // Fetch all IDs with year prefix (numeric max is reliable; orderBy string desc is not)
       const [
-        latestTicket,
-        latestQuotation,
-        latestParagonQuotation,
-        latestErhaQuotation,
-        latestInvoice,
-        latestParagonInvoice,
-        latestErhaInvoice
+        erhaTicketIds,
+        quotationIds,
+        paragonQuotationIds,
+        erhaQuotationIds,
+        invoiceIds,
+        paragonInvoiceIds,
+        erhaInvoiceIds
       ] = await Promise.all([
-        tx.erhaTicket.findFirst({
+        tx.erhaTicket.findMany({
           where: { ticketId: { startsWith: `ERH-${year}-` } },
-          orderBy: { ticketId: "desc" },
           select: { ticketId: true }
         }),
-        tx.quotation.findFirst({
+        tx.quotation.findMany({
           where: { quotationId: { startsWith: `QTN-${year}-` } },
-          orderBy: { quotationId: "desc" },
           select: { quotationId: true }
         }),
-        tx.paragonTicket.findFirst({
+        tx.paragonTicket.findMany({
           where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
-          orderBy: { quotationId: "desc" },
           select: { quotationId: true }
         }),
-        tx.erhaTicket.findFirst({
+        tx.erhaTicket.findMany({
           where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
-          orderBy: { quotationId: "desc" },
           select: { quotationId: true }
         }),
-        tx.invoice.findFirst({
+        tx.invoice.findMany({
           where: { invoiceId: { startsWith: `INV-${year}-` } },
-          orderBy: { invoiceId: "desc" },
           select: { invoiceId: true }
         }),
-        tx.paragonTicket.findFirst({
+        tx.paragonTicket.findMany({
           where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
-          orderBy: { invoiceId: "desc" },
           select: { invoiceId: true }
         }),
-        tx.erhaTicket.findFirst({
+        tx.erhaTicket.findMany({
           where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
-          orderBy: { invoiceId: "desc" },
           select: { invoiceId: true }
         })
       ])
 
-      // Calculate next IDs
-      const nextTicketNum = extractIdNumber(latestTicket?.ticketId) + 1
-      const nextQuotationNum = Math.max(
-        extractIdNumber(latestQuotation?.quotationId),
-        extractIdNumber(latestParagonQuotation?.quotationId),
-        extractIdNumber(latestErhaQuotation?.quotationId)
-      ) + 1
-      const nextInvoiceNum = Math.max(
-        extractIdNumber(latestInvoice?.invoiceId),
-        extractIdNumber(latestParagonInvoice?.invoiceId),
-        extractIdNumber(latestErhaInvoice?.invoiceId)
-      ) + 1
+      const maxQuotationNum = Math.max(
+        0,
+        ...quotationIds.map((r) => extractIdNumber(r.quotationId)),
+        ...paragonQuotationIds.map((r) => extractIdNumber(r.quotationId)),
+        ...erhaQuotationIds.map((r) => extractIdNumber(r.quotationId))
+      )
+      const maxInvoiceNum = Math.max(
+        0,
+        ...invoiceIds.map((r) => extractIdNumber(r.invoiceId)),
+        ...paragonInvoiceIds.map((r) => extractIdNumber(r.invoiceId)),
+        ...erhaInvoiceIds.map((r) => extractIdNumber(r.invoiceId))
+      )
 
-      const ticketId = `ERH-${year}-${nextTicketNum.toString().padStart(4, "0")}`
-      const quotationId = `QTN-${year}-${nextQuotationNum.toString().padStart(4, "0")}`
-      const invoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
+      let nextTicketNum = Math.max(0, ...erhaTicketIds.map((r) => extractIdNumber(r.ticketId))) + 1
+      let nextQuotationNum = maxQuotationNum + 1
+      let nextInvoiceNum = maxInvoiceNum + 1
+
+      let ticketId = `ERH-${year}-${nextTicketNum.toString().padStart(4, "0")}`
+      let quotationId = `QTN-${year}-${nextQuotationNum.toString().padStart(4, "0")}`
+      let invoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
+
+      // Avoid collision with real Quotation/Invoice: if ID already exists there, increment until free
+      while (await tx.quotation.findUnique({ where: { quotationId }, select: { id: true } })) {
+        nextQuotationNum++
+        quotationId = `QTN-${year}-${nextQuotationNum.toString().padStart(4, "0")}`
+      }
+      while (await tx.invoice.findUnique({ where: { invoiceId }, select: { id: true } })) {
+        nextInvoiceNum++
+        invoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
+      }
 
       // Create ticket atomically
       return tx.erhaTicket.create({

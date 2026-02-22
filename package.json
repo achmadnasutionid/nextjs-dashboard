@@ -33,7 +33,10 @@
     "db:rebuild-trackers": "node rebuild-production-trackers.mjs",
     "db:backup:check": "node scripts/check-internal-backup.mjs",
     "db:master-data:export": "node master-data-export-import.mjs export",
-    "db:master-data:import": "node master-data-export-import.mjs import"
+    "db:master-data:import": "node master-data-export-import.mjs import",
+    "db:fix-id-collisions": "tsx scripts/fix-paragon-erha-id-collisions.ts",
+    "db:fix-id-collisions:dry-run": "tsx scripts/fix-paragon-erha-id-collisions.ts --dry-run",
+    "db:list-duplicate-ids": "tsx scripts/list-duplicate-visible-ids.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

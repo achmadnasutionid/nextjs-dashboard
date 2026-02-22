@@ -44,13 +44,77 @@ function getIdField(modelName: string): string {
   return fieldMap[modelName] || `${modelName}Id`
 }
 
+/** Parse PREFIX-YYYY-NNNN and return the numeric part, or 0 if invalid. */
+function parseIdNumber(id: string | null | undefined): number {
+  if (!id || typeof id !== 'string') return 0
+  const parts = id.split('-')
+  if (parts.length < 3) return 0
+  const num = parseInt(parts[2], 10)
+  return isNaN(num) ? 0 : num
+}
+
 /**
- * Ensure sequence exists for this prefix-year
+ * For QTN/INV, the same visible ID is used by Quotation/Invoice AND Paragon/Erha.
+ * Return the max number in use across all those tables so the sequence never reuses an ID.
+ */
+async function getMaxNumberForSharedId(
+  prefix: 'QTN' | 'INV',
+  year: number
+): Promise<number> {
+  const searchPrefix = `${prefix}-${year}-`
+  if (prefix === 'QTN') {
+    const [quotations, paragon, erha] = await Promise.all([
+      prisma.quotation.findMany({
+        where: { quotationId: { startsWith: searchPrefix } },
+        select: { quotationId: true }
+      }),
+      prisma.paragonTicket.findMany({
+        where: { quotationId: { startsWith: searchPrefix, not: '' } },
+        select: { quotationId: true }
+      }),
+      prisma.erhaTicket.findMany({
+        where: { quotationId: { startsWith: searchPrefix, not: '' } },
+        select: { quotationId: true }
+      })
+    ])
+    const numbers = [
+      ...quotations.map((r) => parseIdNumber(r.quotationId)),
+      ...paragon.map((r) => parseIdNumber(r.quotationId)),
+      ...erha.map((r) => parseIdNumber(r.quotationId))
+    ]
+    return numbers.length ? Math.max(...numbers) : 0
+  }
+  // INV
+  const [invoices, paragon, erha] = await Promise.all([
+    prisma.invoice.findMany({
+      where: { invoiceId: { startsWith: searchPrefix } },
+      select: { invoiceId: true }
+    }),
+    prisma.paragonTicket.findMany({
+      where: { invoiceId: { startsWith: searchPrefix, not: '' } },
+      select: { invoiceId: true }
+    }),
+    prisma.erhaTicket.findMany({
+      where: { invoiceId: { startsWith: searchPrefix, not: '' } },
+      select: { invoiceId: true }
+    })
+  ])
+  const numbers = [
+    ...invoices.map((r) => parseIdNumber(r.invoiceId)),
+    ...paragon.map((r) => parseIdNumber(r.invoiceId)),
+    ...erha.map((r) => parseIdNumber(r.invoiceId))
+  ]
+  return numbers.length ? Math.max(...numbers) : 0
+}
+
+/**
+ * Ensure sequence exists for this prefix-year.
+ * For QTN/INV, initializes (and syncs existing sequences) from max across
+ * quotation+invoice+paragon+erha so visible IDs never collide.
  */
 async function ensureSequence(prefix: string, year: number, modelName: string): Promise<void> {
   const sequenceName = getSequenceName(prefix, year)
   
-  // Check if sequence exists
   const existing = await prisma.$queryRaw<Array<{ exists: boolean }>>`
     SELECT EXISTS (
       SELECT FROM pg_sequences 
@@ -58,11 +122,35 @@ async function ensureSequence(prefix: string, year: number, modelName: string): 
     ) as exists
   `
   
+  if (prefix === 'QTN' || prefix === 'INV') {
+    const maxNum = await getMaxNumberForSharedId(prefix as 'QTN' | 'INV', year)
+    const startValue = maxNum + 1
+    if (!existing[0]?.exists) {
+      try {
+        await prisma.$executeRawUnsafe(`
+          CREATE SEQUENCE IF NOT EXISTS "${sequenceName}" START WITH ${startValue}
+        `)
+      } catch (e) {
+        // Sequence might have been created by another process - that's OK
+      }
+    } else {
+      // Sync existing sequence so it never returns a number already used by paragon/erha
+      const curr = await prisma.$queryRawUnsafe<Array<{ last_value: bigint }>>(
+        `SELECT last_value FROM "${sequenceName}"`
+      )
+      const lastVal = curr[0] ? Number(curr[0].last_value) : 0
+      if (lastVal < startValue) {
+        await prisma.$executeRawUnsafe(
+          `SELECT setval('"${sequenceName}"', ${maxNum})`
+        )
+      }
+    }
+    return
+  }
+  
   if (!existing[0]?.exists) {
-    // Find the current max number from database
     const idField = getIdField(modelName)
     const searchPrefix = `${prefix}-${year}-`
-    
     const lastRecord = await (prisma as any)[modelName].findFirst({
       where: {
         [idField]: {
@@ -76,15 +164,12 @@ async function ensureSequence(prefix: string, year: number, modelName: string): 
         [idField]: true
       }
     })
-    
     let startValue = 1
     if (lastRecord) {
-      const parts = lastRecord[idField].split('-')
-      const lastNumber = parseInt(parts[2]) || 0
+      const parts = (lastRecord[idField] as string).split('-')
+      const lastNumber = parseInt(parts[2], 10) || 0
       startValue = lastNumber + 1
     }
-    
-    // Create sequence starting from the next number
     try {
       await prisma.$executeRawUnsafe(`
         CREATE SEQUENCE IF NOT EXISTS "${sequenceName}" START WITH ${startValue}
