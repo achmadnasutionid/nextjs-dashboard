@@ -572,10 +572,10 @@ export default function ProductionTrackerPage() {
                   <th className="sticky left-[402px] z-40 border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-green-50 shadow-[2px_0_4px_rgba(0,0,0,0.1)]">
                     Total
                   </th>
-                  <th className="sticky left-[532px] z-40 border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-amber-50">
+                  <th className="sticky left-[532px] z-40 border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-green-50">
                     Expense
                   </th>
-                  <th className="sticky left-[662px] z-40 border-l border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-amber-50 whitespace-nowrap">
+                  <th className="sticky left-[662px] z-40 border-l border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-green-50 whitespace-nowrap">
                     PHOTOGRAPHER
                   </th>
                   
@@ -620,10 +620,10 @@ export default function ProductionTrackerPage() {
                       <td className="sticky left-[402px] z-20 border-r border-b border-border p-2 bg-green-50 w-[130px] min-w-[130px] max-w-[130px] shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                         <Skeleton className="h-5 w-full" />
                       </td>
-                      <td className="sticky left-[532px] z-20 border-b border-border p-2 bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]">
+                      <td className="sticky left-[532px] z-20 border-b border-border p-2 bg-green-50 w-[130px] min-w-[130px] max-w-[130px]">
                         <Skeleton className="h-5 w-full" />
                       </td>
-                      <td className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]">
+                      <td className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 bg-green-50 w-[130px] min-w-[130px] max-w-[130px]">
                         <Skeleton className="h-5 w-full" />
                       </td>
                       {/* Product Columns - Purple */}
@@ -792,16 +792,16 @@ export default function ProductionTrackerPage() {
                           )}
                         </td>
                         <td 
-                          className="sticky left-[532px] z-20 border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
+                          className="sticky left-[532px] z-20 border-b border-border p-2 text-right bg-green-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
                         >
-                          <span className="text-xs font-medium text-amber-700">
+                          <span className="text-xs font-medium text-green-700">
                             {formatCurrency(calculateExpense(tracker.productAmounts || {}))}
                           </span>
                         </td>
                         <td 
-                          className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
+                          className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 text-right bg-green-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
                         >
-                          <span className="text-xs font-medium text-amber-700">
+                          <span className="text-xs font-medium text-green-700">
                             {formatCurrency(calculatePhotographer(tracker.totalAmount, tracker.productAmounts || {}))}
                           </span>
                         </td>
@@ -908,10 +908,10 @@ export default function ProductionTrackerPage() {
                     <span className="text-sm text-green-700 font-bold">{formatCurrency(totals.totalAmount)}</span>
                   </td>
                   <td className="sticky left-[532px] z-40 border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px]">
-                    <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.expense)}</span>
+                    <span className="text-sm text-green-700 font-semibold">{formatCurrency(totals.expense)}</span>
                   </td>
                   <td className="sticky left-[662px] z-40 border-l border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px]">
-                    <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.photographer)}</span>
+                    <span className="text-sm text-green-700 font-semibold">{formatCurrency(totals.photographer)}</span>
                   </td>
                   
                   {/* Product Columns - Gray */}
