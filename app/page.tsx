@@ -7,7 +7,14 @@ import { Footer } from "@/components/layout/footer"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Search, Receipt } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Dashboard components
 import { QuickActionSection, CardsSection } from "@/components/dashboard/cards-section"
@@ -43,11 +50,38 @@ export default function Home() {
   // State management
   const [searchQuery, setSearchQuery] = useState("")
   const [isClient, setIsClient] = useState(false)
+  const [pendingTotals, setPendingTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
+  const [selectedPendingYear, setSelectedPendingYear] = useState<string>("")
 
   // Initialize client-side state
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Fetch pending invoice totals by year (same data as invoice list: Invoice + Paragon + Erha)
+  useEffect(() => {
+    if (!isClient) return
+    fetch("/api/invoice/pending-totals-by-year")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.years && data.byYear) {
+          setPendingTotals({ years: data.years, byYear: data.byYear })
+          setSelectedPendingYear(data.years.length > 0 ? String(data.years[0]) : "all")
+        }
+      })
+      .catch(() => {})
+  }, [isClient])
+
+  const pendingDisplayAmount = useMemo(() => {
+    if (!pendingTotals?.byYear) return 0
+    if (selectedPendingYear === "all") {
+      return Object.values(pendingTotals.byYear).reduce((a, b) => a + b, 0)
+    }
+    return pendingTotals.byYear[selectedPendingYear] ?? 0
+  }, [pendingTotals, selectedPendingYear])
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
 
   // First landing: trigger backup if not run in last 24h; cache 1 day so we don't call every visit.
   // When backup is triggered, backup data is returned and stored in IndexedDB (copy off the DB).
@@ -160,6 +194,44 @@ export default function Home() {
               sectionTitle="Special Case"
               onNavigate={handleNavigate}
             />
+          )}
+
+          {/* Pending Invoices by Year - under Special Case */}
+          {isClient && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold tracking-tight">Pending Invoices</h2>
+              <Card
+                className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 max-w-md"
+                onClick={() => handleNavigate("/invoice?status=pending")}
+              >
+                <div className="p-6">
+                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <Receipt className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">Total pending (by year)</h3>
+                  <div className="flex flex-wrap items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={selectedPendingYear || "all"}
+                      onValueChange={setSelectedPendingYear}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All years</SelectItem>
+                        {(pendingTotals?.years ?? []).map((y) => (
+                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-lg font-semibold">
+                      {pendingTotals ? formatCurrency(pendingDisplayAmount) : "—"}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">Click to open invoice list (pending)</p>
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* Management Section */}
