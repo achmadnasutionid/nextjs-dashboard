@@ -578,15 +578,15 @@ export default function ProductionTrackerPage() {
                   ))}
                   
                   {/* Financial Summary - Right Sticky - Green */}
-                  <th className="sticky right-[280px] z-40 border-r border-b border-border p-2 text-left font-semibold w-[110px] min-w-[110px] bg-green-50 shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
+                  <th className="sticky right-[300px] z-40 border-r border-b border-border p-2 text-left font-semibold w-[110px] min-w-[110px] bg-green-50 shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                     Total
                   </th>
                   
                   {/* Calculated Columns - Right Sticky - Yellow/Orange */}
-                  <th className="sticky right-[170px] z-40 border-b border-border p-2 text-left font-semibold w-[110px] min-w-[110px] max-w-[110px] bg-amber-50">
+                  <th className="sticky right-[190px] z-40 border-b border-border p-2 text-left font-semibold w-[110px] min-w-[110px] max-w-[110px] bg-amber-50">
                     Expense
                   </th>
-                  <th className="sticky right-[60px] z-40 border-l border-r border-b border-border p-2 text-left font-semibold w-[110px] min-w-[110px] max-w-[110px] bg-amber-50 whitespace-nowrap">
+                  <th className="sticky right-[60px] z-40 border-l border-r border-b border-border p-2 text-left font-semibold w-[130px] min-w-[130px] max-w-[130px] bg-amber-50 whitespace-nowrap">
                     PHOTOGRAPHER
                   </th>
                   
@@ -627,15 +627,15 @@ export default function ProductionTrackerPage() {
                         </td>
                       ))}
                       {/* Total - Right Sticky - Green */}
-                      <td className="sticky right-[280px] z-20 border-r border-b border-border p-2 bg-green-50 w-[110px] min-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
+                      <td className="sticky right-[300px] z-20 border-r border-b border-border p-2 bg-green-50 w-[110px] min-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
                         <Skeleton className="h-5 w-full" />
                       </td>
                       {/* Expense - Right Sticky - Amber */}
-                      <td className="sticky right-[170px] z-20 border-b border-border p-2 bg-amber-50 w-[110px] min-w-[110px] max-w-[110px]">
+                      <td className="sticky right-[190px] z-20 border-b border-border p-2 bg-amber-50 w-[110px] min-w-[110px] max-w-[110px]">
                         <Skeleton className="h-5 w-full" />
                       </td>
                       {/* PHOTOGRAPHER - Right Sticky - Amber */}
-                      <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-2 bg-amber-50 w-[110px] min-w-[110px] max-w-[110px]">
+                      <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-2 bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]">
                         <Skeleton className="h-5 w-full" />
                       </td>
                       {/* Action Column - Right Sticky - Red */}
@@ -828,7 +828,7 @@ export default function ProductionTrackerPage() {
                         
                         {/* Total Amount - Right Sticky - Green */}
                         <td 
-                          className="sticky right-[280px] z-20 border-r border-b border-border p-2 text-right bg-green-50 cursor-pointer hover:bg-green-100 w-[110px] min-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]"
+                          className="sticky right-[300px] z-20 border-r border-b border-border p-2 text-right bg-green-50 cursor-pointer hover:bg-green-100 w-[110px] min-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]"
                           onMouseDown={(e) => {
                             e.preventDefault()
                             handleCellClick(tracker, 'totalAmount')
@@ -855,7 +855,7 @@ export default function ProductionTrackerPage() {
                         
                         {/* Expense - Right Sticky - Amber */}
                         <td 
-                          className="sticky right-[170px] z-20 border-b border-border p-2 text-right bg-amber-50 w-[110px] min-w-[110px] max-w-[110px]"
+                          className="sticky right-[190px] z-20 border-b border-border p-2 text-right bg-amber-50 w-[110px] min-w-[110px] max-w-[110px]"
                         >
                           <span className="text-xs font-medium text-amber-700">
                             {formatCurrency(calculateExpense(tracker.productAmounts || {}))}
@@ -864,7 +864,7 @@ export default function ProductionTrackerPage() {
                         
                         {/* PHOTOGRAPHER - Right Sticky - Amber */}
                         <td 
-                          className="sticky right-[60px] z-20 border-l border-r border-b border-border p-2 text-right bg-amber-50 w-[110px] min-w-[110px] max-w-[110px]"
+                          className="sticky right-[60px] z-20 border-l border-r border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px]"
                         >
                           <span className="text-xs font-medium text-amber-700">
                             {formatCurrency(calculatePhotographer(tracker.totalAmount, tracker.productAmounts || {}))}
@@ -924,17 +924,17 @@ export default function ProductionTrackerPage() {
                   ))}
                   
                   {/* Total Amount - Right Sticky - Gray with Green Accent */}
-                  <td className="sticky right-[280px] z-40 border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[110px] min-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
+                  <td className="sticky right-[300px] z-40 border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[110px] min-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                     <span className="text-sm text-green-700 font-bold">{formatCurrency(totals.totalAmount)}</span>
                   </td>
                   
                   {/* Expense - Right Sticky - Gray with Orange Accent */}
-                  <td className="sticky right-[170px] z-40 border-slate-300 p-2.5 text-right bg-slate-100 w-[110px] min-w-[110px] max-w-[110px]">
+                  <td className="sticky right-[190px] z-40 border-slate-300 p-2.5 text-right bg-slate-100 w-[110px] min-w-[110px] max-w-[110px]">
                     <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.expense)}</span>
                   </td>
                   
                   {/* PHOTOGRAPHER - Right Sticky - Gray with Orange Accent */}
-                  <td className="sticky right-[60px] z-40 border-l border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[110px] min-w-[110px] max-w-[110px]">
+                  <td className="sticky right-[60px] z-40 border-l border-r border-slate-300 p-2.5 text-right bg-slate-100 w-[130px] min-w-[130px] max-w-[130px]">
                     <span className="text-sm text-orange-700 font-semibold">{formatCurrency(totals.photographer)}</span>
                   </td>
                   
