@@ -375,8 +375,8 @@ function InvoicePageContent() {
                               {row.source}
                             </span>
                           )}
-                          <span className="font-semibold text-sm whitespace-nowrap" title={row.documentId}>
-                            {row.documentId.length > 4 ? row.documentId.slice(-4) : row.documentId}
+                          <span className="font-semibold text-sm whitespace-nowrap">
+                            {row.documentId}
                           </span>
                           <span className="text-muted-foreground">-</span>
                           <span className="font-medium text-sm truncate">

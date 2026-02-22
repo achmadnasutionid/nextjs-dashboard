@@ -17,8 +17,18 @@ export async function GET(request: Request) {
     const orderBy = sortBy === "oldest" ? "asc" as const : "desc" as const
     const takePerSource = page * limit
 
+    // Map list filter to DB statuses: pending = draft + pending (main + special case), paid = paid/final
+    const pendingStatuses: string[] = ["draft", "pending"]
     const invWhere: any = { deletedAt: null }
-    if (status !== "all") invWhere.status = status
+    if (status !== "all") {
+      if (status === "pending") {
+        invWhere.status = { in: pendingStatuses }
+      } else if (status === "paid") {
+        invWhere.status = "paid"
+      } else {
+        invWhere.status = status
+      }
+    }
     if (search) {
       invWhere.OR = [
         { invoiceId: { contains: search, mode: "insensitive" } },
@@ -28,7 +38,15 @@ export async function GET(request: Request) {
     }
 
     const ticketWhere: any = { deletedAt: null }
-    if (status !== "all") ticketWhere.status = status
+    if (status !== "all") {
+      if (status === "pending") {
+        ticketWhere.status = { in: pendingStatuses }
+      } else if (status === "paid") {
+        ticketWhere.status = "final"
+      } else {
+        ticketWhere.status = status
+      }
+    }
     if (search) {
       ticketWhere.OR = [
         { quotationId: { contains: search, mode: "insensitive" } },

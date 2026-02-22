@@ -226,11 +226,9 @@ export default function Home() {
                   <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                     <Receipt className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">Total pending + draft (by year)</h3>
                   <p className="text-2xl font-semibold">
                     {pendingTotals ? formatCurrency(pendingDisplayAmount) : "—"}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-2">Click to open invoice list (pending)</p>
                 </div>
               </Card>
             </div>

@@ -83,7 +83,7 @@ export async function POST(
         signatureImageData: quotation.signatureImageData,
         pph: quotation.pph,
         totalAmount: quotation.totalAmount,
-        status: "draft",
+        status: "pending",
         items: {
           create: quotation.items.map((item) => ({
             productName: item.productName,
