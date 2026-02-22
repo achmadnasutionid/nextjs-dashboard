@@ -2,25 +2,26 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 /**
- * GET pending invoice totals grouped by year.
- * Uses same sources as invoice list: Invoice + ParagonTicket + ErhaTicket (status = pending).
+ * GET pending + draft invoice totals grouped by year.
+ * Uses same sources as invoice list: Invoice + ParagonTicket + ErhaTicket (status = pending or draft).
  * Returns { years: number[], byYear: Record<string, number> } for landing page card.
  */
 export async function GET() {
   try {
-    const pendingWhere = { status: "pending" as const, deletedAt: null }
+    const statuses: string[] = ["pending", "draft"]
+    const where = { status: { in: statuses }, deletedAt: null }
 
     const [invoices, paragon, erha] = await Promise.all([
       prisma.invoice.findMany({
-        where: pendingWhere,
+        where,
         select: { productionDate: true, totalAmount: true },
       }),
       prisma.paragonTicket.findMany({
-        where: pendingWhere,
+        where,
         select: { productionDate: true, totalAmount: true },
       }),
       prisma.erhaTicket.findMany({
-        where: pendingWhere,
+        where,
         select: { productionDate: true, totalAmount: true },
       }),
     ])

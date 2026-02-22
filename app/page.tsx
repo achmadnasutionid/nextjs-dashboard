@@ -199,7 +199,25 @@ export default function Home() {
           {/* Pending Invoices by Year - under Special Case */}
           {isClient && (
             <div className="space-y-6">
-              <h2 className="text-xl font-bold tracking-tight">Pending Invoices</h2>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h2 className="text-xl font-bold tracking-tight">Pending Invoices</h2>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    value={selectedPendingYear || "all"}
+                    onValueChange={setSelectedPendingYear}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All years</SelectItem>
+                      {(pendingTotals?.years ?? []).map((y) => (
+                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <Card
                 className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 max-w-md"
                 onClick={() => handleNavigate("/invoice?status=pending")}
@@ -208,26 +226,10 @@ export default function Home() {
                   <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                     <Receipt className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">Total pending (by year)</h3>
-                  <div className="flex flex-wrap items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                    <Select
-                      value={selectedPendingYear || "all"}
-                      onValueChange={setSelectedPendingYear}
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue placeholder="Year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All years</SelectItem>
-                        {(pendingTotals?.years ?? []).map((y) => (
-                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <span className="text-lg font-semibold">
-                      {pendingTotals ? formatCurrency(pendingDisplayAmount) : "—"}
-                    </span>
-                  </div>
+                  <h3 className="font-semibold text-lg mb-2">Total pending + draft (by year)</h3>
+                  <p className="text-2xl font-semibold">
+                    {pendingTotals ? formatCurrency(pendingDisplayAmount) : "—"}
+                  </p>
                   <p className="text-sm text-muted-foreground mt-2">Click to open invoice list (pending)</p>
                 </div>
               </Card>
