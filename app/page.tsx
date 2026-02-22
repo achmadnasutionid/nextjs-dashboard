@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/footer"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Receipt } from "lucide-react"
+import { Search, Receipt, Wallet } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -51,34 +51,62 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isClient, setIsClient] = useState(false)
   const [pendingTotals, setPendingTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
-  const [selectedPendingYear, setSelectedPendingYear] = useState<string>("")
+  const [gearTotals, setGearTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
+  const [bigTotals, setBigTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
+  const [selectedFinanceYear, setSelectedFinanceYear] = useState<string>("")
 
   // Initialize client-side state
   useEffect(() => {
     setIsClient(true)
   }, [])
 
-  // Fetch pending invoice totals by year (same data as invoice list: Invoice + Paragon + Erha)
+  // Fetch Finance Overview data: pending invoices, gear expense, big expense totals by year
   useEffect(() => {
     if (!isClient) return
-    fetch("/api/invoice/pending-totals-by-year")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.years && data.byYear) {
-          setPendingTotals({ years: data.years, byYear: data.byYear })
-          setSelectedPendingYear(data.years.length > 0 ? String(data.years[0]) : "all")
-        }
-      })
-      .catch(() => {})
+    Promise.all([
+      fetch("/api/invoice/pending-totals-by-year").then((r) => r.json()),
+      fetch("/api/gear-expenses/totals-by-year").then((r) => r.json()),
+      fetch("/api/big-expenses/totals-by-year").then((r) => r.json()),
+    ]).then(([pending, gear, big]) => {
+      if (pending?.years && pending?.byYear) setPendingTotals({ years: pending.years, byYear: pending.byYear })
+      if (gear?.years && gear?.byYear) setGearTotals({ years: gear.years, byYear: gear.byYear })
+      if (big?.years && big?.byYear) setBigTotals({ years: big.years, byYear: big.byYear })
+      const allYears = [
+        ...new Set([
+          ...(pending?.years ?? []),
+          ...(gear?.years ?? []),
+          ...(big?.years ?? []),
+        ]),
+      ].sort((a, b) => b - a)
+      setSelectedFinanceYear((prev) => (prev ? prev : allYears.length > 0 ? String(allYears[0]) : "all"))
+    })
   }, [isClient])
+
+  const financeYears = useMemo(() => {
+    const set = new Set<number>()
+    pendingTotals?.years.forEach((y) => set.add(y))
+    gearTotals?.years.forEach((y) => set.add(y))
+    bigTotals?.years.forEach((y) => set.add(y))
+    return Array.from(set).sort((a, b) => b - a)
+  }, [pendingTotals, gearTotals, bigTotals])
 
   const pendingDisplayAmount = useMemo(() => {
     if (!pendingTotals?.byYear) return 0
-    if (selectedPendingYear === "all") {
-      return Object.values(pendingTotals.byYear).reduce((a, b) => a + b, 0)
-    }
-    return pendingTotals.byYear[selectedPendingYear] ?? 0
-  }, [pendingTotals, selectedPendingYear])
+    if (selectedFinanceYear === "all") return Object.values(pendingTotals.byYear).reduce((a, b) => a + b, 0)
+    return pendingTotals.byYear[selectedFinanceYear] ?? 0
+  }, [pendingTotals, selectedFinanceYear])
+
+  const gearDisplayAmount = useMemo(() => {
+    if (!gearTotals?.byYear) return 0
+    if (selectedFinanceYear === "all") return Object.values(gearTotals.byYear).reduce((a, b) => a + b, 0)
+    return gearTotals.byYear[selectedFinanceYear] ?? 0
+  }, [gearTotals, selectedFinanceYear])
+
+  const bigDisplayAmount = useMemo(() => {
+    if (!bigTotals?.byYear) return 0
+    if (selectedFinanceYear === "all") return Object.values(bigTotals.byYear).reduce((a, b) => a + b, 0)
+    return bigTotals.byYear[selectedFinanceYear] ?? 0
+  }, [bigTotals, selectedFinanceYear])
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
@@ -196,41 +224,72 @@ export default function Home() {
             />
           )}
 
-          {/* Pending Invoices by Year - under Special Case */}
+          {/* Finance Overview - under Special Case */}
           {isClient && (
             <div className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-xl font-bold tracking-tight">Pending Invoices</h2>
+                <h2 className="text-xl font-bold tracking-tight">Finance Overview</h2>
                 <div onClick={(e) => e.stopPropagation()}>
                   <Select
-                    value={selectedPendingYear || "all"}
-                    onValueChange={setSelectedPendingYear}
+                    value={selectedFinanceYear || "all"}
+                    onValueChange={setSelectedFinanceYear}
                   >
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Year" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All years</SelectItem>
-                      {(pendingTotals?.years ?? []).map((y) => (
+                      {financeYears.map((y) => (
                         <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <Card
-                className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 max-w-md"
-                onClick={() => handleNavigate("/invoice?status=pending")}
-              >
-                <div className="p-6">
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <Receipt className="h-6 w-6 text-primary" />
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <Card
+                  className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
+                  onClick={() => handleNavigate("/invoice?status=pending")}
+                >
+                  <div className="p-6">
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <Receipt className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">Pending Invoices</h3>
+                    <p className="text-2xl font-semibold">
+                      {pendingTotals ? formatCurrency(pendingDisplayAmount) : "—"}
+                    </p>
                   </div>
-                  <p className="text-2xl font-semibold">
-                    {pendingTotals ? formatCurrency(pendingDisplayAmount) : "—"}
-                  </p>
-                </div>
-              </Card>
+                </Card>
+                <Card
+                  className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
+                  onClick={() => handleNavigate("/special-case/gear-expenses")}
+                >
+                  <div className="p-6">
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <Wallet className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">Gear Expenses</h3>
+                    <p className="text-2xl font-semibold">
+                      {gearTotals ? formatCurrency(gearDisplayAmount) : "—"}
+                    </p>
+                  </div>
+                </Card>
+                <Card
+                  className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
+                  onClick={() => handleNavigate("/special-case/big-expenses")}
+                >
+                  <div className="p-6">
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <Wallet className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">Big Expenses</h3>
+                    <p className="text-2xl font-semibold">
+                      {bigTotals ? formatCurrency(bigDisplayAmount) : "—"}
+                    </p>
+                  </div>
+                </Card>
+              </div>
             </div>
           )}
 
