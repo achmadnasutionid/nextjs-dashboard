@@ -656,7 +656,7 @@ export default function ProductionTrackerPage() {
                     return (
                       <tr key={tracker.id} className="group transition-colors">
                         {/* ID + Link (merged) - Gray: link opens invoice, pencil edits */}
-                        <td className="sticky left-0 z-20 border-r border-b border-border p-1.5 bg-gray-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)] w-[92px] min-w-[92px] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50 group-focus-within:!shadow-[inset_2px_0_0_0_hsl(var(--primary))]">
+                        <td className="sticky left-0 z-20 border-r border-b border-border p-1.5 bg-gray-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)] w-[92px] min-w-[92px] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50 group-focus-within:!shadow-[inset_2px_0_0_0_hsl(var(--primary))]">
                           {editingCell?.rowId === tracker.id && editingCell?.field === 'invoiceId' ? (
                             <Input
                               value={editValue}
@@ -698,7 +698,7 @@ export default function ProductionTrackerPage() {
                         
                         {/* Project Name - Editable - Blue */}
                         <td 
-                          className="sticky left-[92px] z-20 border-r border-b border-border p-1.5 bg-blue-50 cursor-pointer hover:bg-blue-100 min-w-[200px] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50"
+                          className="sticky left-[92px] z-20 border-r border-b border-border p-1.5 bg-blue-50 cursor-pointer hover:bg-blue-100 min-w-[200px] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50"
                           onMouseDown={(e) => {
                             e.preventDefault()
                             handleCellClick(tracker, 'projectName')
@@ -720,7 +720,7 @@ export default function ProductionTrackerPage() {
                         
                         {/* Date - Click to pick - Blue */}
                         <td 
-                          className="sticky left-[292px] z-20 border-r border-b border-border p-1.5 bg-blue-50 w-[110px] min-w-[110px] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50"
+                          className="sticky left-[292px] z-20 border-r border-b border-border p-1.5 bg-blue-50 w-[110px] min-w-[110px] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50"
                         >
                           <Popover>
                             <PopoverTrigger asChild>
@@ -767,7 +767,7 @@ export default function ProductionTrackerPage() {
                         
                         {/* Total, Expense, PHOTOGRAPHER - Left Sticky */}
                         <td 
-                          className="sticky left-[402px] z-20 border-r border-b border-border p-2 text-right bg-green-50 cursor-pointer hover:bg-green-100 w-[130px] min-w-[130px] max-w-[130px] shadow-[2px_0_4px_rgba(0,0,0,0.05)] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50"
+                          className="sticky left-[402px] z-20 border-r border-b border-border p-2 text-right bg-green-50 cursor-pointer hover:bg-green-100 w-[130px] min-w-[130px] max-w-[130px] shadow-[2px_0_4px_rgba(0,0,0,0.05)] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50"
                           onMouseDown={(e) => {
                             e.preventDefault()
                             handleCellClick(tracker, 'totalAmount')
@@ -792,14 +792,14 @@ export default function ProductionTrackerPage() {
                           )}
                         </td>
                         <td 
-                          className="sticky left-[532px] z-20 border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50"
+                          className="sticky left-[532px] z-20 border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50"
                         >
                           <span className="text-xs font-medium text-amber-700">
                             {formatCurrency(calculateExpense(tracker.productAmounts || {}))}
                           </span>
                         </td>
                         <td 
-                          className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50"
+                          className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 text-right bg-amber-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50"
                         >
                           <span className="text-xs font-medium text-amber-700">
                             {formatCurrency(calculatePhotographer(tracker.totalAmount, tracker.productAmounts || {}))}
@@ -816,7 +816,7 @@ export default function ProductionTrackerPage() {
                             <td 
                               key={product}
                               className={cn(
-                                "border-r border-b border-border p-2 text-right bg-purple-50 cursor-pointer hover:bg-purple-100 w-[110px] min-w-[110px] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50",
+                                "border-r border-b border-border p-2 text-right bg-purple-50 cursor-pointer hover:bg-purple-100 w-[110px] min-w-[110px] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50",
                                 index === PRODUCT_COLUMNS.slice(1).length - 1 && "border-r-2"
                               )}
                               onMouseDown={(e) => {
@@ -848,7 +848,7 @@ export default function ProductionTrackerPage() {
                         })}
                         
                         {/* Status - Right Sticky - Red */}
-                        <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 text-center bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50">
+                        <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 text-center bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50">
                           <Select value={tracker.status} onValueChange={(value) => handleStatusChange(tracker.id, value)}>
                             <SelectTrigger className={cn(
                               "h-7 text-xs border w-full min-w-0",
@@ -869,7 +869,7 @@ export default function ProductionTrackerPage() {
                         </td>
                         
                         {/* Action Column - Right Sticky - Red */}
-                        <td className="sticky right-0 z-20 border-b border-border p-2 text-center bg-red-50 w-[60px] min-w-[60px] group-hover:!bg-amber-50 group-focus-within:!bg-amber-50">
+                        <td className="sticky right-0 z-20 border-b border-border p-2 text-center bg-red-50 w-[60px] min-w-[60px] group-hover:!bg-sky-50 group-focus-within:!bg-sky-50">
                           <Button
                             variant="ghost"
                             size="icon"
