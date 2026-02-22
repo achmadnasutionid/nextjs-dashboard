@@ -60,7 +60,7 @@ function InvoicePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Initialize statusFilter from URL parameter immediately
+  // Initialize statusFilter and search from URL parameters
   const initialStatus = (() => {
     const statusParam = searchParams.get("status")
     if (statusParam && ["draft", "pending", "paid"].includes(statusParam)) {
@@ -68,13 +68,14 @@ function InvoicePageContent() {
     }
     return "all"
   })()
-  
+  const initialSearch = searchParams.get("search") ?? ""
+
   const [invoices, setInvoices] = useState<InvoiceListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>(initialStatus)
   const [sortBy, setSortBy] = useState<string>("newest")
-  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [searchQuery, setSearchQuery] = useState<string>(initialSearch)
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
   const [markingPaid, setMarkingPaid] = useState<string | null>(null)
   const [markPaidDialogId, setMarkPaidDialogId] = useState<string | null>(null)
@@ -85,7 +86,7 @@ function InvoicePageContent() {
   const [totalItems, setTotalItems] = useState(0)
   const ITEMS_PER_PAGE = 20
 
-  // Update filter if URL parameter changes
+  // Update filter and search when URL parameters change (e.g. landing from Paragon/Erha "View Invoice")
   useEffect(() => {
     const statusParam = searchParams.get("status")
     const newStatus = statusParam && ["draft", "pending", "paid"].includes(statusParam) 
@@ -94,6 +95,8 @@ function InvoicePageContent() {
     if (newStatus !== statusFilter) {
       setStatusFilter(newStatus)
     }
+    const searchParam = searchParams.get("search") ?? ""
+    setSearchQuery(searchParam)
   }, [searchParams])
 
   const fetchInvoices = useCallback(async () => {

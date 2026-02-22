@@ -454,24 +454,25 @@ export default function ProductionTrackerPage() {
   }
 
   const handleInvoiceLink = async (invoiceId: string) => {
+    const trimmed = invoiceId?.trim()
+    if (!trimmed) return
     try {
-      // Fetch invoice by invoiceId to get the database ID
-      const response = await fetch(`/api/invoice?search=${invoiceId}`)
+      const response = await fetch(`/api/invoice?search=${encodeURIComponent(trimmed)}`)
       if (response.ok) {
         const result = await response.json()
-        const invoice = result.data?.find((inv: any) => inv.invoiceId === invoiceId)
+        const invoice = result.data?.find((inv: { invoiceId: string }) => inv.invoiceId === trimmed)
         if (invoice) {
-          // Open invoice view in new tab
           window.open(`/invoice/${invoice.id}/view`, '_blank')
         } else {
-          toast.error("Invoice not found")
+          // Not in main Invoice table; maybe Paragon/Erha – open list with search so user can see it
+          window.open(`/invoice?search=${encodeURIComponent(trimmed)}`, '_blank')
         }
       } else {
-        toast.error("Failed to load invoice")
+        window.open(`/invoice?search=${encodeURIComponent(trimmed)}`, '_blank')
       }
     } catch (error) {
-      console.error("Error navigating to invoice:", error)
-      toast.error("Failed to navigate to invoice")
+      console.error("Error resolving invoice:", error)
+      window.open(`/invoice?search=${encodeURIComponent(trimmed)}`, '_blank')
     }
   }
 
