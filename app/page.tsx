@@ -119,6 +119,11 @@ export default function Home() {
     return profitTotals.byYear[selectedFinanceYear] ?? 0
   }, [profitTotals, selectedFinanceYear])
 
+  // Profit card: red when (gear + big) >= profit for the selected year; green when profit > expenses
+  const totalExpensesForComparison = gearDisplayAmount + bigDisplayAmount
+  const isProfitBelowExpenses =
+    Number(profitDisplayAmount) <= Number(totalExpensesForComparison)
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
 
@@ -281,7 +286,7 @@ export default function Home() {
                       <TrendingUp className="h-6 w-6 text-primary" />
                     </div>
                     <h3 className="font-semibold text-lg mb-2">Profit</h3>
-                    <p className={`text-2xl font-semibold ${profitTotals ? (profitDisplayAmount > gearDisplayAmount + bigDisplayAmount ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400") : ""}`}>
+                    <p className={`text-2xl font-semibold ${profitTotals ? (isProfitBelowExpenses ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400") : ""}`}>
                       {profitTotals ? formatCurrency(profitDisplayAmount) : "—"}
                     </p>
                   </div>
