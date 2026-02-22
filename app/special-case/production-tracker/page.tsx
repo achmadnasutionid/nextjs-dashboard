@@ -667,18 +667,6 @@ export default function ProductionTrackerPage() {
                             />
                           ) : (
                             <div className="flex items-center gap-0.5 min-w-0">
-                              {tracker.invoiceId ? (
-                                <button
-                                  type="button"
-                                  className="text-[11px] leading-tight text-blue-600 underline hover:no-underline truncate text-left flex-1 min-w-0"
-                                  onClick={() => handleInvoiceLink(tracker.invoiceId!)}
-                                  title="View Invoice"
-                                >
-                                  {tracker.invoiceId}
-                                </button>
-                              ) : (
-                                <span className="text-[11px] text-muted-foreground flex-1">-</span>
-                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -691,6 +679,18 @@ export default function ProductionTrackerPage() {
                               >
                                 <Pencil className="h-3 w-3 text-muted-foreground" />
                               </Button>
+                              {tracker.invoiceId ? (
+                                <button
+                                  type="button"
+                                  className="text-[11px] leading-tight text-blue-600 underline hover:no-underline truncate text-left flex-1 min-w-0"
+                                  onClick={() => handleInvoiceLink(tracker.invoiceId!)}
+                                  title="View Invoice"
+                                >
+                                  {tracker.invoiceId}
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground flex-1">-</span>
+                              )}
                             </div>
                           )}
                         </td>
