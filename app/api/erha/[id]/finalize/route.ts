@@ -85,7 +85,7 @@ export async function POST(
     const expense = await prisma.expense.create({
       data: {
         expenseId,
-        projectName: ticket.billTo, // Bill To -> Project Name
+        projectName: ticket.projectName,
         productionDate: ticket.productionDate, // Production Date
         clientBudget: ticket.totalAmount, // Total -> Client Budget
         paidAmount: ticket.totalAmount, // Total -> Paid Amount

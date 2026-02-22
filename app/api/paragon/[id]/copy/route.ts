@@ -115,6 +115,7 @@ export async function POST(
           quotationDate: originalParagon.quotationDate,
           invoiceBastDate: originalParagon.invoiceBastDate,
           billTo: `${originalParagon.billTo} - Copy`,
+          projectName: `${originalParagon.projectName} - Copy`,
           contactPerson: originalParagon.contactPerson,
           contactPosition: originalParagon.contactPosition,
           bastContactPerson: originalParagon.bastContactPerson,

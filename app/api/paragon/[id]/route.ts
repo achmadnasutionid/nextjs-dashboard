@@ -96,11 +96,23 @@ export async function PUT(
       return NextResponse.json(ticket)
     }
 
+    // Build combined billTo for PDF/uniqueness: "billTo - projectName"
+    const combinedBillTo = (billToPart: string | undefined, projectNamePart: string | undefined): string => {
+      const a = (billToPart ?? "").trim()
+      const b = (projectNamePart ?? "").trim()
+      return [a, b].filter(Boolean).join(" - ") || ""
+    }
+    const projectNameStored = (body.projectName ?? "").trim()
+    const combined = combinedBillTo(body.billTo, body.projectName)
+    const uniqueBillTo = combined ? await generateUniqueName(combined, 'paragon', id) : combined
+
+    const originalTicket = await prisma.paragonTicket.findUnique({
+      where: { id },
+      select: { projectName: true }
+    })
+
     // Use transaction for atomic updates with UPSERT pattern
     const ticket = await prisma.$transaction(async (tx) => {
-      // Generate unique billTo name if there's a conflict
-      const uniqueBillTo = body.billTo ? await generateUniqueName(body.billTo, 'paragon', id) : body.billTo
-      
       // Update main ticket data
       const updated = await tx.paragonTicket.update({
         where: { id },
@@ -116,6 +128,7 @@ export async function PUT(
           quotationDate: new Date(body.quotationDate),
           invoiceBastDate: new Date(body.invoiceBastDate),
           billTo: uniqueBillTo,
+          projectName: projectNameStored,
           contactPerson: body.contactPerson,
           contactPosition: body.contactPosition,
           bastContactPerson: body.bastContactPerson ?? null,
@@ -319,27 +332,19 @@ export async function PUT(
       })
     })
 
-    // Sync tracker if billTo changed or totalAmount changed
-    if (ticket && ticket.billTo && ticket.billTo.trim()) {
+    // Sync tracker by projectName (list display name)
+    if (ticket && ticket.projectName && ticket.projectName.trim()) {
       try {
-        // Get original ticket to check if billTo changed
-        const originalTicket = await prisma.paragonTicket.findUnique({
-          where: { id },
-          select: { billTo: true }
-        })
-
-        if (originalTicket && originalTicket.billTo !== ticket.billTo) {
-          // billTo changed - update tracker name
+        if (originalTicket && originalTicket.projectName !== ticket.projectName) {
           await updateTrackerName(
-            originalTicket.billTo,
-            ticket.billTo,
+            originalTicket.projectName,
+            ticket.projectName,
             ticket.productionDate,
             ticket.totalAmount
           )
         } else {
-          // billTo same - just sync data
           await syncTracker({
-            projectName: ticket.billTo,
+            projectName: ticket.projectName,
             date: ticket.productionDate,
             totalAmount: ticket.totalAmount,
             subtotal: ticket.items?.reduce((sum, item) => sum + item.total, 0) || 0
@@ -347,7 +352,6 @@ export async function PUT(
         }
       } catch (trackerError) {
         console.error("Error syncing tracker:", trackerError)
-        // Don't fail paragon update if tracker sync fails
       }
     }
 

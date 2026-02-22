@@ -52,6 +52,7 @@ interface ParagonTicket {
   ticketId: string
   companyName: string
   billTo: string
+  projectName: string
   productionDate: string
   totalAmount: number
   status: string
@@ -383,7 +384,7 @@ function ParagonTicketPageContent() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <CardTitle className="text-lg">
-                          {ticket.ticketId} - {ticket.items?.[0]?.productName?.trim() || ticket.billTo}
+                          {ticket.ticketId} - {ticket.projectName}
                         </CardTitle>
                         <div className="flex items-center gap-2">
                           <span
@@ -425,7 +426,7 @@ function ParagonTicketPageContent() {
                   <CardContent className="space-y-3">
                     {/* Company and Date Info */}
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
-                      <span><span className="font-medium text-foreground">{ticket.billTo}</span></span>
+                      <span><span className="font-medium text-foreground">{ticket.projectName}</span></span>
                       <span>•</span>
                       <span>Production: {new Date(ticket.productionDate).toLocaleDateString()}</span>
                     </div>

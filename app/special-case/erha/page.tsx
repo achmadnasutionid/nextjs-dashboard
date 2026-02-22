@@ -52,6 +52,7 @@ interface ErhaTicket {
   ticketId: string
   companyName: string
   billTo: string
+  projectName: string
   productionDate: string
   totalAmount: number
   status: string
@@ -382,7 +383,7 @@ function ErhaTicketPageContent() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <CardTitle className="text-lg">
-                          {ticket.ticketId} - {ticket.items?.[0]?.productName?.trim() || ticket.billTo}
+                          {ticket.ticketId} - {ticket.projectName}
                         </CardTitle>
                         <div className="flex items-center gap-2">
                           <span
@@ -425,7 +426,7 @@ function ErhaTicketPageContent() {
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       <div>
                         <p className="text-xs text-muted-foreground">Client</p>
-                        <p className="font-medium">{ticket.billTo}</p>
+                        <p className="font-medium">{ticket.projectName}</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Production Date</p>

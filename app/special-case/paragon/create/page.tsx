@@ -81,6 +81,7 @@ export default function CreateParagonTicketPage() {
   const [quotationDate, setQuotationDate] = useState<Date>()
   const [invoiceBastDate, setInvoiceBastDate] = useState<Date>()
   const [billTo, setBillTo] = useState("")
+  const [projectName, setProjectName] = useState("")
   const [contactPerson, setContactPerson] = useState("")
   const [contactPosition, setContactPosition] = useState("")
   const [bastContactPerson, setBastContactPerson] = useState("")
@@ -129,6 +130,7 @@ export default function CreateParagonTicketPage() {
   const quotationDateRef = useRef<HTMLDivElement>(null)
   const invoiceBastDateRef = useRef<HTMLDivElement>(null)
   const billToRef = useRef<HTMLDivElement>(null)
+  const projectNameRef = useRef<HTMLDivElement>(null)
   const contactPersonRef = useRef<HTMLDivElement>(null)
   const contactPositionRef = useRef<HTMLDivElement>(null)
   const signatureRef = useRef<HTMLDivElement>(null)
@@ -457,6 +459,13 @@ export default function CreateParagonTicketPage() {
           delete fieldErrors.billTo
         }
         break
+      case "projectName":
+        if (!value || (typeof value === "string" && !value.trim())) {
+          fieldErrors.projectName = "Project name is required"
+        } else {
+          delete fieldErrors.projectName
+        }
+        break
       case "contactPerson":
         if (!value || (typeof value === "string" && !value.trim())) {
           fieldErrors.contactPerson = "Contact Person is required"
@@ -490,6 +499,7 @@ export default function CreateParagonTicketPage() {
     if (!quotationDate) newErrors.quotationDate = "Quotation date is required"
     if (!invoiceBastDate) newErrors.invoiceBastDate = "Invoice/BAST date is required"
     if (!billTo.trim()) newErrors.billTo = "Bill To is required"
+    if (!projectName.trim()) newErrors.projectName = "Project name is required"
     if (!contactPerson.trim()) newErrors.contactPerson = "Contact Person is required"
     if (!contactPosition.trim()) newErrors.contactPosition = "Position is required"
     if (!selectedSignatureId) newErrors.signature = "Signature is required"
@@ -505,6 +515,7 @@ export default function CreateParagonTicketPage() {
           quotationDate: quotationDateRef,
           invoiceBastDate: invoiceBastDateRef,
           billTo: billToRef,
+          projectName: projectNameRef,
           contactPerson: contactPersonRef,
           contactPosition: contactPositionRef,
           signature: signatureRef,
@@ -568,6 +579,7 @@ export default function CreateParagonTicketPage() {
         quotationDate: quotationDate?.toISOString() || new Date().toISOString(),
         invoiceBastDate: invoiceBastDate?.toISOString() || new Date().toISOString(),
         billTo: billTo.trim(),
+        projectName: projectName.trim(),
         contactPerson: contactPerson.trim(),
         contactPosition: contactPosition.trim(),
         bastContactPerson: bastContactPerson.trim() || null,
@@ -723,22 +735,41 @@ export default function CreateParagonTicketPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2" ref={billToRef}>
-                  <Label>Bill To <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={billTo}
-                    onChange={(e) => {
-                      markInteracted()
-                      setBillTo(e.target.value)
-                      if (errors.billTo) validateField("billTo", e.target.value)
-                    }}
-                    onBlur={(e) => validateField("billTo", e.target.value)}
-                    placeholder="Enter bill to"
-                    error={!!errors.billTo}
-                  />
-                  {errors.billTo && (
-                    <p className="text-sm text-destructive">{errors.billTo}</p>
-                  )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2" ref={billToRef}>
+                    <Label>Bill To <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={billTo}
+                      onChange={(e) => {
+                        markInteracted()
+                        setBillTo(e.target.value)
+                        if (errors.billTo) validateField("billTo", e.target.value)
+                      }}
+                      onBlur={(e) => validateField("billTo", e.target.value)}
+                      placeholder="Client / bill-to name (used in PDF)"
+                      error={!!errors.billTo}
+                    />
+                    {errors.billTo && (
+                      <p className="text-sm text-destructive">{errors.billTo}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2" ref={projectNameRef}>
+                    <Label>Project name <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={projectName}
+                      onChange={(e) => {
+                        markInteracted()
+                        setProjectName(e.target.value)
+                        if (errors.projectName) validateField("projectName", e.target.value)
+                      }}
+                      onBlur={(e) => validateField("projectName", e.target.value)}
+                      placeholder="Shown in lists"
+                      error={!!errors.projectName}
+                    />
+                    {errors.projectName && (
+                      <p className="text-sm text-destructive">{errors.projectName}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">

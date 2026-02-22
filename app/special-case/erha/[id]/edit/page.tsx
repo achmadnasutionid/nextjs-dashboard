@@ -106,6 +106,7 @@ export default function EditErhaTicketPage() {
   const [quotationDate, setQuotationDate] = useState<Date>()
   const [invoiceBastDate, setInvoiceBastDate] = useState<Date>()
   const [billTo, setBillTo] = useState("")
+  const [projectName, setProjectName] = useState("")
   const [billToAddress, setBillToAddress] = useState("")
   const [contactPerson, setContactPerson] = useState("")
   const [contactPosition, setContactPosition] = useState("")
@@ -150,6 +151,7 @@ export default function EditErhaTicketPage() {
   const quotationDateRef = useRef<HTMLDivElement>(null)
   const invoiceBastDateRef = useRef<HTMLDivElement>(null)
   const billToRef = useRef<HTMLDivElement>(null)
+  const projectNameRef = useRef<HTMLDivElement>(null)
   const billToAddressRef = useRef<HTMLDivElement>(null)
   const contactPersonRef = useRef<HTMLDivElement>(null)
   const contactPositionRef = useRef<HTMLDivElement>(null)
@@ -177,6 +179,7 @@ export default function EditErhaTicketPage() {
         quotationDate: quotationDate?.toISOString(),
         invoiceBastDate: invoiceBastDate?.toISOString(),
         billTo,
+        projectName,
         billToAddress,
         contactPerson,
         contactPosition,
@@ -253,7 +256,11 @@ export default function EditErhaTicketPage() {
       setProductionDate(new Date(ticketData.productionDate))
       setQuotationDate(new Date(ticketData.quotationDate))
       setInvoiceBastDate(new Date(ticketData.invoiceBastDate))
-      setBillTo(ticketData.billTo)
+      setProjectName(ticketData.projectName ?? "")
+      const billToClientPart = (ticketData.projectName && ticketData.billTo.endsWith(" - " + ticketData.projectName))
+        ? ticketData.billTo.slice(0, -(ticketData.projectName.length + 3)).trim()
+        : ticketData.billTo
+      setBillTo(billToClientPart)
       setBillToAddress(ticketData.billToAddress || "")
       setContactPerson(ticketData.contactPerson)
       setContactPosition(ticketData.contactPosition)
@@ -329,6 +336,7 @@ export default function EditErhaTicketPage() {
         quotationDate,
         invoiceBastDate,
         billTo,
+        projectName,
         billToAddress,
         contactPerson,
         contactPosition,
@@ -358,6 +366,7 @@ export default function EditErhaTicketPage() {
       quotationDate: quotationDate?.toISOString(),
       invoiceBastDate: invoiceBastDate?.toISOString(),
       billTo,
+      projectName,
       billToAddress,
       contactPerson,
       contactPosition,
@@ -372,7 +381,7 @@ export default function EditErhaTicketPage() {
     })
     
     setHasUnsavedChanges(currentData !== initialDataRef.current)
-  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, loading])
+  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, projectName, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, loading])
 
   // Auto-save trigger when data changes (only if mandatory fields filled)
   useEffect(() => {
@@ -380,14 +389,14 @@ export default function EditErhaTicketPage() {
     
     // Check if mandatory fields are filled
     const mandatoryFilled = selectedCompanyId && productionDate && quotationDate && 
-      invoiceBastDate && billTo.trim() && billToAddress.trim() && 
+      invoiceBastDate && billTo.trim() && projectName.trim() && billToAddress.trim() && 
       contactPerson.trim() && contactPosition.trim() && 
       selectedBillingId && selectedSignatureId
     
     if (mandatoryFilled) {
       triggerAutoSave()
     }
-  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, loading, isSavingManually, triggerAutoSave])
+  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, projectName, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, loading, isSavingManually, triggerAutoSave])
 
   // Check for stale data when user returns to tab
   useEffect(() => {
@@ -699,6 +708,13 @@ export default function EditErhaTicketPage() {
           delete fieldErrors.billTo
         }
         break
+      case "projectName":
+        if (!value || (typeof value === "string" && !value.trim())) {
+          fieldErrors.projectName = "Project name is required"
+        } else {
+          delete fieldErrors.projectName
+        }
+        break
       case "billToAddress":
         if (!value || (typeof value === "string" && !value.trim())) {
           fieldErrors.billToAddress = "Bill To Address is required"
@@ -746,6 +762,7 @@ export default function EditErhaTicketPage() {
     if (!quotationDate) newErrors.quotationDate = "Quotation date is required"
     if (!invoiceBastDate) newErrors.invoiceBastDate = "Invoice/BAST date is required"
     if (!billTo.trim()) newErrors.billTo = "Bill To is required"
+    if (!projectName.trim()) newErrors.projectName = "Project name is required"
     if (!billToAddress.trim()) newErrors.billToAddress = "Bill To Address is required"
     if (!contactPerson.trim()) newErrors.contactPerson = "Contact Person is required"
     if (!contactPosition.trim()) newErrors.contactPosition = "Position is required"
@@ -763,6 +780,7 @@ export default function EditErhaTicketPage() {
           quotationDate: quotationDateRef,
           invoiceBastDate: invoiceBastDateRef,
           billTo: billToRef,
+          projectName: projectNameRef,
           billToAddress: billToAddressRef,
           contactPerson: contactPersonRef,
           contactPosition: contactPositionRef,
@@ -833,6 +851,7 @@ export default function EditErhaTicketPage() {
         quotationDate: quotationDate!.toISOString(),
         invoiceBastDate: invoiceBastDate!.toISOString(),
         billTo: billTo.trim(),
+        projectName: projectName.trim(),
         billToAddress: billToAddress.trim(),
         contactPerson: contactPerson.trim(),
         contactPosition: contactPosition.trim(),
@@ -1039,21 +1058,39 @@ export default function EditErhaTicketPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2" ref={billToRef}>
-                  <Label>Bill To <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={billTo}
-                    onChange={(e) => {
-                      setBillTo(e.target.value)
-                      if (errors.billTo) validateField("billTo", e.target.value)
-                    }}
-                    onBlur={(e) => validateField("billTo", e.target.value)}
-                    placeholder="Enter bill to"
-                    error={!!errors.billTo}
-                  />
-                  {errors.billTo && (
-                    <p className="text-sm text-destructive">{errors.billTo}</p>
-                  )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2" ref={billToRef}>
+                    <Label>Bill To <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={billTo}
+                      onChange={(e) => {
+                        setBillTo(e.target.value)
+                        if (errors.billTo) validateField("billTo", e.target.value)
+                      }}
+                      onBlur={(e) => validateField("billTo", e.target.value)}
+                      placeholder="Client / bill-to name (used in PDF)"
+                      error={!!errors.billTo}
+                    />
+                    {errors.billTo && (
+                      <p className="text-sm text-destructive">{errors.billTo}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2" ref={projectNameRef}>
+                    <Label>Project name <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={projectName}
+                      onChange={(e) => {
+                        setProjectName(e.target.value)
+                        if (errors.projectName) validateField("projectName", e.target.value)
+                      }}
+                      onBlur={(e) => validateField("projectName", e.target.value)}
+                      placeholder="Shown in lists"
+                      error={!!errors.projectName}
+                    />
+                    {errors.projectName && (
+                      <p className="text-sm text-destructive">{errors.projectName}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2" ref={billToAddressRef}>

@@ -24,8 +24,8 @@ const AUTO_SAVE_RULES = {
     quotation: ['selectedCompanyId', 'productionDate', 'billTo', 'selectedBillingId', 'selectedSignatureId'],
     invoice: ['selectedCompanyId', 'productionDate', 'billTo', 'selectedBillingId', 'selectedSignatureId'],
     expense: ['projectName', 'productionDate'],
-    erha: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'billToAddress', 'contactPerson', 'contactPosition', 'selectedBillingId', 'selectedSignatureId'],
-    paragon: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'contactPerson', 'contactPosition', 'selectedSignatureId']
+    erha: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'projectName', 'billToAddress', 'contactPerson', 'contactPosition', 'selectedBillingId', 'selectedSignatureId'],
+    paragon: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'projectName', 'contactPerson', 'contactPosition', 'selectedSignatureId']
   },
   
   // Don't auto-save if user is actively typing (wait for pause)

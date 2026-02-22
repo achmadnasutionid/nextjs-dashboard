@@ -37,7 +37,8 @@ export async function GET(request: Request) {
         { quotationId: { contains: search, mode: "insensitive" } },
         { invoiceId: { contains: search, mode: "insensitive" } },
         { companyName: { contains: search, mode: "insensitive" } },
-        { billTo: { contains: search, mode: "insensitive" } }
+        { billTo: { contains: search, mode: "insensitive" } },
+        { projectName: { contains: search, mode: "insensitive" } }
       ]
     }
 
@@ -62,17 +63,12 @@ export async function GET(request: Request) {
         select: {
           id: true,
           quotationId: true,
-          billTo: true,
+          projectName: true,
           productionDate: true,
           totalAmount: true,
           status: true,
           generatedInvoiceId: true,
-          updatedAt: true,
-          items: {
-            take: 1,
-            orderBy: { order: "asc" as const },
-            select: { productName: true }
-          }
+          updatedAt: true
         },
         orderBy: { updatedAt: orderBy },
         take: takePerSource
@@ -82,17 +78,12 @@ export async function GET(request: Request) {
         select: {
           id: true,
           quotationId: true,
-          billTo: true,
+          projectName: true,
           productionDate: true,
           totalAmount: true,
           status: true,
           generatedInvoiceId: true,
-          updatedAt: true,
-          items: {
-            take: 1,
-            orderBy: { order: "asc" as const },
-            select: { productName: true }
-          }
+          updatedAt: true
         },
         orderBy: { updatedAt: orderBy },
         take: takePerSource
@@ -129,14 +120,12 @@ export async function GET(request: Request) {
         generatedInvoiceId: q.generatedInvoiceId
       })),
       ...paragonTickets.map((t) => {
-        const firstProduct = t.items?.[0]?.productName
-        const displayName = firstProduct?.trim() || t.billTo
         const docId = (t.quotationId && t.quotationId.trim()) ? t.quotationId : "—"
         return {
           source: "paragon" as const,
           id: t.id,
           documentId: docId,
-          billTo: displayName,
+          billTo: t.projectName,
           productionDate: t.productionDate,
           totalAmount: t.totalAmount,
           status: t.status,
@@ -146,14 +135,12 @@ export async function GET(request: Request) {
         }
       }),
       ...erhaTickets.map((t) => {
-        const firstProduct = t.items?.[0]?.productName
-        const displayName = firstProduct?.trim() || t.billTo
         const docId = (t.quotationId && t.quotationId.trim()) ? t.quotationId : "—"
         return {
           source: "erha" as const,
           id: t.id,
           documentId: docId,
-          billTo: displayName,
+          billTo: t.projectName,
           productionDate: t.productionDate,
           totalAmount: t.totalAmount,
           status: t.status,

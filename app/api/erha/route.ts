@@ -27,7 +27,8 @@ export async function GET(request: Request) {
         { quotationId: { contains: search, mode: 'insensitive' } },
         { invoiceId: { contains: search, mode: 'insensitive' } },
         { companyName: { contains: search, mode: 'insensitive' } },
-        { billTo: { contains: search, mode: 'insensitive' } }
+        { billTo: { contains: search, mode: 'insensitive' } },
+        { projectName: { contains: search, mode: 'insensitive' } }
       ]
     }
 
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
           invoiceId: true,
           companyName: true,
           billTo: true,
+          projectName: true,
           productionDate: true,
           totalAmount: true,
           status: true,
@@ -102,16 +104,23 @@ function extractIdNumber(id: string | null | undefined): number {
   return isNaN(num) ? 0 : num
 }
 
+// Build combined billTo for PDF/uniqueness: "billTo - projectName"
+function combinedBillTo(billToPart: string | undefined, projectNamePart: string | undefined): string {
+  const a = (billToPart ?? "").trim()
+  const b = (projectNamePart ?? "").trim()
+  return [a, b].filter(Boolean).join(" - ") || ""
+}
+
 // POST create new erha ticket
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const year = new Date().getFullYear()
 
-    // Generate unique billTo name before transaction
     const isDraft = body.status === "draft"
-    const billToValue = body.billTo || (isDraft ? "" : body.billTo)
-    const uniqueBillTo = billToValue ? await generateUniqueName(billToValue, 'erha') : billToValue
+    const projectNameStored = (body.projectName ?? "").trim()
+    const combined = combinedBillTo(body.billTo, body.projectName)
+    const uniqueBillTo = combined ? await generateUniqueName(combined, 'erha') : (isDraft ? "" : combined)
 
     // Use transaction for atomic ID generation and creation
     const ticket = await prisma.$transaction(async (tx) => {
@@ -196,6 +205,7 @@ export async function POST(request: Request) {
           quotationDate: body.quotationDate ? new Date(body.quotationDate) : new Date(),
           invoiceBastDate: body.invoiceBastDate ? new Date(body.invoiceBastDate) : new Date(),
           billTo: uniqueBillTo,
+          projectName: projectNameStored,
           billToAddress: body.billToAddress || "",
           contactPerson: body.contactPerson || (isDraft ? "" : body.contactPerson),
           contactPosition: body.contactPosition || (isDraft ? "" : body.contactPosition),
@@ -248,8 +258,8 @@ export async function POST(request: Request) {
       })
     })
 
-    // Sync tracker if billTo is not empty
-    if (uniqueBillTo && uniqueBillTo.trim()) {
+    // Sync tracker if project name is not empty
+    if (projectNameStored && projectNameStored.trim()) {
       try {
         // Calculate subtotal (sum of items)
         const subtotal = body.items?.reduce((sum: number, item: any) => {
@@ -257,7 +267,7 @@ export async function POST(request: Request) {
         }, 0) || 0
 
         await syncTracker({
-          projectName: uniqueBillTo,
+          projectName: projectNameStored,
           date: body.productionDate ? new Date(body.productionDate) : new Date(),
           totalAmount: body.totalAmount ? parseFloat(body.totalAmount) : 0,
           subtotal: subtotal

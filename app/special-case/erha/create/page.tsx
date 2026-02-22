@@ -91,6 +91,7 @@ export default function CreateErhaTicketPage() {
   const [quotationDate, setQuotationDate] = useState<Date>()
   const [invoiceBastDate, setInvoiceBastDate] = useState<Date>()
   const [billTo, setBillTo] = useState("")
+  const [projectName, setProjectName] = useState("")
   const [billToAddress, setBillToAddress] = useState("")
   const [contactPerson, setContactPerson] = useState("")
   const [contactPosition, setContactPosition] = useState("")
@@ -137,6 +138,7 @@ export default function CreateErhaTicketPage() {
   const quotationDateRef = useRef<HTMLDivElement>(null)
   const invoiceBastDateRef = useRef<HTMLDivElement>(null)
   const billToRef = useRef<HTMLDivElement>(null)
+  const projectNameRef = useRef<HTMLDivElement>(null)
   const billToAddressRef = useRef<HTMLDivElement>(null)
   const contactPersonRef = useRef<HTMLDivElement>(null)
   const contactPositionRef = useRef<HTMLDivElement>(null)
@@ -469,6 +471,13 @@ export default function CreateErhaTicketPage() {
           delete fieldErrors.billTo
         }
         break
+      case "projectName":
+        if (!value || (typeof value === "string" && !value.trim())) {
+          fieldErrors.projectName = "Project name is required"
+        } else {
+          delete fieldErrors.projectName
+        }
+        break
       case "billToAddress":
         if (!value || (typeof value === "string" && !value.trim())) {
           fieldErrors.billToAddress = "Bill To Address is required"
@@ -516,6 +525,7 @@ export default function CreateErhaTicketPage() {
     if (!quotationDate) newErrors.quotationDate = "Quotation date is required"
     if (!invoiceBastDate) newErrors.invoiceBastDate = "Invoice/BAST date is required"
     if (!billTo.trim()) newErrors.billTo = "Bill To is required"
+    if (!projectName.trim()) newErrors.projectName = "Project name is required"
     if (!billToAddress.trim()) newErrors.billToAddress = "Bill To Address is required"
     if (!contactPerson.trim()) newErrors.contactPerson = "Contact Person is required"
     if (!contactPosition.trim()) newErrors.contactPosition = "Position is required"
@@ -533,6 +543,7 @@ export default function CreateErhaTicketPage() {
           quotationDate: quotationDateRef,
           invoiceBastDate: invoiceBastDateRef,
           billTo: billToRef,
+          projectName: projectNameRef,
           billToAddress: billToAddressRef,
           contactPerson: contactPersonRef,
           contactPosition: contactPositionRef,
@@ -599,6 +610,7 @@ export default function CreateErhaTicketPage() {
         quotationDate: quotationDate?.toISOString() || new Date().toISOString(),
         invoiceBastDate: invoiceBastDate?.toISOString() || new Date().toISOString(),
         billTo: billTo.trim(),
+        projectName: projectName.trim(),
         billToAddress: billToAddress.trim(),
         contactPerson: contactPerson.trim(),
         contactPosition: contactPosition.trim(),
@@ -761,22 +773,41 @@ export default function CreateErhaTicketPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2" ref={billToRef}>
-                  <Label>Bill To <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={billTo}
-                    onChange={(e) => {
-                      markInteracted()
-                      setBillTo(e.target.value)
-                      if (errors.billTo) validateField("billTo", e.target.value)
-                    }}
-                    onBlur={(e) => validateField("billTo", e.target.value)}
-                    placeholder="Enter bill to"
-                    error={!!errors.billTo}
-                  />
-                  {errors.billTo && (
-                    <p className="text-sm text-destructive">{errors.billTo}</p>
-                  )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2" ref={billToRef}>
+                    <Label>Bill To <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={billTo}
+                      onChange={(e) => {
+                        markInteracted()
+                        setBillTo(e.target.value)
+                        if (errors.billTo) validateField("billTo", e.target.value)
+                      }}
+                      onBlur={(e) => validateField("billTo", e.target.value)}
+                      placeholder="Client / bill-to name (used in PDF)"
+                      error={!!errors.billTo}
+                    />
+                    {errors.billTo && (
+                      <p className="text-sm text-destructive">{errors.billTo}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2" ref={projectNameRef}>
+                    <Label>Project name <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={projectName}
+                      onChange={(e) => {
+                        markInteracted()
+                        setProjectName(e.target.value)
+                        if (errors.projectName) validateField("projectName", e.target.value)
+                      }}
+                      onBlur={(e) => validateField("projectName", e.target.value)}
+                      placeholder="Shown in lists"
+                      error={!!errors.projectName}
+                    />
+                    {errors.projectName && (
+                      <p className="text-sm text-destructive">{errors.projectName}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2" ref={billToAddressRef}>

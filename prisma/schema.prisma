@@ -379,7 +379,8 @@ model ParagonTicket {
   productionDate     DateTime
   quotationDate      DateTime
   invoiceBastDate    DateTime
-  billTo             String
+  billTo             String   // Combined "billTo - projectName" for PDF and uniqueness
+  projectName        String   // Shown in lists only
   contactPerson      String
   contactPosition    String
   bastContactPerson   String?   // BAST/Invoice contact (optional; falls back to contactPerson)
@@ -470,7 +471,8 @@ model ErhaTicket {
   productionDate         DateTime
   quotationDate          DateTime
   invoiceBastDate        DateTime
-  billTo                 String
+  billTo                 String   // Combined "billTo - projectName" for PDF and uniqueness
+  projectName            String   // Shown in lists only
   billToAddress          String             @default("")
   contactPerson          String
   contactPosition        String

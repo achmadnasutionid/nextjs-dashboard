@@ -41,6 +41,7 @@ interface ParagonTicket {
   quotationDate: string
   invoiceBastDate: string
   billTo: string
+  projectName: string
   contactPerson: string
   contactPosition: string
   bastContactPerson?: string | null
@@ -113,13 +114,13 @@ export default function ViewParagonTicketPage() {
       const link = document.createElement("a")
       link.href = url
       const docId = viewType === "quotation" ? ticket.quotationId : viewType === "invoice" ? ticket.invoiceId : ticket.ticketId
-      const fileLabel = (ticket.items?.[0]?.productName ?? ticket.billTo).replace(/\s+/g, "_")
+      const fileLabel = ticket.projectName.replace(/\s+/g, "_")
       link.download = `${docId}_${fileLabel}.pdf`
       link.click()
       URL.revokeObjectURL(url)
 
       // Open WhatsApp Web with pre-filled message
-      const message = `Hi! Here's the Paragon Ticket ${viewType} details:\n\n*${ticket.ticketId}*\nClient: ${ticket.billTo}\nContact: ${ticket.contactPerson} (${ticket.contactPosition})\nTotal Amount: ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(ticket.totalAmount)}\n\nI've attached the PDF document for your review.`
+      const message = `Hi! Here's the Paragon Ticket ${viewType} details:\n\n*${ticket.ticketId}*\nProject: ${ticket.projectName}\nContact: ${ticket.contactPerson} (${ticket.contactPosition})\nTotal Amount: ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(ticket.totalAmount)}\n\nI've attached the PDF document for your review.`
 
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
       
@@ -287,7 +288,7 @@ export default function ViewParagonTicketPage() {
           <div className="space-y-4">
             <div>
               <h2 className="text-xl font-bold tracking-tight">
-                {ticket.ticketId} - {ticket.items?.[0]?.productName?.trim() || ticket.billTo}
+                {ticket.ticketId} - {ticket.projectName}
               </h2>
             </div>
             
@@ -394,7 +395,7 @@ export default function ViewParagonTicketPage() {
               {viewType === 'quotation' && (
                 <PDFDownloadLink
                   document={<ParagonQuotationPDF data={ticket} />}
-                  fileName={`${ticket.quotationId}_${(ticket.items?.[0]?.productName ?? ticket.billTo).replace(/\s+/g, "_")}.pdf`}
+                  fileName={`${ticket.quotationId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
                 >
                   {({ loading: pdfLoading }) => (
                     <Button 
@@ -411,7 +412,7 @@ export default function ViewParagonTicketPage() {
               {viewType === 'invoice' && (
                 <PDFDownloadLink
                   document={<ParagonInvoicePDF data={ticket} />}
-                  fileName={`${ticket.invoiceId}_${(ticket.items?.[0]?.productName ?? ticket.billTo).replace(/\s+/g, "_")}.pdf`}
+                  fileName={`${ticket.invoiceId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
                 >
                   {({ loading: pdfLoading }) => (
                     <Button 
@@ -428,7 +429,7 @@ export default function ViewParagonTicketPage() {
               {viewType === 'bast' && (
                 <PDFDownloadLink
                   document={<ParagonBASTPDF data={ticket} />}
-                  fileName={`${ticket.ticketId}_${(ticket.items?.[0]?.productName ?? ticket.billTo).replace(/\s+/g, "_")}.pdf`}
+                  fileName={`${ticket.ticketId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
                 >
                   {({ loading: pdfLoading }) => (
                     <Button 

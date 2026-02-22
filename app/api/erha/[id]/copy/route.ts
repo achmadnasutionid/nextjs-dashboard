@@ -115,6 +115,7 @@ export async function POST(
           quotationDate: originalErha.quotationDate,
           invoiceBastDate: originalErha.invoiceBastDate,
           billTo: `${originalErha.billTo} - Copy`,
+          projectName: `${originalErha.projectName} - Copy`,
           billToAddress: originalErha.billToAddress,
           contactPerson: originalErha.contactPerson,
           contactPosition: originalErha.contactPosition,
