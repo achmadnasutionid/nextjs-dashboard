@@ -95,25 +95,30 @@ export default function ProductionTrackerPage() {
   const tableRef = useRef<HTMLDivElement>(null)
   const isClickingCell = useRef(false)
 
-  // Allow horizontal scroll via trackpad (deltaX) or Shift+wheel; passive: false so preventDefault works
+  // Wheel scroll: capture phase so we get events even when a cell/input is focused; handle both vertical and horizontal
   useEffect(() => {
     const el = tableRef.current
     if (!el) return
     const handleWheel = (e: WheelEvent) => {
-      const hasHorizontalScroll = el.scrollWidth > el.clientWidth
-      if (!hasHorizontalScroll) return
+      if (!el.contains(e.target as Node)) return
       const deltaX = e.deltaX
-      const shiftWheel = e.shiftKey && e.deltaY !== 0
-      if (deltaX !== 0) {
+      const deltaY = e.deltaY
+      const shiftWheel = e.shiftKey && deltaY !== 0
+      const hasHorizontalScroll = el.scrollWidth > el.clientWidth
+      const hasVerticalScroll = el.scrollHeight > el.clientHeight
+      if (deltaX !== 0 && hasHorizontalScroll) {
         el.scrollLeft += deltaX
         e.preventDefault()
-      } else if (shiftWheel) {
-        el.scrollLeft += e.deltaY
+      } else if (shiftWheel && hasHorizontalScroll) {
+        el.scrollLeft += deltaY
+        e.preventDefault()
+      } else if (deltaY !== 0 && hasVerticalScroll) {
+        el.scrollTop += deltaY
         e.preventDefault()
       }
     }
-    el.addEventListener("wheel", handleWheel, { passive: false })
-    return () => el.removeEventListener("wheel", handleWheel)
+    el.addEventListener("wheel", handleWheel, { passive: false, capture: true })
+    return () => el.removeEventListener("wheel", handleWheel, true)
   }, [])
 
   // Calculate expense from all product columns except PHOTOGRAPHER
