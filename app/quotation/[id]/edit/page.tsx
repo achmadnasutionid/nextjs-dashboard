@@ -262,14 +262,6 @@ export default function EditQuotationPage() {
       setQuotationNumber(quotationData.quotationId)
       setQuotationStatus(quotationData.status)
 
-      // Accepted quotations are locked — redirect to view
-      if (quotationData.status === "accepted") {
-        setLoading(false)
-        toast.error("Accepted quotations cannot be edited")
-        router.push(`/quotation/${quotationId}/view`)
-        return
-      }
-      
       // Find company by name
       const company = companiesData.find((c: Company) => c.name === quotationData.companyName)
       if (company) setSelectedCompanyId(company.id)
@@ -442,7 +434,7 @@ export default function EditQuotationPage() {
     hasUnsavedChanges,
     onSave: async () => {
       // Save with current status, don't force to draft
-      await handleSubmit((quotationStatus as "draft" | "pending") || "draft")
+      await handleSubmit((quotationStatus as "draft" | "pending" | "accepted") || "draft")
     },
     enabled: !loading
   })
@@ -768,7 +760,7 @@ export default function EditQuotationPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (status: "draft" | "pending") => {
+  const handleSubmit = async (status: "draft" | "pending" | "accepted") => {
     if (saving) return
     
     // Cancel any pending auto-save
@@ -884,16 +876,20 @@ export default function EditQuotationPage() {
       })
 
       if (response.ok) {
-        const statusText = status === "pending" ? "saved as pending" : "saved as draft"
+        const statusText = status === "accepted"
+          ? "Changes saved. Status remains accepted."
+          : status === "pending"
+            ? "saved as pending"
+            : "saved as draft"
         toast.success("Quotation updated successfully", {
-          description: `Quotation has been ${statusText}.`
+          description: status === "accepted" ? statusText : `Quotation has been ${statusText}.`
         })
         
         // Clear unsaved changes flag
         setHasUnsavedChanges(false)
         
-        // Redirect to view page if pending, otherwise to list
-        if (status === "pending") {
+        // Redirect to view page if pending or accepted, otherwise to list
+        if (status === "pending" || status === "accepted") {
           router.push(`/quotation/${quotationId}/view`)
         } else {
           router.push("/quotation")
@@ -1443,27 +1439,40 @@ export default function EditQuotationPage() {
                   Delete
                 </Button>
 
-                {/* Save Buttons - Right side */}
+                {/* Save Buttons - Right side. When accepted, only Save (status stays accepted). */}
                 <div className="flex flex-wrap gap-3">
-                  {quotationStatus === "draft" && (
+                  {quotationStatus === "accepted" ? (
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={() => handleSubmit("draft")}
+                      onClick={() => handleSubmit("accepted")}
                       disabled={saving}
                     >
                       <Save className="mr-2 h-4 w-4" />
-                      Save as Draft
+                      Save changes
                     </Button>
+                  ) : (
+                    <>
+                      {quotationStatus === "draft" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSubmit("draft")}
+                          disabled={saving}
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Save as Draft
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        onClick={() => handleSubmit("pending")}
+                        disabled={saving}
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        Save as Pending
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    type="button"
-                    onClick={() => handleSubmit("pending")}
-                    disabled={saving}
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Save as Pending
-                  </Button>
                 </div>
               </div>
             </CardContent>

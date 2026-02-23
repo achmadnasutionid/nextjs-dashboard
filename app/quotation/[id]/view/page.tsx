@@ -394,17 +394,15 @@ export default function ViewQuotationPage() {
                 </Button>
               )}
               
-              {/* Edit button - only for draft/pending; accepted is locked */}
-              {quotation.status !== "accepted" && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/quotation/${quotationId}/edit`)}
-                  size="icon"
-                  title="Edit"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
+              {/* Edit button - allowed for all statuses; accepted stays accepted on save */}
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/quotation/${quotationId}/edit`)}
+                size="icon"
+                title="Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
               
               {/* Copy, WhatsApp, and Download buttons - shown for all non-draft statuses */}
               {quotation.status !== "draft" && (

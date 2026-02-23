@@ -56,24 +56,20 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    // Accepted quotations are locked — no edits allowed
     const current = await prisma.quotation.findUnique({
       where: { id },
       select: { status: true }
     })
-    if (current?.status === "accepted") {
-      return NextResponse.json(
-        { error: "Accepted quotations cannot be edited" },
-        { status: 403 }
-      )
-    }
+    // When already accepted, allow content edits but status must stay accepted (no downgrade)
+    const keepFinalStatus = current?.status === "accepted"
 
     // If only status is provided, just update the status (for accepting quotation)
     if (body.status && Object.keys(body).length === 1) {
+      const newStatus = keepFinalStatus ? "accepted" : body.status
       const quotation = await prisma.quotation.update({
         where: { id },
         data: {
-          status: body.status
+          status: newStatus
         },
         include: {
           items: {
@@ -146,7 +142,7 @@ export async function PUT(
           adjustmentPercentage: body.adjustmentPercentage != null ? parseFloat(body.adjustmentPercentage) : null,
           adjustmentNotes: body.adjustmentNotes ?? null,
           termsAndConditions: body.termsAndConditions || null,
-          status: body.status || "draft",
+          status: keepFinalStatus ? "accepted" : (body.status || "draft"),
         }
       })
 

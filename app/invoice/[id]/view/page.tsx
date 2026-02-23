@@ -281,17 +281,15 @@ export default function ViewInvoicePage() {
                 </Button>
               )}
               
-              {/* Edit button - only for draft/pending; paid is locked */}
-              {Invoice.status !== "paid" && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/invoice/${InvoiceId}/edit`)}
-                  size="icon"
-                  title="Edit"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
+              {/* Edit button - allowed for all statuses; paid stays paid on save */}
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/invoice/${InvoiceId}/edit`)}
+                size="icon"
+                title="Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
               
               {/* Copy, WhatsApp, and Download buttons - shown for all non-draft statuses */}
               {Invoice.status !== "draft" && (
@@ -371,7 +369,7 @@ export default function ViewInvoicePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Mark Invoice as Paid?</AlertDialogTitle>
             <AlertDialogDescription>
-              Mark this invoice as paid? The invoice will be locked and cannot be edited afterward.
+              Mark this invoice as paid? You can still edit its content later; status will remain paid.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

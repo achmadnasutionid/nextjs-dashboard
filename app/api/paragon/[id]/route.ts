@@ -52,12 +52,20 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
+    const current = await prisma.paragonTicket.findUnique({
+      where: { id },
+      select: { status: true }
+    })
+    // When already final, status cannot be downgraded to draft/pending
+    const keepFinalStatus = current?.status === "final"
+
     // If only status is provided, just update the status
     if (body.status && Object.keys(body).length === 1) {
+      const newStatus = keepFinalStatus ? "final" : body.status
       const ticket = await prisma.paragonTicket.update({
         where: { id },
         data: {
-          status: body.status
+          status: newStatus
         },
         include: {
           items: {
@@ -142,7 +150,7 @@ export async function PUT(
           adjustmentPercentage: body.adjustmentPercentage != null ? parseFloat(body.adjustmentPercentage) : null,
           adjustmentNotes: body.adjustmentNotes ?? null,
           termsAndConditions: body.termsAndConditions || null,
-          status: body.status,
+          status: keepFinalStatus ? "final" : body.status,
         }
       })
 

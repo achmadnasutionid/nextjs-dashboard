@@ -57,24 +57,20 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    // Paid invoices are locked — no edits allowed
     const current = await prisma.invoice.findUnique({
       where: { id },
       select: { status: true }
     })
-    if (current?.status === "paid") {
-      return NextResponse.json(
-        { error: "Paid invoices cannot be edited" },
-        { status: 403 }
-      )
-    }
+    // When already paid, allow content edits but status must stay paid (no downgrade)
+    const keepFinalStatus = current?.status === "paid"
 
     // If only status is provided, just update the status (for marking invoice as paid)
     if (body.status && Object.keys(body).length === 1) {
+      const newStatus = keepFinalStatus ? "paid" : body.status
       const invoice = await prisma.invoice.update({
         where: { id },
         data: {
-          status: body.status
+          status: newStatus
         },
         include: {
           items: {
@@ -150,7 +146,7 @@ export async function PUT(
           adjustmentPercentage: body.adjustmentPercentage != null ? parseFloat(body.adjustmentPercentage) : null,
           adjustmentNotes: body.adjustmentNotes ?? null,
           termsAndConditions: body.termsAndConditions || null,
-          status: body.status || "draft",
+          status: keepFinalStatus ? "paid" : (body.status || "draft"),
         }
       })
 

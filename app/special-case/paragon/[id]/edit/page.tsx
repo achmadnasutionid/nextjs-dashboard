@@ -1424,36 +1424,49 @@ export default function EditParagonTicketPage() {
                   Delete
                 </Button>
 
-                {/* Save Buttons - same as quotation/invoice: Draft, Pending; final status is Final (not accepted/paid) */}
+                {/* Save Buttons: when final, only Save changes (status stays final). Otherwise Draft, Pending, Finalize. */}
                 <div className="flex flex-wrap gap-3">
-                  {currentStatus === "draft" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleSubmit("draft")}
-                      disabled={saving}
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      Save as Draft
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    onClick={() => handleSubmit("pending")}
-                    disabled={saving}
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Save as Pending
-                  </Button>
-                  {currentStatus === "pending" && (
+                  {currentStatus === "final" ? (
                     <Button
                       type="button"
                       onClick={() => handleSubmit("final")}
                       disabled={saving}
                     >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Finalize Ticket
+                      <Save className="mr-2 h-4 w-4" />
+                      Save changes
                     </Button>
+                  ) : (
+                    <>
+                      {currentStatus === "draft" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSubmit("draft")}
+                          disabled={saving}
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Save as Draft
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        onClick={() => handleSubmit("pending")}
+                        disabled={saving}
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        Save as Pending
+                      </Button>
+                      {currentStatus === "pending" && (
+                        <Button
+                          type="button"
+                          onClick={() => handleSubmit("final")}
+                          disabled={saving}
+                        >
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Finalize Ticket
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

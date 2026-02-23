@@ -263,14 +263,6 @@ export default function EditInvoicePage() {
       setInvoiceNumber(InvoiceData.invoiceId)
       setInvoiceStatus(InvoiceData.status)
 
-      // Paid invoices are locked — redirect to view
-      if (InvoiceData.status === "paid") {
-        setLoading(false)
-        toast.error("Paid invoices cannot be edited")
-        router.push(`/invoice/${InvoiceId}/view`)
-        return
-      }
-      
       // Find company by name
       const company = companiesData.find((c: Company) => c.name === InvoiceData.companyName)
       if (company) setSelectedCompanyId(company.id)
@@ -453,7 +445,7 @@ export default function EditInvoicePage() {
     hasUnsavedChanges,
     onSave: async () => {
       // Save with current status, don't force to draft
-      await handleSubmit((InvoiceStatus as "draft" | "pending") || "draft")
+      await handleSubmit((InvoiceStatus as "draft" | "pending" | "paid") || "draft")
     },
     enabled: !loading
   })
@@ -770,7 +762,7 @@ export default function EditInvoicePage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (status: "draft" | "pending") => {
+  const handleSubmit = async (status: "draft" | "pending" | "paid") => {
     if (saving) return
     
     // Cancel any pending auto-save
@@ -886,16 +878,20 @@ export default function EditInvoicePage() {
       })
 
       if (response.ok) {
-        const statusText = status === "pending" ? "saved as pending" : "saved as draft"
+        const statusText = status === "paid"
+          ? "Changes saved. Status remains paid."
+          : status === "pending"
+            ? "saved as pending"
+            : "saved as draft"
         toast.success("Invoice updated successfully", {
-          description: `Invoice has been ${statusText}.`
+          description: status === "paid" ? statusText : `Invoice has been ${statusText}.`
         })
         
         // Clear unsaved changes flag
         setHasUnsavedChanges(false)
         
-        // Redirect to view page if pending, otherwise to list
-        if (status === "pending") {
+        // Redirect to view page if pending or paid, otherwise to list
+        if (status === "pending" || status === "paid") {
           router.push(`/invoice/${InvoiceId}/view`)
         } else {
           router.push("/invoice")
@@ -1444,27 +1440,40 @@ export default function EditInvoicePage() {
                   Delete
                 </Button>
 
-                {/* Save Buttons - Right side */}
+                {/* Save Buttons - Right side. When paid, only Save (status stays paid). */}
                 <div className="flex flex-wrap gap-3">
-                  {InvoiceStatus === "draft" && (
+                  {InvoiceStatus === "paid" ? (
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={() => handleSubmit("draft")}
+                      onClick={() => handleSubmit("paid")}
                       disabled={saving}
                     >
                       <Save className="mr-2 h-4 w-4" />
-                      Save as Draft
+                      Save changes
                     </Button>
+                  ) : (
+                    <>
+                      {InvoiceStatus === "draft" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleSubmit("draft")}
+                          disabled={saving}
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Save as Draft
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        onClick={() => handleSubmit("pending")}
+                        disabled={saving}
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        Save as Pending
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    type="button"
-                    onClick={() => handleSubmit("pending")}
-                    disabled={saving}
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Save as Pending
-                  </Button>
                 </div>
               </div>
             </CardContent>
