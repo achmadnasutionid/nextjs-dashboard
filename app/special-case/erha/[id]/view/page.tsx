@@ -288,8 +288,8 @@ export default function ViewErhaTicketPage() {
             </p>
             
             <div className="flex flex-wrap gap-2">
-              {/* Finalize Button - LEFTMOST (Only show on BAST view if status is draft) */}
-              {viewType === 'bast' && ticket.status === 'draft' && (
+              {/* Finalize Button - LEFTMOST (Only when status is pending: draft → pending → final) */}
+              {viewType === 'bast' && ticket.status === 'pending' && (
                 <Button
                   onClick={() => setShowFinalizeDialog(true)}
                   disabled={finalizing}
@@ -301,8 +301,8 @@ export default function ViewErhaTicketPage() {
                 </Button>
               )}
               
-              {/* Upload Screenshot Button - Only show on BAST view if status is draft */}
-              {viewType === 'bast' && ticket.status === 'draft' && (
+              {/* Upload Screenshot Button - Only show on BAST view if status is draft or pending */}
+              {viewType === 'bast' && (ticket.status === 'draft' || ticket.status === 'pending') && (
                 <>
                   <input
                     type="file"

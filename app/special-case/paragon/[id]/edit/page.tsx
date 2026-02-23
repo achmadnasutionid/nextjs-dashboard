@@ -1445,15 +1445,16 @@ export default function EditParagonTicketPage() {
                     <Save className="mr-2 h-4 w-4" />
                     Save as Pending
                   </Button>
-                  <Button
-                    type="button"
-                    variant={currentStatus === "final" ? "secondary" : "outline"}
-                    onClick={() => handleSubmit("final")}
-                    disabled={saving}
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Finalize Ticket
-                  </Button>
+                  {currentStatus === "pending" && (
+                    <Button
+                      type="button"
+                      onClick={() => handleSubmit("final")}
+                      disabled={saving}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Finalize Ticket
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
