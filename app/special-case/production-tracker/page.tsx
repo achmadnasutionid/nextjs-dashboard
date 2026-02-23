@@ -579,8 +579,8 @@ export default function ProductionTrackerPage() {
                     ID
                   </th>
                   
-                  {/* Project Info - Blue */}
-                  <th className="sticky left-[92px] z-40 border-r border-b border-border p-1.5 text-left font-semibold min-w-[200px] bg-blue-50">
+                  {/* Project Info - Blue - fixed width, no resize */}
+                  <th className="sticky left-[92px] z-40 border-r border-b border-border p-1.5 text-left font-semibold w-[200px] min-w-[200px] max-w-[200px] bg-blue-50">
                     Project Name
                   </th>
                   <th className="sticky left-[292px] z-40 border-r border-b border-border p-1.5 text-left font-semibold w-[110px] min-w-[110px] bg-blue-50">
@@ -628,7 +628,7 @@ export default function ProductionTrackerPage() {
                         <Skeleton className="h-4 w-full" />
                       </td>
                       {/* Project Name - Blue */}
-                      <td className="sticky left-[92px] z-20 border-r border-b border-border p-1.5 bg-blue-50 min-w-[200px]">
+                      <td className="sticky left-[92px] z-20 border-r border-b border-border p-1.5 bg-blue-50 w-[200px] min-w-[200px] max-w-[200px]">
                         <Skeleton className="h-4 w-full" />
                       </td>
                       {/* Date - Blue */}
@@ -715,9 +715,9 @@ export default function ProductionTrackerPage() {
                           )}
                         </td>
                         
-                        {/* Project Name - Editable - Blue */}
+                        {/* Project Name - Editable - Blue - fixed width, truncate + tooltip */}
                         <td 
-                          className="sticky left-[92px] z-20 border-r border-b border-border p-1.5 bg-blue-50 cursor-pointer hover:bg-blue-100 min-w-[200px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
+                          className="sticky left-[92px] z-20 border-r border-b border-border p-1.5 bg-blue-50 cursor-pointer hover:bg-blue-100 w-[200px] min-w-[200px] max-w-[200px] overflow-hidden group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
                           onMouseDown={(e) => {
                             e.preventDefault()
                             handleCellClick(tracker, 'projectName')
@@ -733,7 +733,7 @@ export default function ProductionTrackerPage() {
                               autoFocus
                             />
                           ) : (
-                            <span className="text-xs truncate block">{tracker.projectName || "-"}</span>
+                            <span className="text-xs truncate block" title={tracker.projectName || "-"}>{tracker.projectName || "-"}</span>
                           )}
                         </td>
                         
@@ -913,7 +913,7 @@ export default function ProductionTrackerPage() {
                   </td>
                   
                   {/* Project Name - Gray */}
-                  <td className="sticky left-[92px] z-40 border-r border-slate-300 p-1.5 bg-slate-100 min-w-[200px]">
+                  <td className="sticky left-[92px] z-40 border-r border-slate-300 p-1.5 bg-slate-100 w-[200px] min-w-[200px] max-w-[200px]">
                     <span className="text-xs text-slate-600">{filteredTrackers.length} row(s)</span>
                   </td>
                   
