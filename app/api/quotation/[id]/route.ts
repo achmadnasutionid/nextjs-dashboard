@@ -109,6 +109,13 @@ export async function PUT(
       }
     }
 
+    // Capture original billTo BEFORE update so we can detect renames and update tracker (not create a new one)
+    const originalQuotation = await prisma.quotation.findUnique({
+      where: { id },
+      select: { billTo: true }
+    })
+    const originalBillTo = originalQuotation?.billTo ?? null
+
     // Use transaction for atomic updates with UPSERT pattern
     const quotation = await prisma.$transaction(async (tx) => {
       // Generate unique billTo name if there's a conflict
@@ -416,16 +423,10 @@ export async function PUT(
     // Sync tracker if billTo changed or totalAmount changed
     if (quotation && quotation.billTo && quotation.billTo.trim()) {
       try {
-        // Get original quotation to check if billTo changed
-        const originalQuotation = await prisma.quotation.findUnique({
-          where: { id },
-          select: { billTo: true }
-        })
-
-        if (originalQuotation && originalQuotation.billTo !== quotation.billTo) {
-          // billTo changed - update tracker name
+        if (originalBillTo != null && originalBillTo !== quotation.billTo) {
+          // billTo changed - update existing tracker name (don't create new one)
           await updateTrackerName(
-            originalQuotation.billTo,
+            originalBillTo,
             quotation.billTo,
             quotation.productionDate,
             quotation.totalAmount

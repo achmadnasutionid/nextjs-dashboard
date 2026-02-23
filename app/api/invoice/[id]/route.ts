@@ -108,6 +108,13 @@ export async function PUT(
       }
     }
 
+    // Capture original billTo BEFORE update so we can detect renames and update tracker (not create a new one)
+    const originalInvoiceForTracker = await prisma.invoice.findUnique({
+      where: { id },
+      select: { billTo: true }
+    })
+    const originalBillTo = originalInvoiceForTracker?.billTo ?? null
+
     // Use transaction for atomic updates with UPSERT pattern
     const invoice = await prisma.$transaction(async (tx) => {
       // Calculate paidDate if needed
@@ -415,16 +422,10 @@ export async function PUT(
     // Sync tracker if billTo changed or totalAmount changed
     if (invoice && invoice.billTo && invoice.billTo.trim()) {
       try {
-        // Get original invoice to check if billTo changed
-        const originalInvoice = await prisma.invoice.findUnique({
-          where: { id },
-          select: { billTo: true }
-        })
-
-        if (originalInvoice && originalInvoice.billTo !== invoice.billTo) {
-          // billTo changed - update tracker name
+        if (originalBillTo != null && originalBillTo !== invoice.billTo) {
+          // billTo changed - update existing tracker name (don't create new one)
           await updateTrackerName(
-            originalInvoice.billTo,
+            originalBillTo,
             invoice.billTo,
             invoice.productionDate,
             invoice.totalAmount,
