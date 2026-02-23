@@ -10,6 +10,7 @@ import {
   Package,
   PackageOpen,
   Table,
+  Database,
 } from "lucide-react"
 import type { DashboardCard } from "@/types"
 
@@ -39,6 +40,8 @@ function getIcon(iconName: string) {
       return <PackageOpen className="h-6 w-6 text-primary" />
     case "table":
       return <Table className="h-6 w-6 text-primary" />
+    case "database":
+      return <Database className="h-6 w-6 text-primary" />
     default:
       return <Package className="h-6 w-6 text-primary" />
   }

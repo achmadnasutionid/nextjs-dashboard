@@ -21,7 +21,6 @@ import { QuickActionSection, CardsSection } from "@/components/dashboard/cards-s
 
 // Types
 import type { DashboardCard } from "@/types"
-import { saveBackupToCache } from "@/lib/backup-cache"
 
 // Dashboard cards configuration
 const ALL_CARDS: DashboardCard[] = [
@@ -42,6 +41,7 @@ const ALL_CARDS: DashboardCard[] = [
   { id: "signatures", section: "Management", title: "Signatures", keywords: "signatures signature sign master", route: "/signatures", icon: "file-signature" },
   { id: "products", section: "Management", title: "Products", keywords: "products product master", route: "/products", icon: "package" },
   { id: "templates", section: "Management", title: "Templates", keywords: "templates template quotation master", route: "/templates", icon: "package-open" },
+  { id: "backup", section: "Management", title: "Backup", keywords: "backup export import restore", route: "/backup", icon: "database" },
 ]
 
 export default function Home() {
@@ -121,28 +121,6 @@ export default function Home() {
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
-
-  // First landing: trigger backup if not run in last 24h; cache 1 day so we don't call every visit.
-  // When backup is triggered, backup data is returned and stored in IndexedDB (copy off the DB).
-  useEffect(() => {
-    if (!isClient) return
-    const CACHE_KEY = "backup_trigger_until"
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000
-    const cached = typeof sessionStorage !== "undefined" ? sessionStorage.getItem(CACHE_KEY) : null
-    const until = cached ? parseInt(cached, 10) : 0
-    if (Date.now() < until) return
-    fetch("/api/backup/trigger")
-      .then((res) => res.json())
-      .then((body) => {
-        if (body.triggered || body.nextEligibleAt) {
-          sessionStorage.setItem(CACHE_KEY, String(Date.now() + ONE_DAY_MS))
-        }
-        if (body.backupData) {
-          saveBackupToCache(body.backupData).catch(() => {})
-        }
-      })
-      .catch(() => {})
-  }, [isClient])
 
   // Navigation handler
   const handleNavigate = (path: string) => {

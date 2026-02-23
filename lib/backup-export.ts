@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 
-const BACKUP_MODEL_NAMES = [
+export const BACKUP_MODEL_NAMES = [
   "company",
   "billing",
   "signature",
