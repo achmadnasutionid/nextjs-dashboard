@@ -153,14 +153,14 @@ export default function BackupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <PageHeader title="Backup" showBackButton backTo="/" />
 
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className="flex flex-1 flex-col overflow-hidden bg-background">
         <div className="flex flex-1 items-center justify-center p-4">
           <div className="grid w-full max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
             {/* Save backup (primary) */}
-            <Card className="flex flex-col">
+            <Card className="flex flex-col bg-card text-card-foreground">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Save className="h-5 w-5" />
@@ -186,7 +186,7 @@ export default function BackupPage() {
             </Card>
 
             {/* Restore */}
-            <Card className="flex flex-col border-destructive/50">
+            <Card className="flex flex-col border-destructive/50 dark:border-destructive/60 bg-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
                   <Upload className="h-5 w-5" />
@@ -194,7 +194,7 @@ export default function BackupPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-4">
-                <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                <div className="flex items-start gap-2 rounded-md border border-destructive/30 dark:border-destructive/50 bg-destructive/5 dark:bg-destructive/15 p-3 text-sm text-destructive">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>
                     Restore replaces all current data. Save a backup first if you need to keep it. Data loss is permanent.
@@ -255,7 +255,7 @@ export default function BackupPage() {
                     size="sm"
                     onClick={handleImport}
                     disabled={!canImport || importing}
-                    className="w-full border-destructive/50 text-destructive hover:bg-destructive/10"
+                    className="w-full border-destructive/50 dark:border-destructive/60 text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
                   >
                     {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Restore from file"}
                   </Button>
