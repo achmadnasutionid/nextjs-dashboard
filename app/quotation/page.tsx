@@ -517,8 +517,22 @@ function QuotationPageContent() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          {isQuotation && row.status !== "accepted" && (
+                          {isQuotation && (
                             <Link href={`/quotation/${row.id}/edit`}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          )}
+                          {row.source === "paragon" && (
+                            <Link href={`/special-case/paragon/${row.id}/edit`}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          )}
+                          {row.source === "erha" && (
+                            <Link href={`/special-case/erha/${row.id}/edit`}>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />
                               </Button>
