@@ -262,6 +262,14 @@ export default function EditInvoicePage() {
     ]).then(([InvoiceData, companiesData, billingsData, signaturesData, productsData]) => {
       setInvoiceNumber(InvoiceData.invoiceId)
       setInvoiceStatus(InvoiceData.status)
+
+      // Paid invoices are locked — redirect to view
+      if (InvoiceData.status === "paid") {
+        setLoading(false)
+        toast.error("Paid invoices cannot be edited")
+        router.push(`/invoice/${InvoiceId}/view`)
+        return
+      }
       
       // Find company by name
       const company = companiesData.find((c: Company) => c.name === InvoiceData.companyName)

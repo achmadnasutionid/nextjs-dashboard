@@ -425,7 +425,7 @@ function InvoicePageContent() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          {isInvoice && (
+                          {isInvoice && row.status !== "paid" && (
                             <Link href={`/invoice/${row.id}/edit`}>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />

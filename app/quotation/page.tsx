@@ -517,7 +517,7 @@ function QuotationPageContent() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          {isQuotation && (
+                          {isQuotation && row.status !== "accepted" && (
                             <Link href={`/quotation/${row.id}/edit`}>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />
@@ -589,7 +589,7 @@ function QuotationPageContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Accept Quotation?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark the quotation as accepted. You can then generate an invoice from this quotation.
+              This will mark the quotation as accepted and generate an invoice. The quotation will be locked and cannot be edited afterward.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

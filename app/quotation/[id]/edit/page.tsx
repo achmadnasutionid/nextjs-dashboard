@@ -261,6 +261,14 @@ export default function EditQuotationPage() {
     ]).then(([quotationData, companiesData, billingsData, signaturesData, productsData]) => {
       setQuotationNumber(quotationData.quotationId)
       setQuotationStatus(quotationData.status)
+
+      // Accepted quotations are locked — redirect to view
+      if (quotationData.status === "accepted") {
+        setLoading(false)
+        toast.error("Accepted quotations cannot be edited")
+        router.push(`/quotation/${quotationId}/view`)
+        return
+      }
       
       // Find company by name
       const company = companiesData.find((c: Company) => c.name === quotationData.companyName)
