@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma"
 /**
  * GET invoice list including Paragon and Erha tickets (same list, source badge + link to ticket view).
  * Query: status, sortBy, page, limit, search.
+ *
+ * Special case – Paragon and Erha use status: draft | pending | final (same three-state model).
+ * Mapping for list filter: draft → draft; pending → draft + pending (in progress); paid → final.
  */
 export async function GET(request: Request) {
   try {
@@ -17,8 +20,9 @@ export async function GET(request: Request) {
     const orderBy = sortBy === "oldest" ? "asc" as const : "desc" as const
     const takePerSource = page * limit
 
-    // Map list filter to DB statuses: pending = draft + pending (main + special case), paid = paid/final
+    // Pending = in progress (draft + pending) for both invoice and Paragon/Erha; paid → final for tickets
     const pendingStatuses: string[] = ["draft", "pending"]
+
     const invWhere: any = { deletedAt: null }
     if (status !== "all") {
       if (status === "pending") {
@@ -37,6 +41,7 @@ export async function GET(request: Request) {
       ]
     }
 
+    // Paragon/Erha: draft/pending/final – map paid → final, pending → draft + pending
     const ticketWhere: any = { deletedAt: null }
     if (status !== "all") {
       if (status === "pending") {

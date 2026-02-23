@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma"
 /**
  * GET quotation list including Paragon and Erha tickets (same list, source badge + link to ticket view).
  * Query: status, sortBy, page, limit, search, includeTickets (default true).
+ *
+ * Special case – Paragon and Erha use status: draft | pending | final (same three-state model).
+ * Mapping for list filter: draft → draft; pending → draft + pending (in progress); accepted → final.
  */
 export async function GET(request: Request) {
   try {
@@ -17,9 +20,18 @@ export async function GET(request: Request) {
     const orderBy = sortBy === "oldest" ? "asc" as const : "desc" as const
     const takePerSource = page * limit
 
+    // Pending = in progress (draft + pending) for both quotation and Paragon/Erha
+    const pendingStatuses: string[] = ["draft", "pending"]
+
     // Quotation where
     const qWhere: any = { deletedAt: null }
-    if (status !== "all") qWhere.status = status
+    if (status !== "all") {
+      if (status === "pending") {
+        qWhere.status = { in: pendingStatuses }
+      } else {
+        qWhere.status = status
+      }
+    }
     if (search) {
       qWhere.OR = [
         { quotationId: { contains: search, mode: "insensitive" } },
@@ -28,10 +40,17 @@ export async function GET(request: Request) {
       ]
     }
 
-    // Paragon/Erha: map "accepted" -> "final"
-    const ticketStatus = status === "accepted" ? "final" : status
+    // Paragon/Erha: draft/pending/final – map accepted → final, pending → draft + pending
     const ticketWhere: any = { deletedAt: null }
-    if (ticketStatus !== "all") ticketWhere.status = ticketStatus
+    if (status !== "all") {
+      if (status === "accepted") {
+        ticketWhere.status = "final"
+      } else if (status === "pending") {
+        ticketWhere.status = { in: pendingStatuses }
+      } else {
+        ticketWhere.status = status
+      }
+    }
     if (search) {
       ticketWhere.OR = [
         { quotationId: { contains: search, mode: "insensitive" } },

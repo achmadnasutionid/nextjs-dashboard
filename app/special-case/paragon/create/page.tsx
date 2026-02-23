@@ -1179,9 +1179,9 @@ export default function CreateParagonTicketPage() {
                 </div>
               )}
 
-              {/* Actions */}
+              {/* Actions - same pattern as quotation/invoice: Draft + Pending */}
               <div className="flex flex-wrap items-center justify-between gap-3">
-                {/* Auto-save status */}                <div className="flex flex-wrap gap-3 ml-auto">
+                <div className="flex flex-wrap gap-3 ml-auto">
                   <Button
                     type="button"
                     variant="outline"
@@ -1190,6 +1190,14 @@ export default function CreateParagonTicketPage() {
                   >
                     <Save className="mr-2 h-4 w-4" />
                     Save as Draft
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleSubmit("pending")}
+                    disabled={saving}
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Save as Pending
                   </Button>
                 </div>
               </div>

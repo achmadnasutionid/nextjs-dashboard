@@ -436,7 +436,7 @@ export default function EditErhaTicketPage() {
     hasUnsavedChanges,
     onSave: async () => {
       // Save with current status, don't force to draft
-      await handleSubmit((currentStatus as "draft" | "final") || "draft")
+      await handleSubmit((currentStatus as "draft" | "pending" | "final") || "draft")
     },
     enabled: !loading
   })
@@ -793,7 +793,7 @@ export default function EditErhaTicketPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (status: "draft" | "final") => {
+  const handleSubmit = async (status: "draft" | "pending" | "final") => {
     if (saving) return
 
     // Cancel any pending auto-save
@@ -808,18 +808,20 @@ export default function EditErhaTicketPage() {
         return
       }
 
-      // Additional validation for final status
-      if (status === "final") {
+      // Additional validation for pending and final (same as quotation/invoice)
+      if (status === "pending" || status === "final") {
         if (items.length === 0) {
-          toast.warning("Cannot finalize ticket", {
-            description: "Please add at least one item before finalizing."
+          toast.warning(status === "final" ? "Cannot finalize ticket" : "Cannot save as pending", {
+            description: status === "final"
+              ? "Please add at least one item before finalizing."
+              : "Please add at least one item before saving as pending."
           })
           return
         }
 
         const emptyProducts = items.filter(item => !item.productName.trim())
         if (emptyProducts.length > 0) {
-          toast.warning("Cannot finalize ticket", {
+          toast.warning(status === "final" ? "Cannot finalize ticket" : "Cannot save as pending", {
             description: "All items must have a product name filled in."
           })
           return
@@ -827,7 +829,7 @@ export default function EditErhaTicketPage() {
 
         const itemsWithoutDetails = items.filter(item => item.details.length === 0)
         if (itemsWithoutDetails.length > 0) {
-          toast.warning("Cannot finalize ticket", {
+          toast.warning(status === "final" ? "Cannot finalize ticket" : "Cannot save as pending", {
             description: "All products must have at least one detail."
           })
           return
@@ -901,7 +903,13 @@ export default function EditErhaTicketPage() {
       })
 
       if (response.ok) {
-        toast.success(`Ticket ${status === "final" ? "finalized" : "saved as draft"} successfully!`)
+        const msg =
+          status === "final"
+            ? "Ticket finalized successfully!"
+            : status === "pending"
+              ? "Ticket saved as pending successfully!"
+              : "Ticket saved as draft successfully!"
+        toast.success(msg)
         setHasUnsavedChanges(false)
         router.push("/special-case/erha")
       } else {
@@ -1542,19 +1550,30 @@ export default function EditErhaTicketPage() {
                   Delete
                 </Button>
 
-                {/* Save Buttons - Right side */}
+                {/* Save Buttons - same as quotation/invoice: Draft, Pending; final status is Final (not accepted/paid) */}
                 <div className="flex flex-wrap gap-3">
+                  {currentStatus === "draft" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleSubmit("draft")}
+                      disabled={saving}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Save as Draft
+                    </Button>
+                  )}
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={() => handleSubmit("draft")}
+                    onClick={() => handleSubmit("pending")}
                     disabled={saving}
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Save as Draft
+                    Save as Pending
                   </Button>
                   <Button
                     type="button"
+                    variant={currentStatus === "final" ? "secondary" : "outline"}
                     onClick={() => handleSubmit("final")}
                     disabled={saving}
                   >
