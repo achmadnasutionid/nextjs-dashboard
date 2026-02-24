@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer"
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 
 const styles = StyleSheet.create({
@@ -114,6 +114,12 @@ const styles = StyleSheet.create({
     maxWidth: 150,
     height: 60,
     objectFit: "contain",
+  },
+  signatureImagePlaceholder: {
+    width: 150,
+    height: 60,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
   },
   footer: {
     position: "absolute",
@@ -394,7 +400,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                   {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                 </Text>
-                <Image src={sig.imageData} style={styles.signatureImage} />
+                <View style={styles.signatureImagePlaceholder} />
               </>
             ) : (
               <>
@@ -450,7 +456,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <Image src={sig.imageData} style={styles.signatureImage} />
+                  <View style={styles.signatureImagePlaceholder} />
                 </>
               ) : (
                 <>
@@ -491,7 +497,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <Image src={sig.imageData} style={styles.signatureImage} />
+                    <View style={styles.signatureImagePlaceholder} />
                   </>
                 ) : (
                   <>
@@ -534,7 +540,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <Image src={sig.imageData} style={styles.signatureImage} />
+                    <View style={styles.signatureImagePlaceholder} />
                   </>
                 ) : (
                   <>
@@ -598,7 +604,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <Image src={sig.imageData} style={styles.signatureImage} />
+                  <View style={styles.signatureImagePlaceholder} />
                 </>
               ) : (
                 <>
@@ -627,7 +633,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
   }
 
   return (
-    <Document>
+    <Document pdfVersion="1.3">
       <Page size="A4" style={styles.page} wrap>
         {/* Header */}
         <View style={styles.header} fixed>
@@ -823,5 +829,15 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
   )
 }
 
-
+/** Minimal invoice PDF when full render throws (e.g. structure-tree 'S' bug). */
+export const InvoicePDFMinimal: React.FC<{ data: InvoicePDFProps["data"] }> = ({ data }) => (
+  <Document pdfVersion="1.3">
+    <Page size="A4" style={{ padding: 30, fontSize: 10, fontFamily: "Helvetica" }}>
+      <Text style={{ fontSize: 14, fontWeight: "bold", marginBottom: 8 }}>INVOICE</Text>
+      <Text style={{ marginBottom: 4 }}>No. {data.invoiceId}</Text>
+      <Text style={{ marginBottom: 4 }}>Bill To: {data.billTo}</Text>
+      <Text style={{ marginBottom: 4 }}>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.totalAmount)}</Text>
+    </Page>
+  </Document>
+)
 

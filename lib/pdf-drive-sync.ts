@@ -16,7 +16,7 @@ import {
   isDriveConfigured,
 } from "@/lib/google-drive"
 import { QuotationPDF, QuotationPDFMinimal } from "@/components/pdf/quotation-pdf"
-import { InvoicePDF } from "@/components/pdf/invoice-pdf"
+import { InvoicePDF, InvoicePDFMinimal } from "@/components/pdf/invoice-pdf"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
 import { ParagonBASTPDF } from "@/components/pdf/paragon-bast-pdf"
@@ -405,9 +405,21 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
     for (const inv of invoices) {
       try {
         const data = toInvoicePdfData(inv)
-        const buffer = await renderToBuffer(
-          React.createElement(InvoicePDF, { data }) as Parameters<typeof renderToBuffer>[0]
-        )
+        let buffer: ArrayBuffer | Buffer
+        try {
+          buffer = await renderToBuffer(
+            React.createElement(InvoicePDF, { data }) as Parameters<typeof renderToBuffer>[0]
+          )
+        } catch {
+          try {
+            buffer = await renderToBuffer(
+              React.createElement(InvoicePDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
+            )
+          } catch (minimalErr) {
+            console.error("[pdf-drive-sync] Invoice", inv.invoiceId, "minimal fallback failed:", minimalErr)
+            continue
+          }
+        }
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
         await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.from(buffer))
       } catch (e) {
