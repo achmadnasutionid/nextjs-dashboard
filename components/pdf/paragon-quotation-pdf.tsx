@@ -158,6 +158,11 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 2,
   },
+  termsBlock: {
+    marginBottom: 4,
+    fontSize: 8,
+    lineHeight: 1.5,
+  },
 })
 
 interface ParagonQuotationPDFProps {
@@ -456,16 +461,25 @@ const parseHTMLToTextBlocks = (html: string) => {
 
         {/* Detailed Terms & Conditions (S&K) */}
         {data.termsAndConditions && (
-          <View style={{ marginBottom: 15 }}>
-            <Text style={styles.remarksTitle}>Detailed S&K:</Text>
-            <View style={{ fontSize: 8, lineHeight: 1.5 }}>
-              {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
-                <Text key={index} style={{ marginBottom: 4, ...block.style }}>
-                  {block.text}
-                </Text>
-              ))}
+          forSync ? (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.remarksTitle}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={styles.termsBlock}>{block.text}</Text>
+                ))}
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.remarksTitle}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={{ marginBottom: 4, ...block.style }}>{block.text}</Text>
+                ))}
+              </View>
+            </View>
+          )
         )}
 
         {/* Footer with Signatures - bill to only in sign section */}

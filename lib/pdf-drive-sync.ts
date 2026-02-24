@@ -15,8 +15,8 @@ import {
   sanitizeName,
   isDriveConfigured,
 } from "@/lib/google-drive"
-import { QuotationPDF } from "@/components/pdf/quotation-pdf"
-import { InvoicePDF } from "@/components/pdf/invoice-pdf"
+import { QuotationPDF, QuotationPDFMinimal } from "@/components/pdf/quotation-pdf"
+import { InvoicePDF, InvoicePDFMinimal } from "@/components/pdf/invoice-pdf"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
 import { ParagonBASTPDF } from "@/components/pdf/paragon-bast-pdf"
@@ -423,11 +423,20 @@ export async function runPdfDriveSync(): Promise<{
     for (const q of quotations) {
       try {
         const data = toQuotationPdfData(q)
-        const buffer = await renderToBuffer(
-          React.createElement(QuotationPDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
-        )
+        let buffer: ArrayBuffer | Buffer
+        try {
+          buffer = await renderToBuffer(
+            React.createElement(QuotationPDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
+          )
+        } catch (renderErr) {
+          // Fallback when full render throws (e.g. react-pdf 'S' / structure-tree bug)
+          console.warn("[pdf-drive-sync] Quotation full render failed, using minimal PDF:", q.quotationId, renderErr)
+          buffer = await renderToBuffer(
+            React.createElement(QuotationPDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
+          )
+        }
         const fileName = pdfFileName(q.quotationId, q.billTo)
-        const uploadResult = await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.from(buffer))
+        const uploadResult = await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer))
         if (uploadResult.ok) uploaded += 1
         else {
           skipped += 1
@@ -442,11 +451,19 @@ export async function runPdfDriveSync(): Promise<{
     for (const inv of invoices) {
       try {
         const data = toInvoicePdfData(inv)
-        const buffer = await renderToBuffer(
-          React.createElement(InvoicePDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
-        )
+        let buffer: ArrayBuffer | Buffer
+        try {
+          buffer = await renderToBuffer(
+            React.createElement(InvoicePDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
+          )
+        } catch (renderErr) {
+          console.warn("[pdf-drive-sync] Invoice full render failed, using minimal PDF:", inv.invoiceId, renderErr)
+          buffer = await renderToBuffer(
+            React.createElement(InvoicePDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
+          )
+        }
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
-        const uploadResult = await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.from(buffer))
+        const uploadResult = await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer))
         if (uploadResult.ok) uploaded += 1
         else {
           skipped += 1

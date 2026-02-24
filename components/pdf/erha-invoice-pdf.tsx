@@ -178,6 +178,11 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 2,
   },
+  termsBlock: {
+    marginBottom: 4,
+    fontSize: 8,
+    lineHeight: 1.5,
+  },
 })
 
 interface ErhaInvoicePDFProps {
@@ -474,18 +479,27 @@ export const ErhaInvoicePDF: React.FC<ErhaInvoicePDFProps> = ({ data, forSync = 
           </View>
         )}
 
-        {/* Detailed Terms & Conditions (S&K) */}
+        {/* Detailed Terms & Conditions (S&K) - view and sync separate */}
         {data.termsAndConditions && (
-          <View style={{ marginBottom: 15 }}>
-            <Text style={styles.billingInfo}>Detailed S&K:</Text>
-            <View style={{ fontSize: 8, lineHeight: 1.5 }}>
-              {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
-                <Text key={index} style={{ marginBottom: 4, ...block.style }}>
-                  {block.text}
-                </Text>
-              ))}
+          forSync ? (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.billingInfo}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={styles.termsBlock}>{block.text}</Text>
+                ))}
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.billingInfo}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={{ marginBottom: 4, ...block.style }}>{block.text}</Text>
+                ))}
+              </View>
+            </View>
+          )
         )}
 
         {/* Footer with Signature */}

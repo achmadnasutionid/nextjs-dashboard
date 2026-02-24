@@ -133,6 +133,12 @@ const styles = StyleSheet.create({
     borderTop: "1 solid #ddd",
     paddingTop: 8,
   },
+  /** StyleSheet-only style for terms when forSync to avoid react-pdf 'S' bug from inline style spread */
+  termsBlock: {
+    marginBottom: 4,
+    fontSize: 8,
+    lineHeight: 1.5,
+  },
 })
 
 interface QuotationPDFProps {
@@ -790,18 +796,27 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
           </View>
         ) : null}
 
-        {/* Detailed Terms & Conditions (S&K) */}
+        {/* Detailed Terms & Conditions (S&K) - view and sync separate: view keeps original format (bold/italic), sync uses StyleSheet only to avoid react-pdf 'S' bug */}
         {data.termsAndConditions ? (
-          <View style={{ marginBottom: 15 }}>
-            <Text style={styles.sectionTitle}>Detailed S&K:</Text>
-            <View style={{ fontSize: 8, lineHeight: 1.5 }}>
-              {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
-                <Text key={index} style={{ marginBottom: 4, fontSize: 8, ...(block.style || {}) }}>
-                  {block.text}
-                </Text>
-              ))}
+          forSync ? (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={styles.termsBlock}>{block.text}</Text>
+                ))}
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={{ marginBottom: 4, fontSize: 8, ...(block.style || {}) }}>{block.text}</Text>
+                ))}
+              </View>
+            </View>
+          )
         ) : null}
 
         {/* Billing & Signature */}

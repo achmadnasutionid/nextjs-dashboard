@@ -132,6 +132,11 @@ const styles = StyleSheet.create({
     borderTop: "1 solid #ddd",
     paddingTop: 8,
   },
+  termsBlock: {
+    marginBottom: 4,
+    fontSize: 8,
+    lineHeight: 1.5,
+  },
 })
 
 interface InvoicePDFProps {
@@ -789,18 +794,27 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
           </View>
         )}
 
-        {/* Detailed Terms & Conditions (S&K) */}
+        {/* Detailed Terms & Conditions (S&K) - view and sync separate: view = original format, sync = StyleSheet only */}
         {data.termsAndConditions && (
-          <View style={{ marginBottom: 15 }}>
-            <Text style={styles.sectionTitle}>Detailed S&K:</Text>
-            <View style={{ fontSize: 8, lineHeight: 1.5 }}>
-              {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
-                <Text key={index} style={{ marginBottom: 4, fontSize: 8, ...block.style }}>
-                  {block.text}
-                </Text>
-              ))}
+          forSync ? (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={styles.termsBlock}>{block.text}</Text>
+                ))}
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
+                  <Text key={index} style={{ marginBottom: 4, fontSize: 8, ...block.style }}>{block.text}</Text>
+                ))}
+              </View>
+            </View>
+          )
         )}
 
         {/* Billing & Signature */}
