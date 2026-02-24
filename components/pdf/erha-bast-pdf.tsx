@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer"
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 
 // Create styles
 const styles = StyleSheet.create({
@@ -121,6 +121,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
   },
+  signatureImagePlaceholder: {
+    width: 80,
+    height: 40,
+    marginTop: 10,
+    marginBottom: 10,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
+  },
   signaturePlaceholder: {
     height: 50,
     marginTop: 10,
@@ -152,6 +160,12 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     maxHeight: 220,
     objectFit: "contain",
+  },
+  buktiImagePlaceholder: {
+    width: 400,
+    height: 220,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
   },
   buktiGrid: {
     flexDirection: "row",
@@ -278,7 +292,7 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
   }
 
   return (
-    <Document>
+    <Document pdfVersion="1.3">
       <Page size="A4" style={styles.page}>
         {/* Title */}
         <Text style={styles.title}>BERITA ACARA SERAH TERIMA PEKERJAAN (BAST)</Text>
@@ -384,10 +398,11 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
           {/* Right: Pihak Pertama (Service Provider) */}
           <View style={styles.footerRight}>
             <Text style={styles.footerLabel}>Pihak Pertama</Text>
-            {data.signatureImageData && (
-              <Image src={data.signatureImageData} style={styles.signatureImage} />
+            {data.signatureImageData ? (
+              <View style={styles.signatureImagePlaceholder} />
+            ) : (
+              <View style={styles.signaturePlaceholder} />
             )}
-            {!data.signatureImageData && <View style={styles.signaturePlaceholder} />}
             <Text style={styles.footerCompany}>{data.billingName || "CV CATA KARYA ABADI"}</Text>
             <Text style={styles.footerName}>{data.signatureName}</Text>
           </View>
@@ -397,7 +412,7 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
         <View style={styles.buktiSection} wrap={false}>
           <Text style={styles.buktiTitle}>Bukti Pekerjaan</Text>
           {data.finalWorkImageData ? (
-            <Image src={data.finalWorkImageData} style={styles.buktiImageSingle} />
+            <View style={styles.buktiImagePlaceholder} />
           ) : (
             <Text style={{ fontSize: 10, color: "#666" }}>No work evidence uploaded yet.</Text>
           )}

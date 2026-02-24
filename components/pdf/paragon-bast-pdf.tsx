@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer"
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 
 // Create styles
 const styles = StyleSheet.create({
@@ -58,6 +58,14 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 5,
   },
+  signatureImagePlaceholder: {
+    width: 80,
+    height: 40,
+    marginTop: 5,
+    marginBottom: 5,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
+  },
   footerName: {
     fontSize: 10,
     fontWeight: "bold",
@@ -88,6 +96,12 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     maxHeight: 220,
     objectFit: "contain",
+  },
+  buktiImagePlaceholder: {
+    width: 400,
+    height: 220,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
   },
 })
 
@@ -154,7 +168,7 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
   }
 
   return (
-    <Document>
+    <Document pdfVersion="1.3">
       <Page size="A4" style={styles.page}>
         {/* Title */}
         <Text style={styles.title}>BERITA ACARA SERAH TERIMA PEKERJAAN (BAST)</Text>
@@ -231,10 +245,7 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
             <Text style={styles.footerLabel}>Hormat Saya,</Text>
             <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{signBillTo}</Text>
             {data.signatureImageData ? (
-              <Image
-                src={data.signatureImageData}
-                style={styles.signatureImage}
-              />
+              <View style={styles.signatureImagePlaceholder} />
             ) : (
               <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />
             )}
@@ -255,12 +266,9 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
         {/* Bukti Pekerjaan - under signatures, same page so proof is part of signed document */}
         <View style={styles.buktiSection} wrap={false}>
           <Text style={styles.buktiTitle}>Bukti Pekerjaan</Text>
-          {data.finalWorkImageData && (
-            <Image
-              src={data.finalWorkImageData}
-              style={styles.buktiImage}
-            />
-          )}
+          {data.finalWorkImageData ? (
+            <View style={styles.buktiImagePlaceholder} />
+          ) : null}
         </View>
       </Page>
     </Document>

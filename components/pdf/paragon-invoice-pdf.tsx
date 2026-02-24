@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer"
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 
 // Create styles
 const styles = StyleSheet.create({
@@ -137,6 +137,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 40,
     marginBottom: 5,
+  },
+  signatureImagePlaceholder: {
+    width: 80,
+    height: 40,
+    marginBottom: 5,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
   },
   footerName: {
     fontSize: 10,
@@ -330,7 +337,7 @@ const parseHTMLToTextBlocks = (html: string) => {
   }
 
   return (
-    <Document>
+    <Document pdfVersion="1.3">
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
@@ -450,10 +457,7 @@ const parseHTMLToTextBlocks = (html: string) => {
           <View style={styles.footerRight}>
             <Text style={styles.footerLabel}>Best Regards,</Text>
             {data.signatureImageData ? (
-              <Image
-                src={data.signatureImageData}
-                style={styles.signatureImage}
-              />
+              <View style={styles.signatureImagePlaceholder} />
             ) : (
               <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />
             )}
