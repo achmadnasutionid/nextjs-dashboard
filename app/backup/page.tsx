@@ -407,17 +407,17 @@ export default function BackupPage() {
     <div className="flex h-screen flex-col bg-background text-foreground overflow-hidden">
       <PageHeader title="Backup" showBackButton backTo="/" />
 
-      <main className="flex-1 min-h-0 overflow-hidden px-3 pt-5 pb-2">
-        <div className="h-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 content-start max-w-7xl mx-auto">
+      <main className="flex-1 min-h-0 overflow-auto px-3 pt-5 pb-2">
+        <div className="flex flex-col gap-4 max-w-xl mx-auto">
           {/* Drive sync */}
-          <Card className="flex flex-col min-w-[260px] min-h-[200px]">
-            <CardHeader className="py-2 px-3">
+          <Card className="flex flex-col min-h-0">
+            <CardHeader className="py-3 px-4">
               <CardTitle className="flex items-center gap-1.5 text-sm">
                 <FolderSync className="h-4 w-4" />
                 Sync to Drive
               </CardTitle>
             </CardHeader>
-            <CardContent className="py-2 px-3 flex flex-col gap-2 flex-1 min-h-0">
+            <CardContent className="py-3 px-4 flex flex-col gap-2 flex-1 min-h-0">
               {driveStatus?.configured && driveStatus.rootFolderUrl && (
                 <a href={driveStatus.rootFolderUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                   <ExternalLink className="h-3 w-3" /> Open folder
@@ -462,14 +462,14 @@ export default function BackupPage() {
           </Card>
 
           {/* Save backup */}
-          <Card className="flex flex-col min-w-[260px] min-h-[200px]">
-            <CardHeader className="py-2 px-3">
+          <Card className="flex flex-col min-h-0">
+            <CardHeader className="py-3 px-4">
               <CardTitle className="flex items-center gap-1.5 text-sm">
                 <Save className="h-4 w-4" />
                 Save backup
               </CardTitle>
             </CardHeader>
-            <CardContent className="py-2 px-3 flex flex-col gap-2">
+            <CardContent className="py-3 px-4 flex flex-col gap-2">
               <p className="text-xs text-muted-foreground">Save to backup DB (latest 5 kept).</p>
               <Button onClick={handleSaveBackup} disabled={saving} size="sm" className="w-full">
                 {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save now"}
@@ -482,39 +482,42 @@ export default function BackupPage() {
           </Card>
 
           {/* Restore full DB */}
-          <Card className="flex flex-col min-w-[260px] min-h-[200px] border-destructive/50 dark:border-destructive/60">
-            <CardHeader className="py-2 px-3">
+          <Card className="flex flex-col min-h-0 border-destructive/50 dark:border-destructive/60">
+            <CardHeader className="py-3 px-4">
               <CardTitle className="flex items-center gap-1.5 text-sm text-destructive">
                 <Upload className="h-4 w-4" />
                 Restore (full DB)
               </CardTitle>
             </CardHeader>
-            <CardContent className="py-2 px-3 flex flex-col gap-2">
+            <CardContent className="py-3 px-4 flex flex-col gap-3">
               <p className="flex items-center gap-1.5 text-xs text-destructive">
                 <AlertTriangle className="h-3 w-3 shrink-0" /> Replaces all data.
               </p>
-              <Select value={selectedBackupId} onValueChange={setSelectedBackupId}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue placeholder="Saved backup…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {savedBackups.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>{formatBackupDate(b.createdAt)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-1.5">
-                <Input type="text" placeholder={requiredPhrase} value={restoreConfirm} onChange={(e) => setRestoreConfirm(e.target.value)} className="h-7 text-xs font-mono flex-1" />
-                <Button variant="destructive" size="sm" onClick={handleRestore} disabled={!canRestore || restoring} className="h-7 shrink-0">
-                  {restoring ? <Loader2 className="h-3 w-3 animate-spin" /> : "Restore"}
-                </Button>
+              <div className="space-y-2">
+                <Label className="text-xs">From saved backup</Label>
+                <Select value={selectedBackupId} onValueChange={setSelectedBackupId}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select a backup…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {savedBackups.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{formatBackupDate(b.createdAt)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Input type="text" placeholder={requiredPhrase} value={restoreConfirm} onChange={(e) => setRestoreConfirm(e.target.value)} className="h-8 text-xs font-mono flex-1" />
+                  <Button variant="destructive" size="sm" onClick={handleRestore} disabled={!canRestore || restoring} className="h-8 shrink-0">
+                    {restoring ? <Loader2 className="h-3 w-3 animate-spin" /> : "Restore"}
+                  </Button>
+                </div>
               </div>
-              <div className="border-t pt-2 mt-0.5 space-y-1.5">
+              <div className="border-t pt-3 space-y-2">
                 <Label className="text-xs">From file (full DB JSON)</Label>
-                <Input type="file" accept=".json,application/json" ref={fileInputRef} onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className="h-7 text-xs" />
-                <div className="flex gap-1.5">
-                  <Input type="text" placeholder={requiredPhrase} value={importConfirm} onChange={(e) => setImportConfirm(e.target.value)} className="h-7 text-xs font-mono flex-1" />
-                  <Button variant="outline" size="sm" onClick={handleImport} disabled={!canImport || importing} className="h-7 shrink-0 border-destructive/50 text-destructive hover:bg-destructive/10 text-xs">
+                <Input type="file" accept=".json,application/json" ref={fileInputRef} onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className="h-8 text-xs" />
+                <div className="flex gap-2">
+                  <Input type="text" placeholder={requiredPhrase} value={importConfirm} onChange={(e) => setImportConfirm(e.target.value)} className="h-8 text-xs font-mono flex-1" />
+                  <Button variant="outline" size="sm" onClick={handleImport} disabled={!canImport || importing} className="h-8 shrink-0 border-destructive/50 text-destructive hover:bg-destructive/10 text-xs">
                     {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Import"}
                   </Button>
                 </div>
@@ -523,14 +526,14 @@ export default function BackupPage() {
           </Card>
 
           {/* Restore single document */}
-          <Card className="flex flex-col min-w-[260px] min-h-[200px]">
-            <CardHeader className="py-2 px-3">
+          <Card className="flex flex-col min-h-0">
+            <CardHeader className="py-3 px-4">
               <CardTitle className="flex items-center gap-1.5 text-sm">
                 <FileJson className="h-4 w-4" />
                 Restore from file
               </CardTitle>
             </CardHeader>
-            <CardContent className="py-2 px-3 flex flex-col gap-2">
+            <CardContent className="py-3 px-4 flex flex-col gap-2">
               <p className="text-xs text-muted-foreground">Single-doc JSON (e.g. from Drive). Preview → PDF or create.</p>
               <Input type="file" accept=".json,application/json" ref={restoreFileInputRef} onChange={handleRestoreFileChange} className="h-7 text-xs" />
               {restoreFileError && <p className="text-xs text-destructive">{restoreFileError}</p>}
