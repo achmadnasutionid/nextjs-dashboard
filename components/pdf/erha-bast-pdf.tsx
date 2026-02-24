@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 
 // Create styles
 const styles = StyleSheet.create({
@@ -182,6 +182,8 @@ const styles = StyleSheet.create({
 })
 
 interface ErhaBASTPDFProps {
+  /** When true, omit signature and proof images for Drive sync to avoid react-pdf 'S' bug. */
+  forSync?: boolean
   data: {
     ticketId: string
     quotationId: string
@@ -227,7 +229,7 @@ interface ErhaBASTPDFProps {
   }
 }
 
-export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
+export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data, forSync = false }) => {
   const contactPerson = data.bastContactPerson ?? data.contactPerson
   const contactPosition = data.bastContactPosition ?? data.contactPosition
 
@@ -398,7 +400,9 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
           {/* Right: Pihak Pertama (Service Provider) */}
           <View style={styles.footerRight}>
             <Text style={styles.footerLabel}>Pihak Pertama</Text>
-            {data.signatureImageData ? (
+            {data.signatureImageData && !forSync ? (
+              <Image src={data.signatureImageData} style={styles.signatureImage} />
+            ) : data.signatureImageData && forSync ? (
               <View style={styles.signatureImagePlaceholder} />
             ) : (
               <View style={styles.signaturePlaceholder} />
@@ -411,7 +415,9 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data }) => {
         {/* Bukti Pekerjaan - under signatures, same page so proof is part of signed document */}
         <View style={styles.buktiSection} wrap={false}>
           <Text style={styles.buktiTitle}>Bukti Pekerjaan</Text>
-          {data.finalWorkImageData ? (
+          {data.finalWorkImageData && !forSync ? (
+            <Image src={data.finalWorkImageData} style={styles.buktiImage} />
+          ) : data.finalWorkImageData && forSync ? (
             <View style={styles.buktiImagePlaceholder} />
           ) : (
             <Text style={{ fontSize: 10, color: "#666" }}>No work evidence uploaded yet.</Text>

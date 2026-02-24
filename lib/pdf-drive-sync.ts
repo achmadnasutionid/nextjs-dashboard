@@ -15,8 +15,8 @@ import {
   sanitizeName,
   isDriveConfigured,
 } from "@/lib/google-drive"
-import { QuotationPDF, QuotationPDFMinimal } from "@/components/pdf/quotation-pdf"
-import { InvoicePDF, InvoicePDFMinimal } from "@/components/pdf/invoice-pdf"
+import { QuotationPDF } from "@/components/pdf/quotation-pdf"
+import { InvoicePDF } from "@/components/pdf/invoice-pdf"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
 import { ParagonBASTPDF } from "@/components/pdf/paragon-bast-pdf"
@@ -423,24 +423,9 @@ export async function runPdfDriveSync(): Promise<{
     for (const q of quotations) {
       try {
         const data = toQuotationPdfData(q)
-        let buffer: ArrayBuffer | Buffer
-        try {
-          buffer = await renderToBuffer(
-            React.createElement(QuotationPDF, { data }) as Parameters<typeof renderToBuffer>[0]
-          )
-        } catch {
-          // Fall back to minimal PDF (e.g. structure-tree 'S' bug in full PDF)
-          try {
-            buffer = await renderToBuffer(
-              React.createElement(QuotationPDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
-            )
-          } catch (minimalErr) {
-            skipped += 1
-            setFirstSkipReason(`Quotation ${q.quotationId} render (minimal)`, minimalErr)
-            console.error("[pdf-drive-sync] Quotation", q.quotationId, "minimal fallback failed:", minimalErr)
-            continue
-          }
-        }
+        const buffer = await renderToBuffer(
+          React.createElement(QuotationPDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
+        )
         const fileName = pdfFileName(q.quotationId, q.billTo)
         const uploadResult = await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.from(buffer))
         if (uploadResult.ok) uploaded += 1
@@ -457,23 +442,9 @@ export async function runPdfDriveSync(): Promise<{
     for (const inv of invoices) {
       try {
         const data = toInvoicePdfData(inv)
-        let buffer: ArrayBuffer | Buffer
-        try {
-          buffer = await renderToBuffer(
-            React.createElement(InvoicePDF, { data }) as Parameters<typeof renderToBuffer>[0]
-          )
-        } catch {
-          try {
-            buffer = await renderToBuffer(
-              React.createElement(InvoicePDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
-            )
-          } catch (minimalErr) {
-            skipped += 1
-            setFirstSkipReason(`Invoice ${inv.invoiceId} render (minimal)`, minimalErr)
-            console.error("[pdf-drive-sync] Invoice", inv.invoiceId, "minimal fallback failed:", minimalErr)
-            continue
-          }
-        }
+        const buffer = await renderToBuffer(
+          React.createElement(InvoicePDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
+        )
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
         const uploadResult = await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.from(buffer))
         if (uploadResult.ok) uploaded += 1
@@ -493,9 +464,9 @@ export async function runPdfDriveSync(): Promise<{
       const projectFolderId = await getOrCreateFolder(paragonFolderId, folderName)
       if (!projectFolderId) continue
       const data = toParagonPdfData(t)
-      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ParagonBASTPDF, { data })]]
-      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data })])
-      if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data })])
+      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ParagonBASTPDF, { data, forSync: true })]]
+      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data, forSync: true })])
+      if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data, forSync: true })])
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
@@ -520,9 +491,9 @@ export async function runPdfDriveSync(): Promise<{
       const projectFolderId = await getOrCreateFolder(erhaFolderId, folderName)
       if (!projectFolderId) continue
       const data = toErhaPdfData(t)
-      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ErhaBASTPDF, { data })]]
-      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ErhaQuotationPDF, { data })])
-      if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ErhaInvoicePDF, { data })])
+      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ErhaBASTPDF, { data, forSync: true })]]
+      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ErhaQuotationPDF, { data, forSync: true })])
+      if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ErhaInvoicePDF, { data, forSync: true })])
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])

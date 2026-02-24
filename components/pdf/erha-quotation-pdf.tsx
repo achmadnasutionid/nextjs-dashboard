@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 
 // Create styles
 const styles = StyleSheet.create({
@@ -195,6 +195,8 @@ const styles = StyleSheet.create({
 })
 
 interface ErhaQuotationPDFProps {
+  /** When true, omit signature image for Drive sync to avoid react-pdf 'S' bug. */
+  forSync?: boolean
   data: {
     ticketId: string
     quotationId: string
@@ -240,7 +242,7 @@ interface ErhaQuotationPDFProps {
   }
 }
 
-export const ErhaQuotationPDF: React.FC<ErhaQuotationPDFProps> = ({ data }) => {
+export const ErhaQuotationPDF: React.FC<ErhaQuotationPDFProps> = ({ data, forSync = false }) => {
   const formatCurrency = (amount: number) => {
     return `Rp${new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
@@ -550,7 +552,9 @@ export const ErhaQuotationPDF: React.FC<ErhaQuotationPDFProps> = ({ data }) => {
           {/* Right: Company Signature */}
           <View style={styles.footerRight}>
             <Text style={{ fontSize: 10, marginBottom: 5 }}>Best Regards,</Text>
-            {data.signatureImageData ? (
+            {data.signatureImageData && !forSync ? (
+              <Image src={data.signatureImageData} style={styles.signatureImage} />
+            ) : data.signatureImageData && forSync ? (
               <View style={styles.signatureImagePlaceholder} />
             ) : (
               <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />

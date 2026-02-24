@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 
 const styles = StyleSheet.create({
@@ -136,6 +136,8 @@ const styles = StyleSheet.create({
 })
 
 interface QuotationPDFProps {
+  /** When true, omit signature/proof images to avoid react-pdf 'S' bug; use only for Drive sync. */
+  forSync?: boolean
   data: {
     quotationId: string
     companyName: string
@@ -311,7 +313,7 @@ const parseHTMLToTextBlocks = (html: string) => {
   return blocks
 }
 
-export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
+export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = false }) => {
   // Ensure items is an array with valid structure
   const safeItems = (data.items || []).map(item => ({
     ...item,
@@ -401,7 +403,11 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                   {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                 </Text>
-                <View style={styles.signatureImagePlaceholder} />
+                {forSync ? (
+                  <View style={styles.signatureImagePlaceholder} />
+                ) : (
+                  <Image src={sig.imageData} style={styles.signatureImage} />
+                )}
               </View>
             ) : (
               <View>
@@ -442,6 +448,12 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
       marginBottom: 10
     }
 
+    const renderSigImage = (sig: { imageData: string }, isMainWithData: boolean) => {
+      if (!isMainWithData) return <View style={{ height: 60 }} />
+      if (forSync) return <View style={styles.signatureImagePlaceholder} />
+      return <Image src={sig.imageData} style={styles.signatureImage} />
+    }
+
     if (sigCount === 2) {
       // Side by side
       return (
@@ -457,7 +469,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <View style={styles.signatureImagePlaceholder} />
+                  {renderSigImage(sig, true)}
                 </View>
               ) : (
                 <View>
@@ -498,7 +510,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <View style={styles.signatureImagePlaceholder} />
+                    {renderSigImage(sig, true)}
                   </View>
                 ) : (
                   <View>
@@ -541,7 +553,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <View style={styles.signatureImagePlaceholder} />
+                    {renderSigImage(sig, true)}
                   </View>
                 ) : (
                   <View>
@@ -605,7 +617,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <View style={styles.signatureImagePlaceholder} />
+                  {renderSigImage(sig, true)}
                 </View>
               ) : (
                 <View>

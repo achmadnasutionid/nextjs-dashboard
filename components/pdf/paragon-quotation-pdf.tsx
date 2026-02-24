@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 
 // Create styles
 const styles = StyleSheet.create({
@@ -161,6 +161,8 @@ const styles = StyleSheet.create({
 })
 
 interface ParagonQuotationPDFProps {
+  /** When true, omit signature image for Drive sync to avoid react-pdf 'S' bug. */
+  forSync?: boolean
   data: {
     ticketId: string
     quotationId: string // Real quotation ID from main database
@@ -201,7 +203,7 @@ interface ParagonQuotationPDFProps {
   }
 }
 
-export const ParagonQuotationPDF: React.FC<ParagonQuotationPDFProps> = ({ data }) => {
+export const ParagonQuotationPDF: React.FC<ParagonQuotationPDFProps> = ({ data, forSync = false }) => {
   // Sign section: use only bill to (company/client), not project name
   const signBillTo =
     data.projectName && data.billTo.endsWith(" - " + data.projectName)
@@ -481,7 +483,9 @@ const parseHTMLToTextBlocks = (html: string) => {
           <View style={styles.footerRight}>
             <Text style={{ fontSize: 10, marginBottom: 5 }}>Best Regards,</Text>
             <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{signBillTo}</Text>
-            {data.signatureImageData ? (
+            {data.signatureImageData && !forSync ? (
+              <Image src={data.signatureImageData} style={styles.signatureImage} />
+            ) : data.signatureImageData && forSync ? (
               <View style={styles.signatureImagePlaceholder} />
             ) : (
               <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />

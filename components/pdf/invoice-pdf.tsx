@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 
 const styles = StyleSheet.create({
@@ -135,6 +135,8 @@ const styles = StyleSheet.create({
 })
 
 interface InvoicePDFProps {
+  /** When true, omit signature/proof images to avoid react-pdf 'S' bug; use only for Drive sync. */
+  forSync?: boolean
   data: {
     invoiceId: string
     companyName: string
@@ -310,7 +312,7 @@ const parseHTMLToTextBlocks = (html: string) => {
   return blocks
 }
 
-export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
+export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false }) => {
   // Ensure items is an array with valid structure
   const safeItems = (data.items || []).map(item => ({
     ...item,
@@ -392,18 +394,22 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
       return (
         <View style={[styles.gridCol, { paddingRight: 0, alignItems: "center", justifyContent: "center" }]}>
           <View style={{ alignItems: "center", width: "100%" }}>
-            {sig.imageData ? (
-              <>
+            {sig.imageData && String(sig.imageData).trim() ? (
+              <View>
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                   {data.companyCity}, {data.companyProvince}
                 </Text>
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                   {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                 </Text>
-                <View style={styles.signatureImagePlaceholder} />
-              </>
+                {forSync ? (
+                  <View style={styles.signatureImagePlaceholder} />
+                ) : (
+                  <Image src={sig.imageData} style={styles.signatureImage} />
+                )}
+              </View>
             ) : (
-              <>
+              <View>
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                   __________,__________
                 </Text>
@@ -411,16 +417,16 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                   ___/___/_______
                 </Text>
                 <View style={{ height: 60 }} />
-              </>
+              </View>
             )}
             <Text style={{ fontSize: 8, marginTop: 4, textAlign: "center" }}>
               {sig.name}
             </Text>
-            {sig.position && (
+            {sig.position ? (
               <Text style={{ fontSize: 7, marginTop: 2, textAlign: "center", color: "#666" }}>
                 {sig.position}
               </Text>
-            )}
+            ) : null}
           </View>
         </View>
       )
@@ -428,6 +434,12 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
 
     // Multiple signatures: below billing, arranged based on count
     return null // Will be rendered separately below
+  }
+
+  const renderSigImage = (sig: { imageData: string }, isMainWithData: boolean) => {
+    if (!isMainWithData) return <View style={{ height: 60 }} />
+    if (forSync) return <View style={styles.signatureImagePlaceholder} />
+    return <Image src={sig.imageData} style={styles.signatureImage} />
   }
 
   const renderMultipleSignatures = () => {
@@ -448,18 +460,18 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
           {allSignatures.map((sig, idx) => (
             <View key={idx} style={signatureBoxStyle}>
               {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-              {sig.imageData && idx === 0 ? (
-                <>
+              {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
+                <View>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                     {data.companyCity}, {data.companyProvince}
                   </Text>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <View style={styles.signatureImagePlaceholder} />
-                </>
+                  {renderSigImage(sig, true)}
+                </View>
               ) : (
-                <>
+                <View>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                     __________,__________
                   </Text>
@@ -467,7 +479,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                     ___/___/_______
                   </Text>
                   <View style={{ height: 60 }} />
-                </>
+                </View>
               )}
               <Text style={{ fontSize: 8, marginTop: 4, textAlign: "center" }}>
                 {sig.name}
@@ -489,18 +501,18 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
             {allSignatures.map((sig, idx) => (
               <View key={idx} style={signatureBoxStyle}>
                 {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-                {sig.imageData && idx === 0 ? (
-                  <>
+                {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
+                  <View>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                       {data.companyCity}, {data.companyProvince}
                     </Text>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <View style={styles.signatureImagePlaceholder} />
-                  </>
+                    {renderSigImage(sig, true)}
+                  </View>
                 ) : (
-                  <>
+                  <View>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                       __________,__________
                     </Text>
@@ -508,16 +520,16 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                       ___/___/_______
                     </Text>
                     <View style={{ height: 60 }} />
-                  </>
+                  </View>
                 )}
                 <Text style={{ fontSize: 8, marginTop: 4, textAlign: "center" }}>
                   {sig.name}
                 </Text>
-                {sig.position && (
+                {sig.position ? (
                   <Text style={{ fontSize: 7, marginTop: 2, textAlign: "center", color: "#666" }}>
                     {sig.position}
                   </Text>
-                )}
+                ) : null}
               </View>
             ))}
           </View>
@@ -532,18 +544,18 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
             {allSignatures.slice(0, 2).map((sig, idx) => (
               <View key={idx} style={signatureBoxStyle}>
                 {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-                {sig.imageData && idx === 0 ? (
-                  <>
+                {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
+                  <View>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                       {data.companyCity}, {data.companyProvince}
                     </Text>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <View style={styles.signatureImagePlaceholder} />
-                  </>
+                    {renderSigImage(sig, true)}
+                  </View>
                 ) : (
-                  <>
+                  <View>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                       __________,__________
                     </Text>
@@ -551,16 +563,16 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                       ___/___/_______
                     </Text>
                     <View style={{ height: 60 }} />
-                  </>
+                  </View>
                 )}
                 <Text style={{ fontSize: 8, marginTop: 4, textAlign: "center" }}>
                   {sig.name}
                 </Text>
-                {sig.position && (
+                {sig.position ? (
                   <Text style={{ fontSize: 7, marginTop: 2, textAlign: "center", color: "#666" }}>
                     {sig.position}
                   </Text>
-                )}
+                ) : null}
               </View>
             ))}
           </View>
@@ -596,18 +608,18 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
           {allSignatures.map((sig, idx) => (
             <View key={idx} style={{ ...signatureBoxStyle, width: "30%", marginBottom: 15 }}>
               {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-              {sig.imageData && idx === 0 ? (
-                <>
+              {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
+                <View>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                     {data.companyCity}, {data.companyProvince}
                   </Text>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <View style={styles.signatureImagePlaceholder} />
-                </>
+                  {renderSigImage(sig, true)}
+                </View>
               ) : (
-                <>
+                <View>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                     __________,__________
                   </Text>
@@ -615,16 +627,16 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data }) => {
                     ___/___/_______
                   </Text>
                   <View style={{ height: 60 }} />
-                </>
+                </View>
               )}
               <Text style={{ fontSize: 8, marginTop: 4, textAlign: "center" }}>
                 {sig.name}
               </Text>
-              {sig.position && (
+              {sig.position ? (
                 <Text style={{ fontSize: 7, marginTop: 2, textAlign: "center", color: "#666" }}>
                   {sig.position}
                 </Text>
-              )}
+              ) : null}
             </View>
           ))}
         </View>

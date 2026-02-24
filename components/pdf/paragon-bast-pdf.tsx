@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 
 // Create styles
 const styles = StyleSheet.create({
@@ -106,6 +106,8 @@ const styles = StyleSheet.create({
 })
 
 interface ParagonBASTPDFProps {
+  /** When true, omit signature and proof images for Drive sync to avoid react-pdf 'S' bug. */
+  forSync?: boolean
   data: {
     ticketId: string
     quotationId: string
@@ -149,7 +151,7 @@ interface ParagonBASTPDFProps {
   }
 }
 
-export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
+export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data, forSync = false }) => {
   const contactPerson = data.bastContactPerson ?? data.contactPerson
   const contactPosition = data.bastContactPosition ?? data.contactPosition
 
@@ -244,7 +246,9 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
           <View style={styles.footerLeft}>
             <Text style={styles.footerLabel}>Hormat Saya,</Text>
             <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{signBillTo}</Text>
-            {data.signatureImageData ? (
+            {data.signatureImageData && !forSync ? (
+              <Image src={data.signatureImageData} style={styles.signatureImage} />
+            ) : data.signatureImageData && forSync ? (
               <View style={styles.signatureImagePlaceholder} />
             ) : (
               <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />
@@ -266,7 +270,9 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data }) => {
         {/* Bukti Pekerjaan - under signatures, same page so proof is part of signed document */}
         <View style={styles.buktiSection} wrap={false}>
           <Text style={styles.buktiTitle}>Bukti Pekerjaan</Text>
-          {data.finalWorkImageData ? (
+          {data.finalWorkImageData && !forSync ? (
+            <Image src={data.finalWorkImageData} style={styles.buktiImage} />
+          ) : data.finalWorkImageData && forSync ? (
             <View style={styles.buktiImagePlaceholder} />
           ) : null}
         </View>
