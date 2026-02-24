@@ -341,6 +341,13 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
     return { ok: false, error: "Google Drive not configured" }
   }
 
+  let firstError: string | null = null
+  function captureError(e: unknown, context: string) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error("[pdf-drive-sync]", context, e)
+    if (!firstError) firstError = `${context}: ${msg}`
+  }
+
   try {
     const quotationsFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Quotations")
     const invoicesFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Invoices")
@@ -370,7 +377,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
         const fileName = pdfFileName(q.quotationId, q.billTo)
         await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.from(buffer))
       } catch (e) {
-        console.error("[pdf-drive-sync] Quotation", q.quotationId, e)
+        captureError(e, `Quotation ${q.quotationId}`)
       }
     }
 
@@ -388,7 +395,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
         await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.from(buffer))
       } catch (e) {
-        console.error("[pdf-drive-sync] Invoice", inv.invoiceId, e)
+        captureError(e, `Invoice ${inv.invoiceId}`)
       }
     }
 
@@ -413,7 +420,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
         } catch (e) {
-          console.error("[pdf-drive-sync] Paragon", t.ticketId, fileName, e)
+          captureError(e, `Paragon ${t.ticketId} ${fileName}`)
         }
       }
     }
@@ -439,11 +446,12 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
         } catch (e) {
-          console.error("[pdf-drive-sync] Erha", t.ticketId, fileName, e)
+          captureError(e, `Erha ${t.ticketId} ${fileName}`)
         }
       }
     }
 
+    if (firstError) return { ok: false, error: firstError }
     return { ok: true }
   } catch (e) {
     console.error("[pdf-drive-sync] Failed:", e)

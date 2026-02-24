@@ -19,6 +19,9 @@ const MIME_PDF = "application/pdf"
 /** Drive API scope for full access to files/folders (e.g. shared folder). */
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive"
 
+/** Required when root folder is on a shared drive (Team Drive). */
+const SHARED_DRIVE_PARAMS = { supportsAllDrives: true }
+
 function bufferToStream(buf: Buffer): Readable {
   return Readable.from(buf)
 }
@@ -88,6 +91,7 @@ export async function getOrCreateFolder(
   const keyParams = getApiKeyParams()
   const res = await d.files.list({
     ...keyParams,
+    ...SHARED_DRIVE_PARAMS,
     q: `'${parentId}' in parents and name = '${safeName.replace(/'/g, "''")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: "files(id)",
     pageSize: 1,
@@ -96,6 +100,7 @@ export async function getOrCreateFolder(
   if (existing?.id) return existing.id
   const create = await d.files.create({
     ...keyParams,
+    ...SHARED_DRIVE_PARAMS,
     requestBody: {
       name: safeName,
       mimeType: "application/vnd.google-apps.folder",
@@ -125,6 +130,7 @@ export async function uploadOrUpdateFile(
   const keyParams = getApiKeyParams()
   const res = await d.files.list({
     ...keyParams,
+    ...SHARED_DRIVE_PARAMS,
     q: `'${parentId}' in parents and name = '${safeName.replace(/'/g, "''")}' and trashed = false`,
     fields: "files(id)",
     pageSize: 1,
@@ -133,6 +139,7 @@ export async function uploadOrUpdateFile(
   if (existing?.id) {
     await d.files.update({
       ...keyParams,
+      ...SHARED_DRIVE_PARAMS,
       fileId: existing.id,
       media: { mimeType: MIME_PDF, body: bufferToStream(buffer) },
     })
@@ -140,6 +147,7 @@ export async function uploadOrUpdateFile(
   }
   await d.files.create({
     ...keyParams,
+    ...SHARED_DRIVE_PARAMS,
     requestBody: {
       name: safeName,
       mimeType: MIME_PDF,
