@@ -1,5 +1,5 @@
 import React from "react"
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer"
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 
 const styles = StyleSheet.create({
@@ -114,6 +114,13 @@ const styles = StyleSheet.create({
     maxWidth: 150,
     height: 60,
     objectFit: "contain",
+  },
+  /** Placeholder when Image is skipped to avoid react-pdf structure-tree bug (reading 'S'). */
+  signatureImagePlaceholder: {
+    width: 150,
+    height: 60,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
   },
   footer: {
     position: "absolute",
@@ -394,7 +401,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                   {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                 </Text>
-                <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
+                <View style={styles.signatureImagePlaceholder} />
               </View>
             ) : (
               <View>
@@ -450,7 +457,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
+                  <View style={styles.signatureImagePlaceholder} />
                 </View>
               ) : (
                 <View>
@@ -491,7 +498,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
+                    <View style={styles.signatureImagePlaceholder} />
                   </View>
                 ) : (
                   <View>
@@ -534,7 +541,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
+                    <View style={styles.signatureImagePlaceholder} />
                   </View>
                 ) : (
                   <View>
@@ -598,7 +605,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
+                  <View style={styles.signatureImagePlaceholder} />
                 </View>
               ) : (
                 <View>
