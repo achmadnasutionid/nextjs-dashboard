@@ -742,7 +742,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     </Text>
                   )}
                 </View>
-                <Text style={item.id === 'pph' ? { color: "green" } : {}}>
+                <Text style={item.id === 'pph' ? { color: "green" } : { color: "#000" }}>
                   {item.id === 'pph' && "+ "}{formatCurrency(item.value)}
                 </Text>
               </View>
@@ -777,7 +777,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
             <Text style={styles.sectionTitle}>Detailed S&K:</Text>
             <View style={{ fontSize: 8, lineHeight: 1.5 }}>
               {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
-                <Text key={index} style={{ marginBottom: 4, fontSize: 8, ...block.style }}>
+                <Text key={index} style={{ marginBottom: 4, fontSize: 8, ...(block.style || {}) }}>
                   {block.text}
                 </Text>
               ))}
@@ -786,7 +786,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
         )}
 
         {/* Billing & Signature */}
-        <View style={allSignatures.length === 1 ? styles.grid : {}} wrap={false}>
+        <View style={allSignatures.length === 1 ? styles.grid : { width: "100%" }} wrap={false}>
           <View style={allSignatures.length === 1 ? styles.gridCol : { width: "100%" }}>
             <Text style={styles.sectionTitle}>Billing Information</Text>
             <View style={styles.row}>
