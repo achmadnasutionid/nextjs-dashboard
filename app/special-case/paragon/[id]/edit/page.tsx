@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { CurrencyInput } from "@/components/ui/currency-input"
-import { Save, CheckCircle, Plus, Trash2, GripVertical, Percent } from "lucide-react"
+import { Save, Plus, Trash2, GripVertical, Percent } from "lucide-react"
 import { SortableItems } from "@/components/ui/sortable-items"
 import { useRouter, useParams } from "next/navigation"
 import { toast } from "sonner"
@@ -847,7 +847,12 @@ export default function EditParagonTicketPage() {
               : "Ticket saved as draft successfully!"
         toast.success(msg)
         setHasUnsavedChanges(false)
-        router.push("/special-case/paragon")
+        // Redirect to view if pending or final (like quotation/invoice), so user can review and finalize from view
+        if (status === "pending" || status === "final") {
+          router.push(`/special-case/paragon/${ticketId}/view`)
+        } else {
+          router.push("/special-case/paragon")
+        }
       } else {
         let description = "An error occurred"
         try {
@@ -1424,7 +1429,7 @@ export default function EditParagonTicketPage() {
                   Delete
                 </Button>
 
-                {/* Save Buttons: when final, only Save changes (status stays final). Otherwise Draft, Pending, Finalize. */}
+                {/* Save Buttons: when final, only Save changes (status stays final). Otherwise Draft and Pending only; finalize is on list/view. */}
                 <div className="flex flex-wrap gap-3">
                   {currentStatus === "final" ? (
                     <Button
@@ -1456,16 +1461,6 @@ export default function EditParagonTicketPage() {
                         <Save className="mr-2 h-4 w-4" />
                         Save as Pending
                       </Button>
-                      {currentStatus === "pending" && (
-                        <Button
-                          type="button"
-                          onClick={() => handleSubmit("final")}
-                          disabled={saving}
-                        >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Finalize Ticket
-                        </Button>
-                      )}
                     </>
                   )}
                 </div>
