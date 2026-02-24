@@ -15,6 +15,7 @@ import { Readable } from "stream"
 import { google, drive_v3 } from "googleapis"
 
 const MIME_PDF = "application/pdf"
+const MIME_JSON = "application/json"
 
 /** Drive API scope for full access to files/folders (e.g. shared folder). */
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive"
@@ -161,6 +162,60 @@ export async function uploadOrUpdateFile(
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e)
     console.error("[google-drive] uploadOrUpdateFile failed:", fileName, e)
+    return { ok: false, error: errMsg }
+  }
+}
+
+/**
+ * Upload or update a JSON file in the given folder. Same name = replace content.
+ * parentId: folder ID. fileName: e.g. "QTN-2026-1820.json". jsonString: serialized JSON (includes images as base64 if needed).
+ */
+export async function uploadOrUpdateJsonFile(
+  parentId: string,
+  fileName: string,
+  jsonString: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const d = getDrive()
+  if (!d) return { ok: false, error: "Google Drive client not initialized" }
+  const safeName = sanitizeName(fileName)
+  if (!safeName.endsWith(".json")) {
+    console.warn("[google-drive] File name should end with .json:", fileName)
+  }
+  const buffer = Buffer.from(jsonString, "utf-8")
+  const keyParams = getApiKeyParams()
+  try {
+    const res = await d.files.list({
+      ...keyParams,
+      ...SHARED_DRIVE_PARAMS,
+      q: `'${parentId}' in parents and name = '${safeName.replace(/'/g, "''")}' and trashed = false`,
+      fields: "files(id)",
+      pageSize: 1,
+    })
+    const existing = res.data.files?.[0]
+    if (existing?.id) {
+      await d.files.update({
+        ...keyParams,
+        ...SHARED_DRIVE_PARAMS,
+        fileId: existing.id,
+        media: { mimeType: MIME_JSON, body: bufferToStream(buffer) },
+      })
+      return { ok: true }
+    }
+    await d.files.create({
+      ...keyParams,
+      ...SHARED_DRIVE_PARAMS,
+      requestBody: {
+        name: safeName,
+        mimeType: MIME_JSON,
+        parents: [parentId],
+      },
+      media: { mimeType: MIME_JSON, body: bufferToStream(buffer) },
+      fields: "id",
+    })
+    return { ok: true }
+  } catch (e) {
+    const errMsg = e instanceof Error ? e.message : String(e)
+    console.error("[google-drive] uploadOrUpdateJsonFile failed:", fileName, e)
     return { ok: false, error: errMsg }
   }
 }

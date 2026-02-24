@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { runPdfDriveSync } from "@/lib/pdf-drive-sync"
+import { runJsonDriveSync } from "@/lib/backup-json-drive-sync"
 import { getBackupSyncStatus } from "@/lib/backup-sync-status"
 
 /**
- * POST /api/backup/sync-pdf-drive – start PDF → Google Drive sync (async).
- * Returns 202 immediately; sync runs in background. Poll GET /api/backup/sync-status for progress.
- * Stops after 3 failures to avoid burdening the service.
+ * POST /api/backup/sync-pdf-drive – start JSON backup → Google Drive (async).
+ * Uploads one JSON file per quotation/invoice/ticket (no PDF rendering). Returns 202 immediately.
+ * Poll GET /api/backup/sync-status for progress. Stops after 3 failures.
  */
 export async function POST() {
   try {
@@ -17,16 +17,16 @@ export async function POST() {
       )
     }
 
-    runPdfDriveSync()
+    runJsonDriveSync()
       .then((result) => {
         if (result.ok) {
-          console.log("[sync-pdf-drive] Completed. uploaded:", result.uploaded, "skipped:", result.skipped)
+          console.log("[sync-drive] JSON backup completed. uploaded:", result.uploaded, "skipped:", result.skipped)
         } else {
-          console.error("[sync-pdf-drive] Finished with error:", result.error)
+          console.error("[sync-drive] JSON backup finished with error:", result.error)
         }
       })
       .catch((e) => {
-        console.error("[sync-pdf-drive] Failed:", e)
+        console.error("[sync-drive] JSON backup failed:", e)
       })
 
     return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST() {
       { status: 202 }
     )
   } catch (e) {
-    console.error("PDF Drive sync start failed:", e)
+    console.error("Backup sync start failed:", e)
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "Sync failed" },
       { status: 500 }

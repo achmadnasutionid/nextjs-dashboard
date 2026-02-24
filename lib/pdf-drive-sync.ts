@@ -34,7 +34,7 @@ import { ErhaBASTPDF } from "@/components/pdf/erha-bast-pdf"
 
 const ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID!
 
-function toQuotationPdfData(q: {
+export function toQuotationPdfData(q: {
   quotationId: string
   companyName: string
   companyAddress: string
@@ -109,7 +109,7 @@ function toQuotationPdfData(q: {
   }
 }
 
-function toInvoicePdfData(inv: {
+export function toInvoicePdfData(inv: {
   invoiceId: string
   companyName: string
   companyAddress: string
@@ -184,7 +184,7 @@ function toInvoicePdfData(inv: {
   }
 }
 
-function toParagonPdfData(t: {
+export function toParagonPdfData(t: {
   ticketId: string
   quotationId: string
   invoiceId: string
@@ -259,7 +259,7 @@ function toParagonPdfData(t: {
   }
 }
 
-function toErhaPdfData(t: {
+export function toErhaPdfData(t: {
   ticketId: string
   quotationId: string
   invoiceId: string

@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Save, Download, Upload, AlertTriangle, Loader2, FolderSync, ExternalLink } from "lucide-react"
+import { Save, Download, Upload, AlertTriangle, Loader2, FolderSync, ExternalLink, FileJson, FileDown, PlusCircle } from "lucide-react"
 import { toast } from "sonner"
 import {
   Select,
@@ -48,6 +48,19 @@ export default function BackupPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [lastSyncError, setLastSyncError] = useState<string | null>(null)
   const [lastSkipReason, setLastSkipReason] = useState<string | null>(null)
+  // Restore from backup file (single document JSON from Drive)
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [restorePreview, setRestorePreview] = useState<{
+    type: "quotation" | "invoice"
+    id: string
+    billTo: string
+    totalAmount: number
+    data: unknown
+  } | null>(null)
+  const [restoreFileError, setRestoreFileError] = useState<string | null>(null)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [creatingDoc, setCreatingDoc] = useState(false)
+  const restoreFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch("/api/backup/import-phrase")
@@ -285,6 +298,103 @@ export default function BackupPage() {
     }
   }
 
+  const handleRestoreFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    setRestoreFile(file)
+    setRestorePreview(null)
+    setRestoreFileError(null)
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const text = reader.result as string
+        const data = JSON.parse(text) as Record<string, unknown>
+        if (data.quotationId && typeof data.quotationId === "string") {
+          setRestorePreview({
+            type: "quotation",
+            id: data.quotationId,
+            billTo: typeof data.billTo === "string" ? data.billTo : "",
+            totalAmount: typeof data.totalAmount === "number" ? data.totalAmount : 0,
+            data,
+          })
+          return
+        }
+        if (data.invoiceId && typeof data.invoiceId === "string") {
+          setRestorePreview({
+            type: "invoice",
+            id: data.invoiceId,
+            billTo: typeof data.billTo === "string" ? data.billTo : "",
+            totalAmount: typeof data.totalAmount === "number" ? data.totalAmount : 0,
+            data,
+          })
+          return
+        }
+        setRestoreFileError("Unknown backup format. Expected quotation or invoice JSON (quotationId or invoiceId).")
+      } catch {
+        setRestoreFileError("Invalid JSON file.")
+      }
+    }
+    reader.readAsText(file, "utf-8")
+  }
+
+  const handleDownloadRestorePdf = async () => {
+    if (!restorePreview) return
+    setDownloadingPdf(true)
+    try {
+      const res = await fetch("/api/backup/render-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: restorePreview.type, data: restorePreview.data }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "PDF generation failed")
+      }
+      const blob = await res.blob()
+      const name = res.headers.get("Content-Disposition")?.match(/filename="?([^";]+)"?/)?.[1] ?? `${restorePreview.id}.pdf`
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = name
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success("PDF downloaded")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Download failed")
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
+  const handleCreateFromRestore = async () => {
+    if (!restorePreview) return
+    setCreatingDoc(true)
+    try {
+      const url = restorePreview.type === "quotation" ? "/api/backup/restore-quotation" : "/api/backup/restore-invoice"
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(restorePreview.data),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (res.status === 409) {
+        toast.error(body.error ?? "This document already exists. Cannot overwrite.")
+        return
+      }
+      if (!res.ok) throw new Error(body.error || "Create failed")
+      const label = restorePreview.type === "quotation" ? "Quotation" : "Invoice"
+      toast.success(`${label} created.`)
+      setRestorePreview(null)
+      setRestoreFile(null)
+      setRestoreFileError(null)
+      if (restoreFileInputRef.current) restoreFileInputRef.current.value = ""
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Create failed")
+    } finally {
+      setCreatingDoc(false)
+    }
+  }
+
   const formatBackupDate = (createdAt: string) => {
     try {
       return new Date(createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
@@ -299,7 +409,7 @@ export default function BackupPage() {
 
       <main className="flex flex-1 flex-col overflow-hidden bg-background">
         <div className="flex flex-1 items-center justify-center p-4">
-          <div className="grid w-full max-w-6xl grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid w-full max-w-6xl grid-cols-1 gap-6 md:grid-cols-2">
             {/* PDF to Google Drive */}
             <Card className="flex flex-col bg-card text-card-foreground">
               <CardHeader>
@@ -310,7 +420,7 @@ export default function BackupPage() {
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-4">
                 <p className="text-sm text-muted-foreground">
-                  Upload generated PDFs (Quotations, Invoices, Paragon, Erha) to Google Drive. Same document = replace existing file. Run manually when you want to backup PDFs.
+                  Upload backup JSON files (Quotations, Invoices, Paragon, Erha) to Google Drive. One file per document. Same document = replace existing file. Use &quot;Restore from backup file&quot; to preview or recreate from a downloaded JSON.
                 </p>
                 {driveStatus?.configured && driveStatus.rootFolderUrl && (
                   <a
@@ -334,7 +444,7 @@ export default function BackupPage() {
                   ) : (
                     <FolderSync className="h-4 w-4 mr-2" />
                   )}
-                  {syncingPdf ? "Syncing…" : "Sync PDFs to Drive now"}
+                  {syncingPdf ? "Syncing…" : "Sync backup to Drive now"}
                 </Button>
                 {syncingPdf && syncProgress?.status === "running" && (
                   <div className="rounded-md border bg-muted/50 p-3 text-sm space-y-1">
@@ -498,6 +608,65 @@ export default function BackupPage() {
                   >
                     {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Restore from file"}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Restore from backup file (single document, e.g. from Drive) */}
+            <Card className="flex flex-col bg-card text-card-foreground">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileJson className="h-5 w-5" />
+                  Restore from backup file
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Upload a single-document backup JSON (e.g. downloaded from Google Drive: <code className="text-xs bg-muted px-1 rounded">QTN-2026-1820.json</code>, <code className="text-xs bg-muted px-1 rounded">INV-2026-xxx.json</code>). Preview, download PDF, or create as new Quotation/Invoice. If the document ID already exists, create will fail to avoid overwriting.
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept=".json,application/json"
+                    ref={restoreFileInputRef}
+                    onChange={handleRestoreFileChange}
+                  />
+                  {restoreFileError && (
+                    <p className="text-sm text-destructive">{restoreFileError}</p>
+                  )}
+                  {restorePreview && (
+                    <div className="rounded-md border bg-muted/50 p-3 text-sm space-y-3">
+                      <p className="font-medium">Preview</p>
+                      <ul className="text-muted-foreground space-y-1">
+                        <li>Type: {restorePreview.type === "quotation" ? "Quotation" : "Invoice"}</li>
+                        <li>ID: {restorePreview.id}</li>
+                        <li>Bill to: {restorePreview.billTo || "—"}</li>
+                        <li>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(restorePreview.totalAmount)}</li>
+                      </ul>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDownloadRestorePdf}
+                          disabled={downloadingPdf}
+                        >
+                          {downloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
+                          Download PDF
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          onClick={handleCreateFromRestore}
+                          disabled={creatingDoc}
+                        >
+                          {creatingDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 mr-2" />}
+                          Create as new {restorePreview.type === "quotation" ? "Quotation" : "Invoice"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
