@@ -857,14 +857,21 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
   )
 }
 
-/** Minimal quotation PDF: Document > Page > Text only. Used when full render throws (e.g. structure-tree 'S' bug). */
+/** StyleSheet-only styles for minimal PDF – no inline objects, avoids react-pdf 'S' bug in sync context */
+const minimalStyles = StyleSheet.create({
+  page: { padding: 30, fontSize: 10, fontFamily: "Helvetica" },
+  title: { fontSize: 14, fontWeight: "bold", marginBottom: 8 },
+  line: { marginBottom: 4 },
+})
+
+/** Minimal quotation PDF: StyleSheet only (no inline style). Used when full render throws. */
 export const QuotationPDFMinimal: React.FC<{ data: QuotationPDFProps["data"] }> = ({ data }) => (
   <Document pdfVersion="1.3">
-    <Page size="A4" style={{ padding: 30, fontSize: 10, fontFamily: "Helvetica" }}>
-      <Text style={{ fontSize: 14, fontWeight: "bold", marginBottom: 8 }}>QUOTATION</Text>
-      <Text style={{ marginBottom: 4 }}>No. {data.quotationId}</Text>
-      <Text style={{ marginBottom: 4 }}>Bill To: {data.billTo}</Text>
-      <Text style={{ marginBottom: 4 }}>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.totalAmount)}</Text>
+    <Page size="A4" style={minimalStyles.page}>
+      <Text style={minimalStyles.title}>QUOTATION</Text>
+      <Text style={minimalStyles.line}>No. {data.quotationId}</Text>
+      <Text style={minimalStyles.line}>Bill To: {data.billTo}</Text>
+      <Text style={minimalStyles.line}>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.totalAmount)}</Text>
     </Page>
   </Document>
 )

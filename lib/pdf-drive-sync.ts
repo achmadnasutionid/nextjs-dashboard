@@ -15,8 +15,8 @@ import {
   sanitizeName,
   isDriveConfigured,
 } from "@/lib/google-drive"
-import { QuotationPDF, QuotationPDFMinimal } from "@/components/pdf/quotation-pdf"
-import { InvoicePDF, InvoicePDFMinimal } from "@/components/pdf/invoice-pdf"
+import { QuotationBackupPDF } from "@/components/pdf/quotation-backup-pdf"
+import { InvoiceBackupPDF } from "@/components/pdf/invoice-backup-pdf"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
 import { ParagonBASTPDF } from "@/components/pdf/paragon-bast-pdf"
@@ -57,6 +57,8 @@ function toQuotationPdfData(q: {
   }>
   remarks: Array<{ text: string; isCompleted: boolean }>
   signatures: Array<{ name: string; position: string; imageData: string }>
+  summaryOrder?: string | null
+  termsAndConditions?: string | null
 }) {
   return {
     quotationId: q.quotationId,
@@ -80,6 +82,8 @@ function toQuotationPdfData(q: {
     pph: q.pph,
     totalAmount: q.totalAmount,
     status: q.status,
+    summaryOrder: q.summaryOrder ?? undefined,
+    termsAndConditions: q.termsAndConditions ?? undefined,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
     items: q.items.map((i) => ({
@@ -128,6 +132,8 @@ function toInvoicePdfData(inv: {
   }>
   remarks: Array<{ text: string; isCompleted: boolean }>
   signatures: Array<{ name: string; position: string; imageData: string }>
+  summaryOrder?: string | null
+  termsAndConditions?: string | null
 }) {
   return {
     invoiceId: inv.invoiceId,
@@ -151,6 +157,8 @@ function toInvoicePdfData(inv: {
     pph: inv.pph,
     totalAmount: inv.totalAmount,
     status: inv.status,
+    summaryOrder: inv.summaryOrder ?? undefined,
+    termsAndConditions: inv.termsAndConditions ?? undefined,
     createdAt: inv.createdAt.toISOString(),
     updatedAt: inv.updatedAt.toISOString(),
     items: inv.items.map((i) => ({
@@ -423,20 +431,15 @@ export async function runPdfDriveSync(): Promise<{
     for (const q of quotations) {
       try {
         const data = toQuotationPdfData(q)
-        let buffer: ArrayBuffer | Buffer
-        try {
-          buffer = await renderToBuffer(
-            React.createElement(QuotationPDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
-          )
-        } catch (renderErr) {
-          // Fallback when full render throws (e.g. react-pdf 'S' / structure-tree bug)
-          console.warn("[pdf-drive-sync] Quotation full render failed, using minimal PDF:", q.quotationId, renderErr)
-          buffer = await renderToBuffer(
-            React.createElement(QuotationPDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
-          )
-        }
+        const buffer = await renderToBuffer(
+          React.createElement(QuotationBackupPDF, { data }) as Parameters<typeof renderToBuffer>[0]
+        )
         const fileName = pdfFileName(q.quotationId, q.billTo)
-        const uploadResult = await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer))
+        const uploadResult = await uploadOrUpdateFile(
+          quotationsFolderId,
+          fileName,
+          Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
+        )
         if (uploadResult.ok) uploaded += 1
         else {
           skipped += 1
@@ -451,19 +454,15 @@ export async function runPdfDriveSync(): Promise<{
     for (const inv of invoices) {
       try {
         const data = toInvoicePdfData(inv)
-        let buffer: ArrayBuffer | Buffer
-        try {
-          buffer = await renderToBuffer(
-            React.createElement(InvoicePDF, { data, forSync: true }) as Parameters<typeof renderToBuffer>[0]
-          )
-        } catch (renderErr) {
-          console.warn("[pdf-drive-sync] Invoice full render failed, using minimal PDF:", inv.invoiceId, renderErr)
-          buffer = await renderToBuffer(
-            React.createElement(InvoicePDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
-          )
-        }
+        const buffer = await renderToBuffer(
+          React.createElement(InvoiceBackupPDF, { data }) as Parameters<typeof renderToBuffer>[0]
+        )
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
-        const uploadResult = await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer))
+        const uploadResult = await uploadOrUpdateFile(
+          invoicesFolderId,
+          fileName,
+          Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
+        )
         if (uploadResult.ok) uploaded += 1
         else {
           skipped += 1

@@ -855,14 +855,21 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
   )
 }
 
-/** Minimal invoice PDF when full render throws (e.g. structure-tree 'S' bug). */
+/** StyleSheet-only for minimal PDF – no inline style, avoids react-pdf 'S' bug in sync */
+const minimalStyles = StyleSheet.create({
+  page: { padding: 30, fontSize: 10, fontFamily: "Helvetica" },
+  title: { fontSize: 14, fontWeight: "bold", marginBottom: 8 },
+  line: { marginBottom: 4 },
+})
+
+/** Minimal invoice PDF when full render throws. Uses StyleSheet only. */
 export const InvoicePDFMinimal: React.FC<{ data: InvoicePDFProps["data"] }> = ({ data }) => (
   <Document pdfVersion="1.3">
-    <Page size="A4" style={{ padding: 30, fontSize: 10, fontFamily: "Helvetica" }}>
-      <Text style={{ fontSize: 14, fontWeight: "bold", marginBottom: 8 }}>INVOICE</Text>
-      <Text style={{ marginBottom: 4 }}>No. {data.invoiceId}</Text>
-      <Text style={{ marginBottom: 4 }}>Bill To: {data.billTo}</Text>
-      <Text style={{ marginBottom: 4 }}>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.totalAmount)}</Text>
+    <Page size="A4" style={minimalStyles.page}>
+      <Text style={minimalStyles.title}>INVOICE</Text>
+      <Text style={minimalStyles.line}>No. {data.invoiceId}</Text>
+      <Text style={minimalStyles.line}>Bill To: {data.billTo}</Text>
+      <Text style={minimalStyles.line}>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.totalAmount)}</Text>
     </Page>
   </Document>
 )
