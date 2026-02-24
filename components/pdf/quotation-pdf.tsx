@@ -386,7 +386,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
       return (
         <View style={[styles.gridCol, { paddingRight: 0, alignItems: "center", justifyContent: "center" }]}>
           <View style={{ alignItems: "center", width: "100%" }}>
-            {sig.imageData ? (
+            {sig.imageData && String(sig.imageData).trim() ? (
               <View>
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                   {data.companyCity}, {data.companyProvince}
@@ -394,7 +394,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                   {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                 </Text>
-                <Image src={sig.imageData} style={styles.signatureImage} />
+                <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
               </View>
             ) : (
               <View>
@@ -442,7 +442,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
           {allSignatures.map((sig, idx) => (
             <View key={idx} style={signatureBoxStyle}>
               {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-              {sig.imageData && idx === 0 ? (
+              {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
                 <View>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                     {data.companyCity}, {data.companyProvince}
@@ -450,7 +450,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <Image src={sig.imageData} style={styles.signatureImage} />
+                  <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
                 </View>
               ) : (
                 <View>
@@ -483,7 +483,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
             {allSignatures.map((sig, idx) => (
               <View key={idx} style={signatureBoxStyle}>
                 {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-                {sig.imageData && idx === 0 ? (
+                {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
                   <View>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                       {data.companyCity}, {data.companyProvince}
@@ -491,7 +491,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <Image src={sig.imageData} style={styles.signatureImage} />
+                    <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
                   </View>
                 ) : (
                   <View>
@@ -526,7 +526,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
             {allSignatures.slice(0, 2).map((sig, idx) => (
               <View key={idx} style={signatureBoxStyle}>
                 {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-                {sig.imageData && idx === 0 ? (
+                {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
                   <View>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                       {data.companyCity}, {data.companyProvince}
@@ -534,7 +534,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                       {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                     </Text>
-                    <Image src={sig.imageData} style={styles.signatureImage} />
+                    <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
                   </View>
                 ) : (
                   <View>
@@ -590,7 +590,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
           {allSignatures.map((sig, idx) => (
             <View key={idx} style={{ ...signatureBoxStyle, width: "30%", marginBottom: 15 }}>
               {/* Only show real location/date for main signature (idx 0) with imageData, rest are for client signatures */}
-              {sig.imageData && idx === 0 ? (
+              {sig.imageData && String(sig.imageData).trim() && idx === 0 ? (
                 <View>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 2 }}>
                     {data.companyCity}, {data.companyProvince}
@@ -598,7 +598,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
                     {new Date(data.updatedAt).toLocaleDateString("id-ID")}
                   </Text>
-                  <Image src={sig.imageData} style={styles.signatureImage} />
+                  <Image src={String(sig.imageData).trim()} style={styles.signatureImage} />
                 </View>
               ) : (
                 <View>
@@ -653,24 +653,24 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               <Text style={styles.label}>City:</Text>
               <Text style={styles.value}>{data.companyCity}, {data.companyProvince}</Text>
             </View>
-            {data.companyPostalCode && (
+            {data.companyPostalCode ? (
               <View style={styles.row}>
                 <Text style={styles.label}>Postal Code:</Text>
                 <Text style={styles.value}>{data.companyPostalCode}</Text>
               </View>
-            )}
-            {data.companyTelp && (
+            ) : null}
+            {data.companyTelp ? (
               <View style={styles.row}>
                 <Text style={styles.label}>Tel:</Text>
                 <Text style={styles.value}>{data.companyTelp}</Text>
               </View>
-            )}
-            {data.companyEmail && (
+            ) : null}
+            {data.companyEmail ? (
               <View style={styles.row}>
                 <Text style={styles.label}>Email:</Text>
                 <Text style={styles.value}>{data.companyEmail}</Text>
               </View>
-            )}
+            ) : null}
           </View>
 
           <View style={styles.gridCol}>
@@ -685,12 +685,12 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               <Text style={styles.label}>Bill To:</Text>
               <Text style={styles.value}>{data.billTo}</Text>
             </View>
-            {data.notes && (
+            {data.notes ? (
               <View style={styles.row}>
                 <Text style={styles.label}>Notes:</Text>
                 <Text style={styles.value}>{data.notes}</Text>
               </View>
-            )}
+            ) : null}
           </View>
         </View>
 
@@ -709,10 +709,10 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               <View key={`item-${itemIndex}`} wrap={false}>
                 {/* Product Header Row - No Amount */}
                 <View style={[styles.tableRow, { backgroundColor: "#f9f9f9", fontWeight: "bold" }]}>
-                  <Text style={styles.col1}>{item.productName || ''}</Text>
-                  <Text style={styles.col2}></Text>
-                  <Text style={styles.col3}></Text>
-                  <Text style={styles.col4}></Text>
+                  <Text style={styles.col1}>{item.productName ? item.productName : "\u00A0"}</Text>
+                  <Text style={styles.col2}>{"\u00A0"}</Text>
+                  <Text style={styles.col3}>{"\u00A0"}</Text>
+                  <Text style={styles.col4}>{"\u00A0"}</Text>
                 </View>
 
                 {/* Detail Rows */}
@@ -736,14 +736,14 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               <View style={index === 2 ? styles.summaryTotal : styles.summaryRow}>
                 <View style={{ flexDirection: "column" }}>
                   <Text>{item.label}:</Text>
-                  {item.note && (
+                  {item.note ? (
                     <Text style={{ fontSize: 8, fontWeight: "bold", marginTop: 2 }}>
                       {item.note}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
                 <Text style={item.id === 'pph' ? { color: "green" } : { color: "#000" }}>
-                  {item.id === 'pph' && "+ "}{formatCurrency(item.value)}
+                  {item.id === 'pph' ? "+ " : ""}{formatCurrency(item.value)}
                 </Text>
               </View>
             </View>
@@ -751,7 +751,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
         </View>
 
         {/* Remarks */}
-        {data.remarks && data.remarks.length > 0 && (
+        {data.remarks && data.remarks.length > 0 ? (
           <View style={styles.section} wrap={false}>
             <Text style={styles.sectionTitle}>Remarks</Text>
             {(data.remarks || []).map((remark, index) => (
@@ -769,10 +769,10 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               </View>
             ))}
           </View>
-        )}
+        ) : null}
 
         {/* Detailed Terms & Conditions (S&K) */}
-        {data.termsAndConditions && (
+        {data.termsAndConditions ? (
           <View style={{ marginBottom: 15 }}>
             <Text style={styles.sectionTitle}>Detailed S&K:</Text>
             <View style={{ fontSize: 8, lineHeight: 1.5 }}>
@@ -783,7 +783,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
               ))}
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* Billing & Signature */}
         <View style={allSignatures.length === 1 ? styles.grid : { width: "100%" }} wrap={false}>
@@ -808,11 +808,11 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
           </View>
 
           {/* Render single signature on right if count is 1 */}
-          {allSignatures.length === 1 && renderSignatures()}
+          {allSignatures.length === 1 ? renderSignatures() : null}
         </View>
 
         {/* Render multiple signatures below if count is 2+ */}
-        {allSignatures.length > 1 && renderMultipleSignatures()}
+        {allSignatures.length > 1 ? renderMultipleSignatures() : null}
 
         {/* Footer */}
         <Text style={styles.footer} fixed>
