@@ -52,38 +52,56 @@ export async function GET(request: Request) {
       ]
     }
 
-    // Fetch data with pagination - optimized for list view
-    const [quotations, total] = await Promise.all([
-      prisma.quotation.findMany({
-        where,
+    const orderByUpdated = { updatedAt: sortBy === "oldest" ? "asc" as const : "desc" as const }
+    const select = {
+      id: true,
+      quotationId: true,
+      companyName: true,
+      billTo: true,
+      productionDate: true,
+      totalAmount: true,
+      status: true,
+      generatedInvoiceId: true,
+      createdAt: true,
+      updatedAt: true,
+      items: {
         select: {
-          id: true,
-          quotationId: true,
-          companyName: true,
-          billTo: true,
-          productionDate: true,
-          totalAmount: true,
-          status: true,
-          generatedInvoiceId: true,
-          createdAt: true,
-          updatedAt: true,
-          // Only fetch item summaries, not full details
-          items: {
-            select: {
-              productName: true,
-              total: true
-            }
-          }
-          // Don't fetch remarks in list view
-        },
-        orderBy: {
-          updatedAt: sortBy === "oldest" ? "asc" : "desc"
-        },
-        take: limit,
-        skip: skip
-      }),
-      prisma.quotation.count({ where })
-    ])
+          productName: true,
+          total: true
+        }
+      }
+    }
+
+    // When showing all statuses: non-accepted first (by updatedAt), accepted at bottom
+    let quotations: Awaited<ReturnType<typeof prisma.quotation.findMany<{ select: typeof select }>>>
+    let total: number
+
+    if (!status || status === "all") {
+      const whereNonAccepted = { ...where, status: { in: ["draft", "pending"] } }
+      const whereAccepted = { ...where, status: "accepted" }
+      const [nonAccepted, accepted, countNon, countAcc] = await Promise.all([
+        prisma.quotation.findMany({ where: whereNonAccepted, orderBy: orderByUpdated, select }),
+        prisma.quotation.findMany({ where: whereAccepted, orderBy: orderByUpdated, select }),
+        prisma.quotation.count({ where: whereNonAccepted }),
+        prisma.quotation.count({ where: whereAccepted })
+      ])
+      const merged = [...nonAccepted, ...accepted]
+      total = countNon + countAcc
+      quotations = merged.slice(skip, skip + limit)
+    } else {
+      const [data, count] = await Promise.all([
+        prisma.quotation.findMany({
+          where,
+          orderBy: orderByUpdated,
+          select,
+          take: limit,
+          skip
+        }),
+        prisma.quotation.count({ where })
+      ])
+      quotations = data
+      total = count
+    }
 
     const response = {
       data: quotations,

@@ -32,52 +32,70 @@ export async function GET(request: Request) {
       ]
     }
 
-    const orderBy = sortBy === "oldest" ? { createdAt: "asc" as const } : { createdAt: "desc" as const }
-
-    // Fetch data with pagination - optimized for list view
-    const [tickets, total] = await Promise.all([
-      prisma.paragonTicket.findMany({
-        where,
-        orderBy,
+    const orderByUpdated = sortBy === "oldest" ? { updatedAt: "asc" as const } : { updatedAt: "desc" as const }
+    const select = {
+      id: true,
+      ticketId: true,
+      quotationId: true,
+      invoiceId: true,
+      companyName: true,
+      billTo: true,
+      projectName: true,
+      productionDate: true,
+      totalAmount: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      items: {
         select: {
           id: true,
-          ticketId: true,
-          quotationId: true,
-          invoiceId: true,
-          companyName: true,
-          billTo: true,
-          projectName: true,
-          productionDate: true,
-          totalAmount: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          // Include full item details for list view (show all details without opening PDF)
-          items: {
+          productName: true,
+          total: true,
+          order: true,
+          details: {
             select: {
               id: true,
-              productName: true,
-              total: true,
-              order: true,
-              details: {
-                select: {
-                  id: true,
-                  detail: true,
-                  unitPrice: true,
-                  qty: true,
-                  amount: true
-                }
-              }
+              detail: true,
+              unitPrice: true,
+              qty: true,
+              amount: true
             }
           }
-        },
-        take: limit,
-        skip: skip
-      }),
-      prisma.paragonTicket.count({ where })
-    ])
+        }
+      }
+    }
 
-    // Return paginated response
+    // When showing all statuses: non-final first (by updatedAt), final at bottom
+    let tickets: Awaited<ReturnType<typeof prisma.paragonTicket.findMany<{ select: typeof select }>>>
+    let total: number
+
+    if (!status || status === "all") {
+      const whereNonFinal = { ...where, status: { in: ["draft", "pending"] } }
+      const whereFinal = { ...where, status: "final" }
+      const [nonFinal, final, countNonFinal, countFinal] = await Promise.all([
+        prisma.paragonTicket.findMany({ where: whereNonFinal, orderBy: orderByUpdated, select }),
+        prisma.paragonTicket.findMany({ where: whereFinal, orderBy: orderByUpdated, select }),
+        prisma.paragonTicket.count({ where: whereNonFinal }),
+        prisma.paragonTicket.count({ where: whereFinal })
+      ])
+      const merged = [...nonFinal, ...final]
+      total = countNonFinal + countFinal
+      tickets = merged.slice(skip, skip + limit)
+    } else {
+      const [data, count] = await Promise.all([
+        prisma.paragonTicket.findMany({
+          where,
+          orderBy: orderByUpdated,
+          select,
+          take: limit,
+          skip
+        }),
+        prisma.paragonTicket.count({ where })
+      ])
+      tickets = data
+      total = count
+    }
+
     return NextResponse.json({
       data: tickets,
       pagination: {

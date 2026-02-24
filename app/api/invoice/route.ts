@@ -52,37 +52,55 @@ export async function GET(request: Request) {
       ]
     }
 
-    // Fetch data with pagination - optimized for list view
-    const [invoices, total] = await Promise.all([
-      prisma.invoice.findMany({
-        where,
+    const orderByUpdated = { updatedAt: sortBy === "oldest" ? "asc" as const : "desc" as const }
+    const select = {
+      id: true,
+      invoiceId: true,
+      companyName: true,
+      billTo: true,
+      productionDate: true,
+      totalAmount: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      items: {
         select: {
-          id: true,
-          invoiceId: true,
-          companyName: true,
-          billTo: true,
-          productionDate: true,
-          totalAmount: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          // Only fetch item summaries, not full details
-          items: {
-            select: {
-              productName: true,
-              total: true
-            }
-          }
-          // Don't fetch remarks in list view
-        },
-        orderBy: {
-          updatedAt: sortBy === "oldest" ? "asc" : "desc"
-        },
-        take: limit,
-        skip: skip
-      }),
-      prisma.invoice.count({ where })
-    ])
+          productName: true,
+          total: true
+        }
+      }
+    }
+
+    // When showing all statuses: non-paid first (by updatedAt), paid at bottom
+    let invoices: Awaited<ReturnType<typeof prisma.invoice.findMany<{ select: typeof select }>>>
+    let total: number
+
+    if (!status || status === "all") {
+      const whereNonPaid = { ...where, status: { in: ["draft", "pending"] } }
+      const wherePaid = { ...where, status: "paid" }
+      const [nonPaid, paid, countNon, countPaid] = await Promise.all([
+        prisma.invoice.findMany({ where: whereNonPaid, orderBy: orderByUpdated, select }),
+        prisma.invoice.findMany({ where: wherePaid, orderBy: orderByUpdated, select }),
+        prisma.invoice.count({ where: whereNonPaid }),
+        prisma.invoice.count({ where: wherePaid })
+      ])
+      const merged = [...nonPaid, ...paid]
+      total = countNon + countPaid
+      invoices = merged.slice(skip, skip + limit)
+    } else {
+      const [data, count] = await Promise.all([
+        prisma.invoice.findMany({
+          where,
+          orderBy: orderByUpdated,
+          select,
+          take: limit,
+          skip
+        }),
+        prisma.invoice.count({ where })
+      ])
+      invoices = data
+      total = count
+    }
 
     const response = {
       data: invoices,

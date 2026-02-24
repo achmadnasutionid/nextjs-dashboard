@@ -166,11 +166,18 @@ export async function GET(request: Request) {
       })
     ]
 
-    rows.sort((a, b) =>
-      orderBy === "desc"
+    // Non-final (draft/pending) first by updatedAt, paid/final at bottom
+    const isFinalStatus = (r: Row) =>
+      (r.source === "invoice" && r.status === "paid") ||
+      ((r.source === "paragon" || r.source === "erha") && r.status === "final")
+    rows.sort((a, b) => {
+      const aFinal = isFinalStatus(a)
+      const bFinal = isFinalStatus(b)
+      if (aFinal !== bFinal) return aFinal ? 1 : -1
+      return orderBy === "desc"
         ? b.updatedAt.getTime() - a.updatedAt.getTime()
         : a.updatedAt.getTime() - b.updatedAt.getTime()
-    )
+    })
 
     const total = totalInv + totalP + totalE
     const start = (page - 1) * limit
