@@ -379,14 +379,15 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
           buffer = await renderToBuffer(
             React.createElement(QuotationPDF, { data }) as Parameters<typeof renderToBuffer>[0]
           )
-        } catch (renderErr) {
-          const msg = renderErr instanceof Error ? renderErr.message : String(renderErr)
-          if (msg.includes("reading 'S'") || msg.includes("reading \"S\"")) {
+        } catch {
+          // Fall back to minimal PDF (e.g. structure-tree 'S' bug in full PDF)
+          try {
             buffer = await renderToBuffer(
               React.createElement(QuotationPDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
             )
-          } else {
-            throw renderErr
+          } catch (minimalErr) {
+            console.error("[pdf-drive-sync] Quotation", q.quotationId, "minimal fallback failed:", minimalErr)
+            continue
           }
         }
         const fileName = pdfFileName(q.quotationId, q.billTo)
