@@ -1,5 +1,5 @@
 /**
- * Google Drive API helpers for PDF sync.
+ * Google Drive API helpers for backup sync.
  * Upload or update file by name in a folder (same ID = replace).
  *
  * Credentials: set one of
@@ -7,8 +7,15 @@
  *   - GOOGLE_SERVICE_ACCOUNT_JSON = stringified JSON of the service account key
  * Root folder: GOOGLE_DRIVE_ROOT_FOLDER_ID = ID of the main folder where Quotations/, Invoices/, etc. live
  *
+ * Important — Service accounts have no storage quota in "My Drive". Use a Shared Drive (Team Drive):
+ *   1. Create or use a Shared Drive in Google Workspace (Drive → Shared drives → New).
+ *   2. Create a folder inside it (e.g. "Backups") or use the Shared Drive root.
+ *   3. Add the service account (e.g. xxx@project.iam.gserviceaccount.com) as a member with "Content manager".
+ *   4. Set GOOGLE_DRIVE_ROOT_FOLDER_ID to that folder's ID (from the folder URL).
+ *   See: https://developers.google.com/workspace/drive/api/guides/about-shareddrives
+ *
  * If you get "Method doesn't allow unregistered callers", add an API key from the same GCP project:
- *   - GOOGLE_DRIVE_API_KEY or GOOGLE_API_KEY = API key (Credentials → Create credentials → API key)
+ *   GOOGLE_DRIVE_API_KEY or GOOGLE_API_KEY = API key (Credentials → Create credentials → API key)
  */
 
 import { Readable } from "stream"

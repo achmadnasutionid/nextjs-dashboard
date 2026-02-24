@@ -404,273 +404,154 @@ export default function BackupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex h-screen flex-col bg-background text-foreground overflow-hidden">
       <PageHeader title="Backup" showBackButton backTo="/" />
 
-      <main className="flex flex-1 flex-col overflow-hidden bg-background">
-        <div className="flex flex-1 items-center justify-center p-4">
-          <div className="grid w-full max-w-6xl grid-cols-1 gap-6 md:grid-cols-2">
-            {/* PDF to Google Drive */}
-            <Card className="flex flex-col bg-card text-card-foreground">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FolderSync className="h-5 w-5" />
-                  PDF to Google Drive
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col gap-4">
-                <p className="text-sm text-muted-foreground">
-                  Upload backup JSON files (Quotations, Invoices, Paragon, Erha) to Google Drive. One file per document. Same document = replace existing file. Use &quot;Restore from backup file&quot; to preview or recreate from a downloaded JSON.
+      <main className="flex-1 min-h-0 overflow-hidden px-3 pb-2">
+        <div className="h-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 content-start max-w-7xl mx-auto">
+          {/* Drive sync */}
+          <Card className="flex flex-col min-h-0">
+            <CardHeader className="py-2 px-3">
+              <CardTitle className="flex items-center gap-1.5 text-sm">
+                <FolderSync className="h-4 w-4" />
+                Sync to Drive
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-3 flex flex-col gap-2 flex-1 min-h-0">
+              {driveStatus?.configured && driveStatus.rootFolderUrl && (
+                <a href={driveStatus.rootFolderUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                  <ExternalLink className="h-3 w-3" /> Open folder
+                </a>
+              )}
+              <Button onClick={handleSyncPdfToDrive} disabled={!driveStatus?.configured || syncingPdf} variant="outline" size="sm" className="w-full">
+                {syncingPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <FolderSync className="h-3 w-3 mr-1" />}
+                {syncingPdf ? "Syncing…" : "Sync backup now"}
+              </Button>
+              {syncingPdf && syncProgress?.status === "running" && (
+                <p className="text-xs text-muted-foreground">
+                  {syncProgress.phase} {syncProgress.total > 0 ? `${syncProgress.current}/${syncProgress.total}` : ""} · {syncProgress.uploaded} uploaded
                 </p>
-                {driveStatus?.configured && driveStatus.rootFolderUrl && (
-                  <a
-                    href={driveStatus.rootFolderUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open Drive folder
-                  </a>
-                )}
-                <Button
-                  onClick={handleSyncPdfToDrive}
-                  disabled={!driveStatus?.configured || syncingPdf}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {syncingPdf ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <FolderSync className="h-4 w-4 mr-2" />
-                  )}
-                  {syncingPdf ? "Syncing…" : "Sync backup to Drive now"}
-                </Button>
-                {syncingPdf && syncProgress?.status === "running" && (
-                  <div className="rounded-md border bg-muted/50 p-3 text-sm space-y-1">
-                    <p className="font-medium">Backup in progress — you can use the app as usual.</p>
-                    <p className="text-muted-foreground">
-                      {syncProgress.phase} {syncProgress.total > 0 ? `(${syncProgress.current}/${syncProgress.total})` : ""} · Uploaded: {syncProgress.uploaded} · Failed: {syncProgress.failed}
-                    </p>
+              )}
+              {(syncProgress?.status === "completed" || syncProgress?.status === "stopped") && syncProgress?.message && (
+                <p className={`text-xs ${syncProgress.status === "stopped" ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}>{syncProgress.message}</p>
+              )}
+              {lastSyncError && (
+                <details className="text-xs">
+                  <summary className="text-destructive cursor-pointer font-medium">Sync error</summary>
+                  <pre className="mt-1 max-h-20 overflow-auto whitespace-pre-wrap break-words bg-muted/50 p-1.5 rounded text-[10px]">{lastSyncError}</pre>
+                  <Button type="button" variant="outline" size="sm" className="mt-1 h-6 text-xs" onClick={copySyncError}>Copy</Button>
+                </details>
+              )}
+              {lastSkipReason && !lastSyncError && (
+                <details className="text-xs">
+                  <summary className="text-amber-700 dark:text-amber-400 cursor-pointer font-medium">Skipped</summary>
+                  <pre className="mt-1 max-h-20 overflow-auto whitespace-pre-wrap break-words bg-muted/50 p-1.5 rounded text-[10px]">{lastSkipReason}</pre>
+                  <Button type="button" variant="outline" size="sm" className="mt-1 h-6 text-xs" onClick={copySkipReason}>Copy</Button>
+                </details>
+              )}
+              {driveStatus && !driveStatus.configured && (
+                <details className="text-xs text-amber-900 dark:text-amber-200">
+                  <summary className="cursor-pointer font-medium">Setup required</summary>
+                  <div className="mt-1 space-y-1 rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-2">
+                    <p>Use a <strong>Shared Drive</strong> folder; add service account as Content manager. Set <code className="bg-black/10 dark:bg-white/10 px-0.5 rounded">GOOGLE_DRIVE_ROOT_FOLDER_ID</code> to that folder ID.</p>
+                    <p>Set <code className="bg-black/10 dark:bg-white/10 px-0.5 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code> or <code className="bg-black/10 dark:bg-white/10 px-0.5 rounded">GOOGLE_APPLICATION_CREDENTIALS</code>.</p>
                   </div>
-                )}
-                {syncProgress?.status === "completed" && syncProgress.message && (
-                  <p className="text-sm text-green-600 dark:text-green-400">{syncProgress.message}</p>
-                )}
-                {syncProgress?.status === "stopped" && syncProgress.message && (
-                  <p className="text-sm text-amber-600 dark:text-amber-400">{syncProgress.message}</p>
-                )}
-                {lastSyncError && (
-                  <div className="rounded-md border border-destructive/40 bg-destructive/5 dark:bg-destructive/10 p-3 text-sm space-y-2">
-                    <p className="font-medium text-destructive">Last sync error (copy and share for debugging):</p>
-                    <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs bg-muted/50 p-2 rounded select-all">
-                      {lastSyncError}
-                    </pre>
-                    <Button type="button" variant="outline" size="sm" onClick={copySyncError}>
-                      Copy full error
-                    </Button>
-                  </div>
-                )}
-                {lastSkipReason && !lastSyncError && (
-                  <div className="rounded-md border border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10 p-3 text-sm space-y-2">
-                    <p className="font-medium text-amber-700 dark:text-amber-400">Why items were skipped (first error — copy for debugging):</p>
-                    <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs bg-muted/50 p-2 rounded select-all">
-                      {lastSkipReason}
-                    </pre>
-                    <Button type="button" variant="outline" size="sm" onClick={copySkipReason}>
-                      Copy skip reason
-                    </Button>
-                  </div>
-                )}
-                {driveStatus && !driveStatus.configured && (
-                  <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-900 dark:text-amber-200 space-y-2">
-                    <p className="font-medium">Setup required (in .env or environment):</p>
-                    <ol className="list-decimal list-inside space-y-1.5 text-xs">
-                      <li>
-                        <strong>Root folder</strong> — <code className="bg-black/10 dark:bg-white/10 px-1 rounded">GOOGLE_DRIVE_ROOT_FOLDER_ID</code>
-                        <br />
-                        Create a folder in Google Drive, open it in the browser. The URL is <code className="bg-black/10 dark:bg-white/10 px-1 rounded">https://drive.google.com/drive/folders/FOLDER_ID</code>. Copy <code className="bg-black/10 dark:bg-white/10 px-1 rounded">FOLDER_ID</code> into this variable.
-                      </li>
-                      <li>
-                        <strong>Google credential</strong> — use one of:
-                        <br />
-                        • <code className="bg-black/10 dark:bg-white/10 px-1 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code> = full JSON key as a string (e.g. from Google Cloud Console → Service account → Keys → Add key → JSON). Good for Railway/hosted env.
-                        <br />
-                        • <code className="bg-black/10 dark:bg-white/10 px-1 rounded">GOOGLE_APPLICATION_CREDENTIALS</code> = path to the JSON file on the server.
-                      </li>
-                    </ol>
-                    <p className="text-xs pt-1">After saving env and restarting, this section will show the sync button and link to open the Drive folder.</p>
-                    <p className="text-xs pt-1">
-                      <strong>Full step-by-step guide:</strong> open <code className="bg-black/10 dark:bg-white/10 px-1 rounded">docs/GOOGLE_DRIVE_SETUP.md</code> in this repo.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </details>
+              )}
+            </CardContent>
+          </Card>
 
-            {/* Save backup (primary) */}
-            <Card className="flex flex-col bg-card text-card-foreground">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Save className="h-5 w-5" />
-                  Save backup
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col gap-4">
-                <p className="text-sm text-muted-foreground">
-                  Save the current database to the backup DB. The latest 5 backups are kept. No file download needed.
-                </p>
-                <Button onClick={handleSaveBackup} disabled={saving} className="w-full">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save backup now"}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleDownload} disabled={downloading} className="w-full">
-                  {downloading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Download className="h-4 w-4 mr-2" />
-                  )}
-                  Download as file (optional)
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Save backup */}
+          <Card className="flex flex-col min-h-0">
+            <CardHeader className="py-2 px-3">
+              <CardTitle className="flex items-center gap-1.5 text-sm">
+                <Save className="h-4 w-4" />
+                Save backup
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-3 flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground">Save to backup DB (latest 5 kept).</p>
+              <Button onClick={handleSaveBackup} disabled={saving} size="sm" className="w-full">
+                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save now"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleDownload} disabled={downloading} className="w-full h-7 text-xs">
+                {downloading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Download className="h-3 w-3 mr-1" />}
+                Download file
+              </Button>
+            </CardContent>
+          </Card>
 
-            {/* Restore */}
-            <Card className="flex flex-col border-destructive/50 dark:border-destructive/60 bg-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <Upload className="h-5 w-5" />
-                  Restore backup
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col gap-4">
-                <div className="flex items-start gap-2 rounded-md border border-destructive/30 dark:border-destructive/50 bg-destructive/5 dark:bg-destructive/15 p-3 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>
-                    Restore replaces all current data. Save a backup first if you need to keep it. Data loss is permanent.
-                  </span>
-                </div>
-
-                {/* Restore from saved backup */}
-                <div className="space-y-2">
-                  <Label>From saved backup</Label>
-                  <Select value={selectedBackupId} onValueChange={setSelectedBackupId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a backup…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {savedBackups.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {formatBackupDate(b.createdAt)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="text"
-                    placeholder={requiredPhrase}
-                    value={restoreConfirm}
-                    onChange={(e) => setRestoreConfirm(e.target.value)}
-                    className="font-mono"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRestore}
-                    disabled={!canRestore || restoring}
-                    className="w-full"
-                  >
-                    {restoring ? <Loader2 className="h-4 w-4 animate-spin" /> : "Restore this backup"}
+          {/* Restore full DB */}
+          <Card className="flex flex-col min-h-0 border-destructive/50 dark:border-destructive/60">
+            <CardHeader className="py-2 px-3">
+              <CardTitle className="flex items-center gap-1.5 text-sm text-destructive">
+                <Upload className="h-4 w-4" />
+                Restore (full DB)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-3 flex flex-col gap-2">
+              <p className="flex items-center gap-1.5 text-xs text-destructive">
+                <AlertTriangle className="h-3 w-3 shrink-0" /> Replaces all data.
+              </p>
+              <Select value={selectedBackupId} onValueChange={setSelectedBackupId}>
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue placeholder="Saved backup…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {savedBackups.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>{formatBackupDate(b.createdAt)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-1.5">
+                <Input type="text" placeholder={requiredPhrase} value={restoreConfirm} onChange={(e) => setRestoreConfirm(e.target.value)} className="h-7 text-xs font-mono flex-1" />
+                <Button variant="destructive" size="sm" onClick={handleRestore} disabled={!canRestore || restoring} className="h-7 shrink-0">
+                  {restoring ? <Loader2 className="h-3 w-3 animate-spin" /> : "Restore"}
+                </Button>
+              </div>
+              <div className="border-t pt-2 mt-0.5 space-y-1.5">
+                <Label className="text-xs">From file (full DB JSON)</Label>
+                <Input type="file" accept=".json,application/json" ref={fileInputRef} onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} className="h-7 text-xs" />
+                <div className="flex gap-1.5">
+                  <Input type="text" placeholder={requiredPhrase} value={importConfirm} onChange={(e) => setImportConfirm(e.target.value)} className="h-7 text-xs font-mono flex-1" />
+                  <Button variant="outline" size="sm" onClick={handleImport} disabled={!canImport || importing} className="h-7 shrink-0 border-destructive/50 text-destructive hover:bg-destructive/10 text-xs">
+                    {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Import"}
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                {/* Restore from file */}
-                <div className="space-y-2 border-t pt-4">
-                  <Label>From file (JSON)</Label>
-                  <Input
-                    type="file"
-                    accept=".json,application/json"
-                    ref={fileInputRef}
-                    onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
-                  />
-                  <Input
-                    type="text"
-                    placeholder={requiredPhrase}
-                    value={importConfirm}
-                    onChange={(e) => setImportConfirm(e.target.value)}
-                    className="font-mono"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleImport}
-                    disabled={!canImport || importing}
-                    className="w-full border-destructive/50 dark:border-destructive/60 text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
-                  >
-                    {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Restore from file"}
-                  </Button>
+          {/* Restore single document */}
+          <Card className="flex flex-col min-h-0">
+            <CardHeader className="py-2 px-3">
+              <CardTitle className="flex items-center gap-1.5 text-sm">
+                <FileJson className="h-4 w-4" />
+                Restore from file
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-3 flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground">Single-doc JSON (e.g. from Drive). Preview → PDF or create.</p>
+              <Input type="file" accept=".json,application/json" ref={restoreFileInputRef} onChange={handleRestoreFileChange} className="h-7 text-xs" />
+              {restoreFileError && <p className="text-xs text-destructive">{restoreFileError}</p>}
+              {restorePreview && (
+                <div className="rounded border bg-muted/50 p-2 text-xs space-y-1.5">
+                  <p className="font-medium">{restorePreview.type === "quotation" ? "Quotation" : "Invoice"} · {restorePreview.id}</p>
+                  <p className="text-muted-foreground truncate">{restorePreview.billTo || "—"} · {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(restorePreview.totalAmount)}</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <Button type="button" variant="outline" size="sm" onClick={handleDownloadRestorePdf} disabled={downloadingPdf} className="h-6 text-xs">
+                      {downloadingPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3 mr-1" />}
+                      PDF
+                    </Button>
+                    <Button type="button" variant="default" size="sm" onClick={handleCreateFromRestore} disabled={creatingDoc} className="h-6 text-xs">
+                      {creatingDoc ? <Loader2 className="h-3 w-3 animate-spin" /> : <PlusCircle className="h-3 w-3 mr-1" />}
+                      Create new
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Restore from backup file (single document, e.g. from Drive) */}
-            <Card className="flex flex-col bg-card text-card-foreground">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileJson className="h-5 w-5" />
-                  Restore from backup file
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col gap-4">
-                <p className="text-sm text-muted-foreground">
-                  Upload a single-document backup JSON (e.g. downloaded from Google Drive: <code className="text-xs bg-muted px-1 rounded">QTN-2026-1820.json</code>, <code className="text-xs bg-muted px-1 rounded">INV-2026-xxx.json</code>). Preview, download PDF, or create as new Quotation/Invoice. If the document ID already exists, create will fail to avoid overwriting.
-                </p>
-                <div className="space-y-2">
-                  <Input
-                    type="file"
-                    accept=".json,application/json"
-                    ref={restoreFileInputRef}
-                    onChange={handleRestoreFileChange}
-                  />
-                  {restoreFileError && (
-                    <p className="text-sm text-destructive">{restoreFileError}</p>
-                  )}
-                  {restorePreview && (
-                    <div className="rounded-md border bg-muted/50 p-3 text-sm space-y-3">
-                      <p className="font-medium">Preview</p>
-                      <ul className="text-muted-foreground space-y-1">
-                        <li>Type: {restorePreview.type === "quotation" ? "Quotation" : "Invoice"}</li>
-                        <li>ID: {restorePreview.id}</li>
-                        <li>Bill to: {restorePreview.billTo || "—"}</li>
-                        <li>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(restorePreview.totalAmount)}</li>
-                      </ul>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDownloadRestorePdf}
-                          disabled={downloadingPdf}
-                        >
-                          {downloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
-                          Download PDF
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="default"
-                          size="sm"
-                          onClick={handleCreateFromRestore}
-                          disabled={creatingDoc}
-                        >
-                          {creatingDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 mr-2" />}
-                          Create as new {restorePreview.type === "quotation" ? "Quotation" : "Invoice"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
 

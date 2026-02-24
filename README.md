@@ -91,16 +91,15 @@ DIRECT_URL="postgresql://postgres:PASSWORD@HOST:PORT/railway"
 
 #### Google Drive PDF backup (optional)
 
-The app can upload generated PDFs (quotations, invoices, Paragon, Erha) to a Google Drive folder. You trigger it manually from the **Backup** page (“Sync PDFs to Drive now”). Same document ID = file is replaced. You need both settings below.
+The app can upload backup JSON files (quotations, invoices, Paragon, Erha) to a Google Drive folder. You trigger it manually from the **Backup** page (“Sync backup to Drive now”). Same document ID = file is replaced. You need both settings below.
 
 - **Where to put credentials**
   - **Option A:** Put the path to your service account JSON file in `GOOGLE_APPLICATION_CREDENTIALS` (e.g. in `.env`: `GOOGLE_APPLICATION_CREDENTIALS=./secrets/google-service-account.json`). Keep the file outside the repo (add to `.gitignore`).
   - **Option B:** Paste the full JSON key as a single line in `GOOGLE_SERVICE_ACCOUNT_JSON` (e.g. in Railway env vars). No file needed.
 
-- **Main folder**
-  - Create a folder in Google Drive that will hold all synced PDFs (e.g. "Master Dashboard PDFs").
-  - Open that folder in the browser; the URL looks like `https://drive.google.com/drive/folders/FOLDER_ID`. Copy `FOLDER_ID` and set it as `GOOGLE_DRIVE_ROOT_FOLDER_ID` in your env.
-  - Under that root the app creates: `Quotations/`, `Invoices/`, `Paragon/{billTo}/`, `Erha/{billTo}/`.
+- **Main folder (use a Shared Drive)**
+  - Service accounts have no storage quota in “My Drive”. Use a **Shared Drive** (Drive → Shared drives): create one (or a folder inside it, e.g. “Backups”), add your service account email as a member with “Content manager”, then open that folder in the browser. The URL is `https://drive.google.com/drive/folders/FOLDER_ID` — copy `FOLDER_ID` and set it as `GOOGLE_DRIVE_ROOT_FOLDER_ID` in your env.
+  - Under that root the app creates: `Quotations/`, `Invoices/`, `Paragon/{projectName}/`, `Erha/{projectName}/`.
 
 If these env vars are not set, the sync is skipped (no errors). No draft documents are synced; only non-draft records are uploaded.
 
