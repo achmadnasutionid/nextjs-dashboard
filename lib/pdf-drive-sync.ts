@@ -1,7 +1,8 @@
 /**
  * PDF → Google Drive sync. Runs in background when backup trigger runs (24h).
- * Syncs: Quotations, Invoices, Paragon (quotation + invoice + BAST), Erha (same).
- * Excludes draft; same document ID = replace file in Drive.
+ * - Quotations / Invoices: status not draft (pending + accepted/paid), same ID = replace in Drive.
+ * - Paragon / Erha: status final only (so Drive has only finalized tickets); 3 PDFs per ticket
+ *   (quotation, invoice, BAST). Same file name = replace. Skips quotation/invoice PDF if ID empty.
  * Folder structure: root/Quotations, root/Invoices, root/Paragon/{billTo}, root/Erha/{billTo}.
  */
 
@@ -391,9 +392,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       }
     }
 
-    // Paragon tickets (exclude draft, exclude deleted) – 3 PDFs per ticket under Paragon/{billTo}
+    // Paragon tickets (final only, exclude deleted) – up to 3 PDFs per ticket under Paragon/{billTo}
     const paragonTickets = await prisma.paragonTicket.findMany({
-      where: { status: { not: "draft" }, deletedAt: null },
+      where: { status: "final", deletedAt: null },
       include: {
         items: { include: { details: true }, orderBy: { order: "asc" as const } },
         remarks: { orderBy: { order: "asc" as const } },
@@ -403,11 +404,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       const billToFolderId = await getOrCreateFolder(paragonFolderId, t.billTo)
       if (!billToFolderId) continue
       const data = toParagonPdfData(t)
-      const files: [string, React.ReactElement][] = [
-        [t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data })],
-        [t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data })],
-        [t.ticketId + "_BAST.pdf", React.createElement(ParagonBASTPDF, { data })],
-      ]
+      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ParagonBASTPDF, { data })]]
+      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data })])
+      if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data })])
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
@@ -418,9 +417,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       }
     }
 
-    // Erha tickets (exclude draft, exclude deleted) – 3 PDFs per ticket under Erha/{billTo}
+    // Erha tickets (final only, exclude deleted) – up to 3 PDFs per ticket under Erha/{billTo}
     const erhaTickets = await prisma.erhaTicket.findMany({
-      where: { status: { not: "draft" }, deletedAt: null },
+      where: { status: "final", deletedAt: null },
       include: {
         items: { include: { details: true }, orderBy: { order: "asc" as const } },
         remarks: { orderBy: { order: "asc" as const } },
@@ -430,11 +429,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       const billToFolderId = await getOrCreateFolder(erhaFolderId, t.billTo)
       if (!billToFolderId) continue
       const data = toErhaPdfData(t)
-      const files: [string, React.ReactElement][] = [
-        [t.quotationId + ".pdf", React.createElement(ErhaQuotationPDF, { data })],
-        [t.invoiceId + ".pdf", React.createElement(ErhaInvoicePDF, { data })],
-        [t.ticketId + "_BAST.pdf", React.createElement(ErhaBASTPDF, { data })],
-      ]
+      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ErhaBASTPDF, { data })]]
+      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ErhaQuotationPDF, { data })])
+      if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ErhaInvoicePDF, { data })])
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])

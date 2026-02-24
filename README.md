@@ -83,15 +83,15 @@ DATABASE_URL="postgresql://postgres:PASSWORD@HOST:PORT/railway"
 # Direct connection (for migrations)
 DIRECT_URL="postgresql://postgres:PASSWORD@HOST:PORT/railway"
 
-# Optional: Google Drive PDF sync (runs in background when backup runs, ~24h)
+# Optional: Google Drive PDF backup (trigger manually from Backup page)
 # GOOGLE_DRIVE_ROOT_FOLDER_ID="your-drive-folder-id"
 # GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
 # or: GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'
 ```
 
-#### Google Drive PDF sync (optional)
+#### Google Drive PDF backup (optional)
 
-The app can sync generated PDFs (quotations, invoices, Paragon, Erha) to a Google Drive folder when the 24h backup runs (on first landing after cache expiry). Same document ID = file is replaced.
+The app can upload generated PDFs (quotations, invoices, Paragon, Erha) to a Google Drive folder. You trigger it manually from the **Backup** page (“Sync PDFs to Drive now”). Same document ID = file is replaced. You need both settings below.
 
 - **Where to put credentials**
   - **Option A:** Put the path to your service account JSON file in `GOOGLE_APPLICATION_CREDENTIALS` (e.g. in `.env`: `GOOGLE_APPLICATION_CREDENTIALS=./secrets/google-service-account.json`). Keep the file outside the repo (add to `.gitignore`).

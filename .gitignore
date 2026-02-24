@@ -38,6 +38,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# GCP / Railway credentials (sensitive)
+cataracta-studio-*.json
+railway-gcp-credentials-value.txt
+
 # vercel
 .vercel
 

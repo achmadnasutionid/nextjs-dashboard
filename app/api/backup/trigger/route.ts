@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { exportDatabaseToJson } from "@/lib/backup-export"
 import { getBackupDb, isBackupConfigured, saveBackupKeepLastN } from "@/lib/backup-db"
-import { runPdfDriveSyncInBackground } from "@/lib/pdf-drive-sync"
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
 const MAX_MB = Math.min(Math.max(1, parseInt(process.env.BACKUP_MAX_RESPONSE_MB || "100", 10) || 100), 500)
@@ -40,9 +39,6 @@ export async function GET() {
 
     const { summary, data } = await exportDatabaseToJson()
     const backup = await saveBackupKeepLastN(summary, data)
-
-    // Start PDF → Google Drive sync in background (same 24h window as backup)
-    runPdfDriveSyncInBackground()
 
     const backupPayload = { summary, data }
     const json = JSON.stringify(backupPayload)
