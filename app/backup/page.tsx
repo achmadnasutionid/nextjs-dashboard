@@ -183,7 +183,7 @@ export default function BackupPage() {
 
       <main className="flex flex-1 flex-col overflow-hidden bg-background">
         <div className="flex flex-1 items-center justify-center p-4">
-          <div className="grid w-full max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid w-full max-w-6xl grid-cols-1 gap-6 md:grid-cols-3">
             {/* PDF to Google Drive */}
             <Card className="flex flex-col bg-card text-card-foreground">
               <CardHeader>
