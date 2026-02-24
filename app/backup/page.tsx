@@ -35,6 +35,17 @@ export default function BackupPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [driveStatus, setDriveStatus] = useState<{ configured: boolean; rootFolderUrl?: string } | null>(null)
   const [syncingPdf, setSyncingPdf] = useState(false)
+  const [syncProgress, setSyncProgress] = useState<{
+    status: string
+    phase: string
+    current: number
+    total: number
+    uploaded: number
+    failed: number
+    message: string | null
+    lastError: string | null
+  } | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [lastSyncError, setLastSyncError] = useState<string | null>(null)
   const [lastSkipReason, setLastSkipReason] = useState<string | null>(null)
 
@@ -155,29 +166,101 @@ export default function BackupPage() {
     }
   }
 
+  const fetchSyncStatus = () => {
+    fetch("/api/backup/sync-status")
+      .then((r) => r.json())
+      .then((data) => {
+        setSyncProgress({
+          status: data.status ?? "idle",
+          phase: data.phase ?? "",
+          current: data.current ?? 0,
+          total: data.total ?? 0,
+          uploaded: data.uploaded ?? 0,
+          failed: data.failed ?? 0,
+          message: data.message ?? null,
+          lastError: data.lastError ?? null,
+        })
+        if (data.status === "completed" || data.status === "stopped") {
+          if (pollRef.current) {
+            clearInterval(pollRef.current)
+            pollRef.current = null
+          }
+          setSyncingPdf(false)
+          if (data.status === "stopped" && data.lastError) setLastSyncError(data.lastError)
+          if (data.message) {
+            if (data.status === "stopped") toast.warning(data.message)
+            else toast.success(data.message)
+          }
+        }
+      })
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    if (!syncingPdf) return
+    fetchSyncStatus()
+    const id = setInterval(fetchSyncStatus, 2500)
+    pollRef.current = id
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [syncingPdf])
+
+  useEffect(() => {
+    fetch("/api/backup/sync-status")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === "running") {
+          setSyncingPdf(true)
+          setSyncProgress({
+            status: data.status,
+            phase: data.phase ?? "",
+            current: data.current ?? 0,
+            total: data.total ?? 0,
+            uploaded: data.uploaded ?? 0,
+            failed: data.failed ?? 0,
+            message: data.message ?? null,
+            lastError: data.lastError ?? null,
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const handleSyncPdfToDrive = async () => {
-    setSyncingPdf(true)
     setLastSyncError(null)
     setLastSkipReason(null)
+    setSyncProgress(null)
     try {
       const res = await fetch("/api/backup/sync-pdf-drive", { method: "POST" })
       const data = await res.json().catch(() => ({}))
+      if (res.status === 409) {
+        toast.info(data.error ?? "Backup already in progress")
+        setSyncingPdf(true)
+        return
+      }
       if (!res.ok) {
         const errMsg = data.error || "Sync failed"
         setLastSyncError(errMsg)
         if (data.skipReason) setLastSkipReason(data.skipReason)
-        throw new Error(errMsg)
+        toast.error(errMsg)
+        return
+      }
+      if (res.status === 202) {
+        toast.success(data.message ?? "Backup started. Check progress below.")
+        setSyncingPdf(true)
+        return
       }
       const count = typeof data.uploaded === "number" ? data.uploaded : 0
       const skipCount = typeof data.skipped === "number" ? data.skipped : 0
       const skipReason = typeof data.skipReason === "string" ? data.skipReason : null
       if (skipReason) setLastSkipReason(skipReason)
       if (count === 0) {
-        const msg =
+        toast.warning(
           skipCount > 0
-            ? `0 PDFs uploaded, ${skipCount} skipped. See "Why skipped" below to copy the error.`
-            : "Sync completed but 0 PDFs uploaded. No non-draft quotations/invoices, or check server logs."
-        toast.warning(msg)
+            ? `0 PDFs uploaded, ${skipCount} skipped. See "Why skipped" below.`
+            : "Sync completed but 0 PDFs uploaded."
+        )
       } else {
         toast.success(`${count} PDF${count === 1 ? "" : "s"} synced to Google Drive`)
       }
@@ -185,8 +268,6 @@ export default function BackupPage() {
       const msg = e instanceof Error ? e.message : "Sync failed"
       setLastSyncError(msg)
       toast.error("Sync failed — see error below to copy")
-    } finally {
-      setSyncingPdf(false)
     }
   }
 
@@ -255,6 +336,20 @@ export default function BackupPage() {
                   )}
                   {syncingPdf ? "Syncing…" : "Sync PDFs to Drive now"}
                 </Button>
+                {syncingPdf && syncProgress?.status === "running" && (
+                  <div className="rounded-md border bg-muted/50 p-3 text-sm space-y-1">
+                    <p className="font-medium">Backup in progress — you can use the app as usual.</p>
+                    <p className="text-muted-foreground">
+                      {syncProgress.phase} {syncProgress.total > 0 ? `(${syncProgress.current}/${syncProgress.total})` : ""} · Uploaded: {syncProgress.uploaded} · Failed: {syncProgress.failed}
+                    </p>
+                  </div>
+                )}
+                {syncProgress?.status === "completed" && syncProgress.message && (
+                  <p className="text-sm text-green-600 dark:text-green-400">{syncProgress.message}</p>
+                )}
+                {syncProgress?.status === "stopped" && syncProgress.message && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">{syncProgress.message}</p>
+                )}
                 {lastSyncError && (
                   <div className="rounded-md border border-destructive/40 bg-destructive/5 dark:bg-destructive/10 p-3 text-sm space-y-2">
                     <p className="font-medium text-destructive">Last sync error (copy and share for debugging):</p>

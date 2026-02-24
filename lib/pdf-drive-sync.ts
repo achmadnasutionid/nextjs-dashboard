@@ -15,6 +15,14 @@ import {
   sanitizeName,
   isDriveConfigured,
 } from "@/lib/google-drive"
+import {
+  setBackupSyncRunning,
+  updateBackupSyncProgress,
+  recordBackupSyncFailure,
+  setBackupSyncCompleted,
+  setBackupSyncStopped,
+  delay,
+} from "@/lib/backup-sync-status"
 import { QuotationBackupPDF } from "@/components/pdf/quotation-backup-pdf"
 import { InvoiceBackupPDF } from "@/components/pdf/invoice-backup-pdf"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
@@ -428,7 +436,11 @@ export async function runPdfDriveSync(): Promise<{
       "Erha tickets"
     )
 
+    setBackupSyncRunning("Quotations", quotations.length)
+    let currentIndex = 0
     for (const q of quotations) {
+      currentIndex += 1
+      updateBackupSyncProgress({ phase: "Quotations", current: currentIndex, total: quotations.length, uploaded, failed: skipped })
       try {
         const data = toQuotationPdfData(q)
         const buffer = await renderToBuffer(
@@ -440,18 +452,34 @@ export async function runPdfDriveSync(): Promise<{
           fileName,
           Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
         )
-        if (uploadResult.ok) uploaded += 1
-        else {
+        if (uploadResult.ok) {
+          uploaded += 1
+          updateBackupSyncProgress({ uploaded })
+        } else {
           skipped += 1
           setFirstSkipReason(`Quotation ${fileName} upload`, uploadResult.error)
           console.error("[pdf-drive-sync] Upload failed for quotation:", fileName, uploadResult.error)
+          if (recordBackupSyncFailure(uploadResult.error ?? "Upload failed")) {
+            setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${uploadResult.error}`)
+            return { ok: false, error: "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+          }
         }
       } catch (e) {
         captureError(e, `Quotation ${q.quotationId}`)
+        const errStr = e instanceof Error ? e.message : String(e)
+        if (recordBackupSyncFailure(errStr)) {
+          setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${errStr}`)
+          return { ok: false, error: firstError ?? "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+        }
       }
+      await delay(200)
     }
 
+    updateBackupSyncProgress({ phase: "Invoices", current: 0, total: invoices.length })
+    currentIndex = 0
     for (const inv of invoices) {
+      currentIndex += 1
+      updateBackupSyncProgress({ phase: "Invoices", current: currentIndex, total: invoices.length, uploaded, failed: skipped })
       try {
         const data = toInvoicePdfData(inv)
         const buffer = await renderToBuffer(
@@ -463,19 +491,34 @@ export async function runPdfDriveSync(): Promise<{
           fileName,
           Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
         )
-        if (uploadResult.ok) uploaded += 1
-        else {
+        if (uploadResult.ok) {
+          uploaded += 1
+          updateBackupSyncProgress({ uploaded })
+        } else {
           skipped += 1
           setFirstSkipReason(`Invoice ${fileName} upload`, uploadResult.error)
           console.error("[pdf-drive-sync] Upload failed for invoice:", fileName, uploadResult.error)
+          if (recordBackupSyncFailure(uploadResult.error ?? "Upload failed")) {
+            setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${uploadResult.error}`)
+            return { ok: false, error: "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+          }
         }
       } catch (e) {
         captureError(e, `Invoice ${inv.invoiceId}`)
+        const errStr = e instanceof Error ? e.message : String(e)
+        if (recordBackupSyncFailure(errStr)) {
+          setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${errStr}`)
+          return { ok: false, error: firstError ?? "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+        }
       }
+      await delay(200)
     }
 
-    // Paragon tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Paragon/{projectName}
+    updateBackupSyncProgress({ phase: "Paragon", current: 0, total: paragonTickets.length })
+    let paragonIndex = 0
     for (const t of paragonTickets) {
+      paragonIndex += 1
+      updateBackupSyncProgress({ phase: "Paragon", current: paragonIndex, total: paragonTickets.length, uploaded, failed: skipped })
       const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
       const projectFolderId = await getOrCreateFolder(paragonFolderId, folderName)
       if (!projectFolderId) continue
@@ -487,22 +530,37 @@ export async function runPdfDriveSync(): Promise<{
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
-          if (uploadResult.ok) uploaded += 1
-          else {
+          if (uploadResult.ok) {
+            uploaded += 1
+            updateBackupSyncProgress({ uploaded })
+          } else {
             skipped += 1
             setFirstSkipReason(`Paragon ${fileName} upload`, uploadResult.error)
             console.error("[pdf-drive-sync] Upload failed for Paragon:", fileName, uploadResult.error)
+            if (recordBackupSyncFailure(uploadResult.error ?? "Upload failed")) {
+              setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${uploadResult.error}`)
+              return { ok: false, error: "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+            }
           }
         } catch (e) {
           skipped += 1
           setFirstSkipReason(`Paragon ${t.ticketId} ${fileName} render`, e)
           console.error("[pdf-drive-sync] Paragon", t.ticketId, fileName, "skipped:", e)
+          const errStr = e instanceof Error ? e.message : String(e)
+          if (recordBackupSyncFailure(errStr)) {
+            setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${errStr}`)
+            return { ok: false, error: firstError ?? "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+          }
         }
       }
+      await delay(200)
     }
 
-    // Erha tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Erha/{projectName}
+    updateBackupSyncProgress({ phase: "Erha", current: 0, total: erhaTickets.length })
+    let erhaIndex = 0
     for (const t of erhaTickets) {
+      erhaIndex += 1
+      updateBackupSyncProgress({ phase: "Erha", current: erhaIndex, total: erhaTickets.length, uploaded, failed: skipped })
       const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
       const projectFolderId = await getOrCreateFolder(erhaFolderId, folderName)
       if (!projectFolderId) continue
@@ -514,28 +572,43 @@ export async function runPdfDriveSync(): Promise<{
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
-          if (uploadResult.ok) uploaded += 1
-          else {
+          if (uploadResult.ok) {
+            uploaded += 1
+            updateBackupSyncProgress({ uploaded })
+          } else {
             skipped += 1
             setFirstSkipReason(`Erha ${fileName} upload`, uploadResult.error)
             console.error("[pdf-drive-sync] Upload failed for Erha:", fileName, uploadResult.error)
+            if (recordBackupSyncFailure(uploadResult.error ?? "Upload failed")) {
+              setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${uploadResult.error}`)
+              return { ok: false, error: "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+            }
           }
         } catch (e) {
           skipped += 1
           setFirstSkipReason(`Erha ${t.ticketId} ${fileName} render`, e)
           console.error("[pdf-drive-sync] Erha", t.ticketId, fileName, "skipped:", e)
+          const errStr = e instanceof Error ? e.message : String(e)
+          if (recordBackupSyncFailure(errStr)) {
+            setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${errStr}`)
+            return { ok: false, error: firstError ?? "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+          }
         }
       }
+      await delay(200)
     }
 
     if (skipped > 0) {
       console.log("[pdf-drive-sync] Done. uploaded:", uploaded, "skipped:", skipped, "first skip reason:", firstSkipReason ?? "(none)")
     }
     if (firstError) return { ok: false, error: firstError, uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+    setBackupSyncCompleted(uploaded, skipped)
     return { ok: true, uploaded, skipped, skipReason: firstSkipReason ?? undefined }
   } catch (e) {
     console.error("[pdf-drive-sync] Failed:", e)
-    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    const errStr = e instanceof Error ? e.message : String(e)
+    setBackupSyncStopped(errStr)
+    return { ok: false, error: errStr }
   }
 }
 
