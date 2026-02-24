@@ -114,15 +114,15 @@ export async function getOrCreateFolder(
 /**
  * Upload or update a file in the given folder. Same name = replace content.
  * parentId: folder ID. fileName: exact file name. buffer: PDF bytes.
- * Returns true on success.
+ * Returns { ok: true } on success, { ok: false, error } on failure (so caller can show reason).
  */
 export async function uploadOrUpdateFile(
   parentId: string,
   fileName: string,
   buffer: Buffer
-): Promise<boolean> {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const d = getDrive()
-  if (!d) return false
+  if (!d) return { ok: false, error: "Google Drive client not initialized" }
   const safeName = sanitizeName(fileName)
   if (!safeName.endsWith(".pdf")) {
     console.warn("[google-drive] File name should end with .pdf:", fileName)
@@ -144,7 +144,7 @@ export async function uploadOrUpdateFile(
         fileId: existing.id,
         media: { mimeType: MIME_PDF, body: bufferToStream(buffer) },
       })
-      return true
+      return { ok: true }
     }
     await d.files.create({
       ...keyParams,
@@ -157,9 +157,10 @@ export async function uploadOrUpdateFile(
       media: { mimeType: MIME_PDF, body: bufferToStream(buffer) },
       fields: "id",
     })
-    return true
+    return { ok: true }
   } catch (e) {
+    const errMsg = e instanceof Error ? e.message : String(e)
     console.error("[google-drive] uploadOrUpdateFile failed:", fileName, e)
-    return false
+    return { ok: false, error: errMsg }
   }
 }

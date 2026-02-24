@@ -36,6 +36,7 @@ export default function BackupPage() {
   const [driveStatus, setDriveStatus] = useState<{ configured: boolean; rootFolderUrl?: string } | null>(null)
   const [syncingPdf, setSyncingPdf] = useState(false)
   const [lastSyncError, setLastSyncError] = useState<string | null>(null)
+  const [lastSkipReason, setLastSkipReason] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/backup/import-phrase")
@@ -157,20 +158,24 @@ export default function BackupPage() {
   const handleSyncPdfToDrive = async () => {
     setSyncingPdf(true)
     setLastSyncError(null)
+    setLastSkipReason(null)
     try {
       const res = await fetch("/api/backup/sync-pdf-drive", { method: "POST" })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         const errMsg = data.error || "Sync failed"
         setLastSyncError(errMsg)
+        if (data.skipReason) setLastSkipReason(data.skipReason)
         throw new Error(errMsg)
       }
       const count = typeof data.uploaded === "number" ? data.uploaded : 0
       const skipCount = typeof data.skipped === "number" ? data.skipped : 0
+      const skipReason = typeof data.skipReason === "string" ? data.skipReason : null
+      if (skipReason) setLastSkipReason(skipReason)
       if (count === 0) {
         const msg =
           skipCount > 0
-            ? `0 PDFs uploaded, ${skipCount} skipped (render/upload failed). Check server logs for details.`
+            ? `0 PDFs uploaded, ${skipCount} skipped. See "Why skipped" below to copy the error.`
             : "Sync completed but 0 PDFs uploaded. No non-draft quotations/invoices, or check server logs."
         toast.warning(msg)
       } else {
@@ -189,6 +194,13 @@ export default function BackupPage() {
     if (lastSyncError) {
       navigator.clipboard.writeText(lastSyncError)
       toast.success("Error copied to clipboard")
+    }
+  }
+
+  const copySkipReason = () => {
+    if (lastSkipReason) {
+      navigator.clipboard.writeText(lastSkipReason)
+      toast.success("Skip reason copied to clipboard")
     }
   }
 
@@ -251,6 +263,17 @@ export default function BackupPage() {
                     </pre>
                     <Button type="button" variant="outline" size="sm" onClick={copySyncError}>
                       Copy full error
+                    </Button>
+                  </div>
+                )}
+                {lastSkipReason && !lastSyncError && (
+                  <div className="rounded-md border border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10 p-3 text-sm space-y-2">
+                    <p className="font-medium text-amber-700 dark:text-amber-400">Why items were skipped (first error — copy for debugging):</p>
+                    <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs bg-muted/50 p-2 rounded select-all">
+                      {lastSkipReason}
+                    </pre>
+                    <Button type="button" variant="outline" size="sm" onClick={copySkipReason}>
+                      Copy skip reason
                     </Button>
                   </div>
                 )}

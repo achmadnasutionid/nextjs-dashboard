@@ -336,19 +336,30 @@ function pdfFileName(id: string, billTo: string): string {
   return `${id}_${safe}.pdf`
 }
 
+function errToString(e: unknown): string {
+  if (e instanceof Error) return e.message + (e.stack ? "\n" + e.stack : "")
+  return String(e)
+}
+
 export async function runPdfDriveSync(): Promise<{
   ok: boolean
   error?: string
   uploaded?: number
   skipped?: number
+  skipReason?: string
 }> {
   if (!ROOT_FOLDER_ID || !isDriveConfigured()) {
     return { ok: false, error: "Google Drive not configured" }
   }
 
   let firstError: string | null = null
+  let firstSkipReason: string | null = null
   let uploaded = 0
   let skipped = 0
+  function setFirstSkipReason(context: string, e: unknown) {
+    if (firstSkipReason) return
+    firstSkipReason = `${context}: ${errToString(e)}`
+  }
   function captureError(e: unknown, context: string) {
     const msg = e instanceof Error ? e.message : String(e)
     const stack = e instanceof Error && e.stack ? e.stack : ""
@@ -425,16 +436,18 @@ export async function runPdfDriveSync(): Promise<{
             )
           } catch (minimalErr) {
             skipped += 1
+            setFirstSkipReason(`Quotation ${q.quotationId} render (minimal)`, minimalErr)
             console.error("[pdf-drive-sync] Quotation", q.quotationId, "minimal fallback failed:", minimalErr)
             continue
           }
         }
         const fileName = pdfFileName(q.quotationId, q.billTo)
-        const ok = await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.from(buffer))
-        if (ok) uploaded += 1
+        const uploadResult = await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.from(buffer))
+        if (uploadResult.ok) uploaded += 1
         else {
           skipped += 1
-          console.error("[pdf-drive-sync] Upload failed for quotation:", fileName)
+          setFirstSkipReason(`Quotation ${fileName} upload`, uploadResult.error)
+          console.error("[pdf-drive-sync] Upload failed for quotation:", fileName, uploadResult.error)
         }
       } catch (e) {
         captureError(e, `Quotation ${q.quotationId}`)
@@ -456,16 +469,18 @@ export async function runPdfDriveSync(): Promise<{
             )
           } catch (minimalErr) {
             skipped += 1
+            setFirstSkipReason(`Invoice ${inv.invoiceId} render (minimal)`, minimalErr)
             console.error("[pdf-drive-sync] Invoice", inv.invoiceId, "minimal fallback failed:", minimalErr)
             continue
           }
         }
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
-        const ok = await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.from(buffer))
-        if (ok) uploaded += 1
+        const uploadResult = await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.from(buffer))
+        if (uploadResult.ok) uploaded += 1
         else {
           skipped += 1
-          console.error("[pdf-drive-sync] Upload failed for invoice:", fileName)
+          setFirstSkipReason(`Invoice ${fileName} upload`, uploadResult.error)
+          console.error("[pdf-drive-sync] Upload failed for invoice:", fileName, uploadResult.error)
         }
       } catch (e) {
         captureError(e, `Invoice ${inv.invoiceId}`)
@@ -484,14 +499,16 @@ export async function runPdfDriveSync(): Promise<{
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
-          const ok = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
-          if (ok) uploaded += 1
+          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
+          if (uploadResult.ok) uploaded += 1
           else {
             skipped += 1
-            console.error("[pdf-drive-sync] Upload failed for Paragon:", fileName)
+            setFirstSkipReason(`Paragon ${fileName} upload`, uploadResult.error)
+            console.error("[pdf-drive-sync] Upload failed for Paragon:", fileName, uploadResult.error)
           }
         } catch (e) {
           skipped += 1
+          setFirstSkipReason(`Paragon ${t.ticketId} ${fileName} render`, e)
           console.error("[pdf-drive-sync] Paragon", t.ticketId, fileName, "skipped:", e)
         }
       }
@@ -509,24 +526,26 @@ export async function runPdfDriveSync(): Promise<{
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
-          const ok = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
-          if (ok) uploaded += 1
+          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
+          if (uploadResult.ok) uploaded += 1
           else {
             skipped += 1
-            console.error("[pdf-drive-sync] Upload failed for Erha:", fileName)
+            setFirstSkipReason(`Erha ${fileName} upload`, uploadResult.error)
+            console.error("[pdf-drive-sync] Upload failed for Erha:", fileName, uploadResult.error)
           }
         } catch (e) {
           skipped += 1
+          setFirstSkipReason(`Erha ${t.ticketId} ${fileName} render`, e)
           console.error("[pdf-drive-sync] Erha", t.ticketId, fileName, "skipped:", e)
         }
       }
     }
 
     if (skipped > 0) {
-      console.log("[pdf-drive-sync] Done. uploaded:", uploaded, "skipped:", skipped)
+      console.log("[pdf-drive-sync] Done. uploaded:", uploaded, "skipped:", skipped, "first skip reason:", firstSkipReason ?? "(none)")
     }
-    if (firstError) return { ok: false, error: firstError, uploaded, skipped }
-    return { ok: true, uploaded, skipped }
+    if (firstError) return { ok: false, error: firstError, uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+    return { ok: true, uploaded, skipped, skipReason: firstSkipReason ?? undefined }
   } catch (e) {
     console.error("[pdf-drive-sync] Failed:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }

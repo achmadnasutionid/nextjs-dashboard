@@ -15,6 +15,7 @@ export async function POST() {
           error: result.error ?? "Sync failed",
           uploaded: result.uploaded ?? 0,
           skipped: result.skipped ?? 0,
+          skipReason: result.skipReason,
         },
         { status: 400 }
       )
@@ -23,6 +24,7 @@ export async function POST() {
       ok: true,
       uploaded: result.uploaded ?? 0,
       skipped: result.skipped ?? 0,
+      skipReason: result.skipReason,
     })
   } catch (e) {
     console.error("PDF Drive sync failed:", e)
