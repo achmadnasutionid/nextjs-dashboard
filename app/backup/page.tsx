@@ -407,7 +407,7 @@ export default function BackupPage() {
     <div className="flex h-screen flex-col bg-background text-foreground overflow-hidden">
       <PageHeader title="Backup" showBackButton backTo="/" />
 
-      <main className="flex-1 min-h-0 overflow-hidden px-3 pb-2">
+      <main className="flex-1 min-h-0 overflow-hidden px-3 pt-5 pb-2">
         <div className="h-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 content-start max-w-7xl mx-auto">
           {/* Drive sync */}
           <Card className="flex flex-col min-h-0">
