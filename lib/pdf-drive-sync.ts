@@ -15,7 +15,7 @@ import {
   sanitizeName,
   isDriveConfigured,
 } from "@/lib/google-drive"
-import { QuotationPDF } from "@/components/pdf/quotation-pdf"
+import { QuotationPDF, QuotationPDFMinimal } from "@/components/pdf/quotation-pdf"
 import { InvoicePDF } from "@/components/pdf/invoice-pdf"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
@@ -344,8 +344,11 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
   let firstError: string | null = null
   function captureError(e: unknown, context: string) {
     const msg = e instanceof Error ? e.message : String(e)
+    const stack = e instanceof Error && e.stack ? e.stack : ""
+    const full = stack ? `${context}: ${msg}\n\nStack:\n${stack}` : `${context}: ${msg}`
     console.error("[pdf-drive-sync]", context, e)
-    if (!firstError) firstError = `${context}: ${msg}`
+    console.error("[pdf-drive-sync] FULL ERROR (copy this):\n", full)
+    if (!firstError) firstError = full
   }
 
   try {
@@ -371,9 +374,21 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
     for (const q of quotations) {
       try {
         const data = toQuotationPdfData(q)
-        const buffer = await renderToBuffer(
-          React.createElement(QuotationPDF, { data }) as Parameters<typeof renderToBuffer>[0]
-        )
+        let buffer: ArrayBuffer | Buffer
+        try {
+          buffer = await renderToBuffer(
+            React.createElement(QuotationPDF, { data }) as Parameters<typeof renderToBuffer>[0]
+          )
+        } catch (renderErr) {
+          const msg = renderErr instanceof Error ? renderErr.message : String(renderErr)
+          if (msg.includes("reading 'S'") || msg.includes("reading \"S\"")) {
+            buffer = await renderToBuffer(
+              React.createElement(QuotationPDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
+            )
+          } else {
+            throw renderErr
+          }
+        }
         const fileName = pdfFileName(q.quotationId, q.billTo)
         await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.from(buffer))
       } catch (e) {

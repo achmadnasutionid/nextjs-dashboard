@@ -627,7 +627,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
   }
 
   return (
-    <Document>
+    <Document pdfVersion="1.3">
       <Page size="A4" style={styles.page} wrap>
         {/* Header */}
         <View style={styles.header} fixed>
@@ -823,4 +823,16 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data }) => {
   )
 }
 
-
+/** Minimal quotation PDF used as fallback when full render throws (e.g. reading 'S' structure-tree bug). */
+export const QuotationPDFMinimal: React.FC<{ data: QuotationPDFProps["data"] }> = ({ data }) => (
+  <Document pdfVersion="1.3">
+    <Page size="A4" style={{ padding: 30, fontSize: 10, fontFamily: "Helvetica" }}>
+      <View>
+        <Text style={{ fontSize: 14, fontWeight: "bold", marginBottom: 8 }}>QUOTATION</Text>
+        <Text style={{ marginBottom: 4 }}>No. {data.quotationId}</Text>
+        <Text style={{ marginBottom: 4 }}>Bill To: {data.billTo}</Text>
+        <Text style={{ marginBottom: 4 }}>Total: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.totalAmount)}</Text>
+      </View>
+    </Page>
+  </Document>
+)

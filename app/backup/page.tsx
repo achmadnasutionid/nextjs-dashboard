@@ -35,6 +35,7 @@ export default function BackupPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [driveStatus, setDriveStatus] = useState<{ configured: boolean; rootFolderUrl?: string } | null>(null)
   const [syncingPdf, setSyncingPdf] = useState(false)
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/backup/import-phrase")
@@ -155,17 +156,29 @@ export default function BackupPage() {
 
   const handleSyncPdfToDrive = async () => {
     setSyncingPdf(true)
+    setLastSyncError(null)
     try {
       const res = await fetch("/api/backup/sync-pdf-drive", { method: "POST" })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(data.error || "Sync failed")
+        const errMsg = data.error || "Sync failed"
+        setLastSyncError(errMsg)
+        throw new Error(errMsg)
       }
       toast.success("PDFs synced to Google Drive")
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sync failed")
+      const msg = e instanceof Error ? e.message : "Sync failed"
+      setLastSyncError(msg)
+      toast.error("Sync failed — see error below to copy")
     } finally {
       setSyncingPdf(false)
+    }
+  }
+
+  const copySyncError = () => {
+    if (lastSyncError) {
+      navigator.clipboard.writeText(lastSyncError)
+      toast.success("Error copied to clipboard")
     }
   }
 
@@ -220,6 +233,17 @@ export default function BackupPage() {
                   )}
                   {syncingPdf ? "Syncing…" : "Sync PDFs to Drive now"}
                 </Button>
+                {lastSyncError && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/5 dark:bg-destructive/10 p-3 text-sm space-y-2">
+                    <p className="font-medium text-destructive">Last sync error (copy and share for debugging):</p>
+                    <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs bg-muted/50 p-2 rounded select-all">
+                      {lastSyncError}
+                    </pre>
+                    <Button type="button" variant="outline" size="sm" onClick={copySyncError}>
+                      Copy full error
+                    </Button>
+                  </div>
+                )}
                 {driveStatus && !driveStatus.configured && (
                   <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-900 dark:text-amber-200 space-y-2">
                     <p className="font-medium">Setup required (in .env or environment):</p>
