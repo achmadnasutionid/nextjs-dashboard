@@ -5,7 +5,7 @@
 Critical features for Quotation, PDFs, Paragon/Erha, and data safety are covered.
 
 ```bash
-npm run test:critical  # Run before every deployment!
+npm run test  # Run before every deployment!
 ```
 
 ## Test Files (critical)
@@ -51,8 +51,8 @@ npm run test:critical  # Run before every deployment!
 ## Available Commands
 
 ```bash
-# Run all critical tests once
-npm run test:critical
+# Run all tests once
+npm run test
 
 # Run all tests with watch mode (auto-rerun on changes)
 npm run test:watch
@@ -94,7 +94,7 @@ Received: null
 
 → Issue: bastContactPerson not saved on create
 → Fix: Check Paragon create API / Prisma schema
-→ Rerun: npm run test:critical
+→ Rerun: npm run test
 → ✅ Pass → Safe to deploy
 ```
 
@@ -151,7 +151,7 @@ it('FEATURE 13: Should handle discount field', async () => {
 - Ensure proper cleanup (afterAll hooks)
 
 ### Connection errors
-- Tests use `.env.test` (see `npm run test:critical`). Verify DATABASE_URL points to a **test** DB (setup truncates tables).
+- Tests use `.env` (same DB as local dev: `DATABASE_URL_LOCAL` or `DATABASE_URL`). Ensure your DB is reachable.
 - Check if PostgreSQL is running
 
 ## Files

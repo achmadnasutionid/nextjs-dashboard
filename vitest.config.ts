@@ -14,7 +14,7 @@ export default defineConfig({
     hookTimeout: 30000,
     env: {
       NODE_ENV: 'test',
-      // Will be overridden by .env.test when using dotenv-cli
+      // Load .env via dotenv -e .env in package.json test scripts
     },
     // Run tests sequentially to avoid database conflicts
     pool: 'forks',

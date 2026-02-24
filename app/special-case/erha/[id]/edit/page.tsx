@@ -941,7 +941,7 @@ export default function EditErhaTicketPage() {
     
     setDeleting(true)
     try {
-      const response = await fetch(`/api/special-case/erha/${ticketId}`, {
+      const response = await fetch(`/api/erha/${ticketId}`, {
         method: "DELETE"
       })
 

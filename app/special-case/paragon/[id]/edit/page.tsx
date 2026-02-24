@@ -877,7 +877,7 @@ export default function EditParagonTicketPage() {
     
     setDeleting(true)
     try {
-      const response = await fetch(`/api/special-case/paragon/${ticketId}`, {
+      const response = await fetch(`/api/paragon/${ticketId}`, {
         method: "DELETE"
       })
 
