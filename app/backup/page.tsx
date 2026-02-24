@@ -410,7 +410,7 @@ export default function BackupPage() {
       <main className="flex-1 min-h-0 overflow-hidden px-3 pt-5 pb-2">
         <div className="h-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 content-start max-w-7xl mx-auto">
           {/* Drive sync */}
-          <Card className="flex flex-col min-h-0">
+          <Card className="flex flex-col min-w-[260px] min-h-[200px]">
             <CardHeader className="py-2 px-3">
               <CardTitle className="flex items-center gap-1.5 text-sm">
                 <FolderSync className="h-4 w-4" />
@@ -462,7 +462,7 @@ export default function BackupPage() {
           </Card>
 
           {/* Save backup */}
-          <Card className="flex flex-col min-h-0">
+          <Card className="flex flex-col min-w-[260px] min-h-[200px]">
             <CardHeader className="py-2 px-3">
               <CardTitle className="flex items-center gap-1.5 text-sm">
                 <Save className="h-4 w-4" />
@@ -482,7 +482,7 @@ export default function BackupPage() {
           </Card>
 
           {/* Restore full DB */}
-          <Card className="flex flex-col min-h-0 border-destructive/50 dark:border-destructive/60">
+          <Card className="flex flex-col min-w-[260px] min-h-[200px] border-destructive/50 dark:border-destructive/60">
             <CardHeader className="py-2 px-3">
               <CardTitle className="flex items-center gap-1.5 text-sm text-destructive">
                 <Upload className="h-4 w-4" />
@@ -523,7 +523,7 @@ export default function BackupPage() {
           </Card>
 
           {/* Restore single document */}
-          <Card className="flex flex-col min-h-0">
+          <Card className="flex flex-col min-w-[260px] min-h-[200px]">
             <CardHeader className="py-2 px-3">
               <CardTitle className="flex items-center gap-1.5 text-sm">
                 <FileJson className="h-4 w-4" />
