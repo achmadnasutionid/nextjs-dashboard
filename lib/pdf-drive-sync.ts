@@ -1,7 +1,7 @@
 /**
  * PDF → Google Drive sync. Runs in background when backup trigger runs (24h).
  * - Quotations / Invoices: status not draft (pending + accepted/paid), same ID = replace in Drive.
- * - Paragon / Erha: status final only (so Drive has only finalized tickets); 3 PDFs per ticket
+ * - Paragon / Erha: status not draft, non-deleted (same as Quotations/Invoices); 3 PDFs per ticket
  *   (quotation, invoice, BAST). Same file name = replace. Skips quotation/invoice PDF if ID empty.
  * Folder structure: root/Quotations, root/Invoices, root/Paragon/{billTo}, root/Erha/{billTo}.
  */
@@ -392,9 +392,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       }
     }
 
-    // Paragon tickets (final only, exclude deleted) – up to 3 PDFs per ticket under Paragon/{billTo}
+    // Paragon tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Paragon/{billTo}
     const paragonTickets = await prisma.paragonTicket.findMany({
-      where: { status: "final", deletedAt: null },
+      where: { status: { not: "draft" }, deletedAt: null },
       include: {
         items: { include: { details: true }, orderBy: { order: "asc" as const } },
         remarks: { orderBy: { order: "asc" as const } },
@@ -417,9 +417,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       }
     }
 
-    // Erha tickets (final only, exclude deleted) – up to 3 PDFs per ticket under Erha/{billTo}
+    // Erha tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Erha/{billTo}
     const erhaTickets = await prisma.erhaTicket.findMany({
-      where: { status: "final", deletedAt: null },
+      where: { status: { not: "draft" }, deletedAt: null },
       include: {
         items: { include: { details: true }, orderBy: { order: "asc" as const } },
         remarks: { orderBy: { order: "asc" as const } },
