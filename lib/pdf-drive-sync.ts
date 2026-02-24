@@ -3,7 +3,7 @@
  * - Quotations / Invoices: status not draft (pending + accepted/paid), same ID = replace in Drive.
  * - Paragon / Erha: status not draft, non-deleted (same as Quotations/Invoices); 3 PDFs per ticket
  *   (quotation, invoice, BAST). Same file name = replace. Skips quotation/invoice PDF if ID empty.
- * Folder structure: root/Quotations, root/Invoices, root/Paragon/{billTo}, root/Erha/{billTo}.
+ * Folder structure: root/Quotations, root/Invoices, root/Paragon/{projectName}, root/Erha/{projectName}.
  */
 
 import React from "react"
@@ -392,7 +392,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       }
     }
 
-    // Paragon tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Paragon/{billTo}
+    // Paragon tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Paragon/{projectName}
     const paragonTickets = await prisma.paragonTicket.findMany({
       where: { status: { not: "draft" }, deletedAt: null },
       include: {
@@ -401,8 +401,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       },
     })
     for (const t of paragonTickets) {
-      const billToFolderId = await getOrCreateFolder(paragonFolderId, t.billTo)
-      if (!billToFolderId) continue
+      const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
+      const projectFolderId = await getOrCreateFolder(paragonFolderId, folderName)
+      if (!projectFolderId) continue
       const data = toParagonPdfData(t)
       const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ParagonBASTPDF, { data })]]
       if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data })])
@@ -410,14 +411,14 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
-          await uploadOrUpdateFile(billToFolderId, fileName, Buffer.from(buffer))
+          await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
         } catch (e) {
           console.error("[pdf-drive-sync] Paragon", t.ticketId, fileName, e)
         }
       }
     }
 
-    // Erha tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Erha/{billTo}
+    // Erha tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Erha/{projectName}
     const erhaTickets = await prisma.erhaTicket.findMany({
       where: { status: { not: "draft" }, deletedAt: null },
       include: {
@@ -426,8 +427,9 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       },
     })
     for (const t of erhaTickets) {
-      const billToFolderId = await getOrCreateFolder(erhaFolderId, t.billTo)
-      if (!billToFolderId) continue
+      const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
+      const projectFolderId = await getOrCreateFolder(erhaFolderId, folderName)
+      if (!projectFolderId) continue
       const data = toErhaPdfData(t)
       const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ErhaBASTPDF, { data })]]
       if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ErhaQuotationPDF, { data })])
@@ -435,7 +437,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
-          await uploadOrUpdateFile(billToFolderId, fileName, Buffer.from(buffer))
+          await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
         } catch (e) {
           console.error("[pdf-drive-sync] Erha", t.ticketId, fileName, e)
         }
