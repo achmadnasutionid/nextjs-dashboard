@@ -448,7 +448,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
         } catch (e) {
-          captureError(e, `Paragon ${t.ticketId} ${fileName}`)
+          console.error("[pdf-drive-sync] Paragon", t.ticketId, fileName, "skipped:", e)
         }
       }
     }
@@ -474,7 +474,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string }
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
         } catch (e) {
-          captureError(e, `Erha ${t.ticketId} ${fileName}`)
+          console.error("[pdf-drive-sync] Erha", t.ticketId, fileName, "skipped:", e)
         }
       }
     }
