@@ -165,7 +165,12 @@ export default function BackupPage() {
         setLastSyncError(errMsg)
         throw new Error(errMsg)
       }
-      toast.success("PDFs synced to Google Drive")
+      const count = typeof data.uploaded === "number" ? data.uploaded : 0
+      if (count === 0) {
+        toast.warning("Sync completed but 0 PDFs uploaded. Check server logs for skipped errors or ensure you have non-draft quotations/invoices.")
+      } else {
+        toast.success(`${count} PDF${count === 1 ? "" : "s"} synced to Google Drive`)
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Sync failed"
       setLastSyncError(msg)

@@ -10,11 +10,11 @@ export async function POST() {
     const result = await runPdfDriveSync()
     if (!result.ok) {
       return NextResponse.json(
-        { ok: false, error: result.error ?? "Sync failed" },
+        { ok: false, error: result.error ?? "Sync failed", uploaded: result.uploaded ?? 0 },
         { status: 400 }
       )
     }
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, uploaded: result.uploaded ?? 0 })
   } catch (e) {
     console.error("PDF Drive sync failed:", e)
     return NextResponse.json(
