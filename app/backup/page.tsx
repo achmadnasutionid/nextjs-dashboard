@@ -166,8 +166,13 @@ export default function BackupPage() {
         throw new Error(errMsg)
       }
       const count = typeof data.uploaded === "number" ? data.uploaded : 0
+      const skipCount = typeof data.skipped === "number" ? data.skipped : 0
       if (count === 0) {
-        toast.warning("Sync completed but 0 PDFs uploaded. Check server logs for skipped errors or ensure you have non-draft quotations/invoices.")
+        const msg =
+          skipCount > 0
+            ? `0 PDFs uploaded, ${skipCount} skipped (render/upload failed). Check server logs for details.`
+            : "Sync completed but 0 PDFs uploaded. No non-draft quotations/invoices, or check server logs."
+        toast.warning(msg)
       } else {
         toast.success(`${count} PDF${count === 1 ? "" : "s"} synced to Google Drive`)
       }

@@ -336,13 +336,19 @@ function pdfFileName(id: string, billTo: string): string {
   return `${id}_${safe}.pdf`
 }
 
-export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; uploaded?: number }> {
+export async function runPdfDriveSync(): Promise<{
+  ok: boolean
+  error?: string
+  uploaded?: number
+  skipped?: number
+}> {
   if (!ROOT_FOLDER_ID || !isDriveConfigured()) {
     return { ok: false, error: "Google Drive not configured" }
   }
 
   let firstError: string | null = null
   let uploaded = 0
+  let skipped = 0
   function captureError(e: unknown, context: string) {
     const msg = e instanceof Error ? e.message : String(e)
     const stack = e instanceof Error && e.stack ? e.stack : ""
@@ -372,6 +378,37 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; 
       where: { status: { not: "draft" }, deletedAt: null },
       include: quotationInclude,
     })
+    // Invoices (exclude draft, exclude deleted)
+    const invoices = await prisma.invoice.findMany({
+      where: { status: { not: "draft" }, deletedAt: null },
+      include: quotationInclude,
+    })
+    const paragonTickets = await prisma.paragonTicket.findMany({
+      where: { status: { not: "draft" }, deletedAt: null },
+      include: {
+        items: { include: { details: true }, orderBy: { order: "asc" as const } },
+        remarks: { orderBy: { order: "asc" as const } },
+      },
+    })
+    const erhaTickets = await prisma.erhaTicket.findMany({
+      where: { status: { not: "draft" }, deletedAt: null },
+      include: {
+        items: { include: { details: true }, orderBy: { order: "asc" as const } },
+        remarks: { orderBy: { order: "asc" as const } },
+      },
+    })
+    console.log(
+      "[pdf-drive-sync] Syncing:",
+      quotations.length,
+      "quotations,",
+      invoices.length,
+      "invoices,",
+      paragonTickets.length,
+      "Paragon tickets,",
+      erhaTickets.length,
+      "Erha tickets"
+    )
+
     for (const q of quotations) {
       try {
         const data = toQuotationPdfData(q)
@@ -387,6 +424,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; 
               React.createElement(QuotationPDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
             )
           } catch (minimalErr) {
+            skipped += 1
             console.error("[pdf-drive-sync] Quotation", q.quotationId, "minimal fallback failed:", minimalErr)
             continue
           }
@@ -394,16 +432,15 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; 
         const fileName = pdfFileName(q.quotationId, q.billTo)
         const ok = await uploadOrUpdateFile(quotationsFolderId, fileName, Buffer.from(buffer))
         if (ok) uploaded += 1
+        else {
+          skipped += 1
+          console.error("[pdf-drive-sync] Upload failed for quotation:", fileName)
+        }
       } catch (e) {
         captureError(e, `Quotation ${q.quotationId}`)
       }
     }
 
-    // Invoices (exclude draft, exclude deleted)
-    const invoices = await prisma.invoice.findMany({
-      where: { status: { not: "draft" }, deletedAt: null },
-      include: quotationInclude,
-    })
     for (const inv of invoices) {
       try {
         const data = toInvoicePdfData(inv)
@@ -418,6 +455,7 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; 
               React.createElement(InvoicePDFMinimal, { data }) as Parameters<typeof renderToBuffer>[0]
             )
           } catch (minimalErr) {
+            skipped += 1
             console.error("[pdf-drive-sync] Invoice", inv.invoiceId, "minimal fallback failed:", minimalErr)
             continue
           }
@@ -425,19 +463,16 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; 
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
         const ok = await uploadOrUpdateFile(invoicesFolderId, fileName, Buffer.from(buffer))
         if (ok) uploaded += 1
+        else {
+          skipped += 1
+          console.error("[pdf-drive-sync] Upload failed for invoice:", fileName)
+        }
       } catch (e) {
         captureError(e, `Invoice ${inv.invoiceId}`)
       }
     }
 
     // Paragon tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Paragon/{projectName}
-    const paragonTickets = await prisma.paragonTicket.findMany({
-      where: { status: { not: "draft" }, deletedAt: null },
-      include: {
-        items: { include: { details: true }, orderBy: { order: "asc" as const } },
-        remarks: { orderBy: { order: "asc" as const } },
-      },
-    })
     for (const t of paragonTickets) {
       const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
       const projectFolderId = await getOrCreateFolder(paragonFolderId, folderName)
@@ -451,20 +486,18 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; 
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           const ok = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
           if (ok) uploaded += 1
+          else {
+            skipped += 1
+            console.error("[pdf-drive-sync] Upload failed for Paragon:", fileName)
+          }
         } catch (e) {
+          skipped += 1
           console.error("[pdf-drive-sync] Paragon", t.ticketId, fileName, "skipped:", e)
         }
       }
     }
 
     // Erha tickets (non-draft, exclude deleted) – up to 3 PDFs per ticket under Erha/{projectName}
-    const erhaTickets = await prisma.erhaTicket.findMany({
-      where: { status: { not: "draft" }, deletedAt: null },
-      include: {
-        items: { include: { details: true }, orderBy: { order: "asc" as const } },
-        remarks: { orderBy: { order: "asc" as const } },
-      },
-    })
     for (const t of erhaTickets) {
       const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
       const projectFolderId = await getOrCreateFolder(erhaFolderId, folderName)
@@ -478,14 +511,22 @@ export async function runPdfDriveSync(): Promise<{ ok: boolean; error?: string; 
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
           const ok = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
           if (ok) uploaded += 1
+          else {
+            skipped += 1
+            console.error("[pdf-drive-sync] Upload failed for Erha:", fileName)
+          }
         } catch (e) {
+          skipped += 1
           console.error("[pdf-drive-sync] Erha", t.ticketId, fileName, "skipped:", e)
         }
       }
     }
 
-    if (firstError) return { ok: false, error: firstError, uploaded }
-    return { ok: true, uploaded }
+    if (skipped > 0) {
+      console.log("[pdf-drive-sync] Done. uploaded:", uploaded, "skipped:", skipped)
+    }
+    if (firstError) return { ok: false, error: firstError, uploaded, skipped }
+    return { ok: true, uploaded, skipped }
   } catch (e) {
     console.error("[pdf-drive-sync] Failed:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }

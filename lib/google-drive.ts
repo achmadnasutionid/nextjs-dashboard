@@ -128,33 +128,38 @@ export async function uploadOrUpdateFile(
     console.warn("[google-drive] File name should end with .pdf:", fileName)
   }
   const keyParams = getApiKeyParams()
-  const res = await d.files.list({
-    ...keyParams,
-    ...SHARED_DRIVE_PARAMS,
-    q: `'${parentId}' in parents and name = '${safeName.replace(/'/g, "''")}' and trashed = false`,
-    fields: "files(id)",
-    pageSize: 1,
-  })
-  const existing = res.data.files?.[0]
-  if (existing?.id) {
-    await d.files.update({
+  try {
+    const res = await d.files.list({
       ...keyParams,
       ...SHARED_DRIVE_PARAMS,
-      fileId: existing.id,
+      q: `'${parentId}' in parents and name = '${safeName.replace(/'/g, "''")}' and trashed = false`,
+      fields: "files(id)",
+      pageSize: 1,
+    })
+    const existing = res.data.files?.[0]
+    if (existing?.id) {
+      await d.files.update({
+        ...keyParams,
+        ...SHARED_DRIVE_PARAMS,
+        fileId: existing.id,
+        media: { mimeType: MIME_PDF, body: bufferToStream(buffer) },
+      })
+      return true
+    }
+    await d.files.create({
+      ...keyParams,
+      ...SHARED_DRIVE_PARAMS,
+      requestBody: {
+        name: safeName,
+        mimeType: MIME_PDF,
+        parents: [parentId],
+      },
       media: { mimeType: MIME_PDF, body: bufferToStream(buffer) },
+      fields: "id",
     })
     return true
+  } catch (e) {
+    console.error("[google-drive] uploadOrUpdateFile failed:", fileName, e)
+    return false
   }
-  await d.files.create({
-    ...keyParams,
-    ...SHARED_DRIVE_PARAMS,
-    requestBody: {
-      name: safeName,
-      mimeType: MIME_PDF,
-      parents: [parentId],
-    },
-    media: { mimeType: MIME_PDF, body: bufferToStream(buffer) },
-    fields: "id",
-  })
-  return true
 }
