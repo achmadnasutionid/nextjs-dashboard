@@ -252,23 +252,6 @@ export default function Home() {
                     </p>
                   </div>
                 </Card>
-                {pendingProfitMissingIds.length > 0 && (
-                  <Card
-                    className="group cursor-pointer transition-all hover:shadow-lg hover:border-amber-500/50"
-                    onClick={() => handleNavigate(`/invoice?status=pending&search=${encodeURIComponent(pendingProfitMissingIds.join(","))}`)}
-                  >
-                    <div className="p-6">
-                      <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                        <Receipt className="h-6 w-6 text-amber-600" />
-                      </div>
-                      <h3 className="font-semibold text-lg mb-2">Pending without tracker</h3>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {pendingProfitMissingIds.length} invoice(s) have no tracker data
-                      </p>
-                      <p className="text-xs text-amber-600 font-medium">Click to open filtered list</p>
-                    </div>
-                  </Card>
-                )}
                 <Card
                   className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
                   onClick={() => handleNavigate("/invoice?status=paid")}
@@ -294,6 +277,23 @@ export default function Home() {
                     </p>
                   </div>
                 </Card>
+                {pendingProfitMissingIds.length > 0 && (
+                  <Card
+                    className="group cursor-pointer transition-all hover:shadow-lg hover:border-amber-500/50"
+                    onClick={() => handleNavigate(`/invoice?status=pending&search=${encodeURIComponent(pendingProfitMissingIds.join(","))}`)}
+                  >
+                    <div className="p-6">
+                      <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                        <Receipt className="h-6 w-6 text-amber-600" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2">Pending without tracker</h3>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {pendingProfitMissingIds.length} invoice(s) have no tracker data
+                      </p>
+                      <p className="text-xs text-amber-600 font-medium">Click to open filtered list</p>
+                    </div>
+                  </Card>
+                )}
               </div>
             </div>
           )}
