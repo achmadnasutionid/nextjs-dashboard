@@ -32,7 +32,6 @@ export async function GET(request: Request) {
       select: {
         id: true,
         quotationId: true,
-        companyName: true,
         productionDate: true,
         totalAmount: true,
         billTo: true
@@ -55,10 +54,10 @@ export async function GET(request: Request) {
       select: {
         id: true,
         ticketId: true,
-        companyName: true,
         productionDate: true,
         totalAmount: true,
-        billTo: true
+        billTo: true,
+        projectName: true
       }
     })
 
@@ -74,41 +73,43 @@ export async function GET(request: Request) {
       select: {
         id: true,
         ticketId: true,
-        companyName: true,
         productionDate: true,
         totalAmount: true,
-        billTo: true
+        billTo: true,
+        projectName: true
       }
     })
 
-    // Combine all events
+    // Combine all events — use billTo/projectName for display title (not company name)
     const events = [
       ...quotations.map(q => ({
         id: q.id,
         type: "quotation" as const,
         referenceId: q.quotationId,
-        companyName: q.companyName,
         productionDate: q.productionDate,
         totalAmount: q.totalAmount,
-        billTo: q.billTo
+        billTo: q.billTo,
+        displayTitle: q.billTo || q.quotationId
       })),
       ...paragonTickets.map(t => ({
         id: t.id,
         type: "paragon" as const,
         referenceId: t.ticketId,
-        companyName: t.companyName,
         productionDate: t.productionDate,
         totalAmount: t.totalAmount,
-        billTo: t.billTo
+        billTo: t.billTo,
+        projectName: t.projectName,
+        displayTitle: (t.projectName?.trim() || t.billTo) || t.ticketId
       })),
       ...erhaTickets.map(t => ({
         id: t.id,
         type: "erha" as const,
         referenceId: t.ticketId,
-        companyName: t.companyName,
         productionDate: t.productionDate,
         totalAmount: t.totalAmount,
-        billTo: t.billTo
+        billTo: t.billTo,
+        projectName: t.projectName,
+        displayTitle: (t.projectName?.trim() || t.billTo) || t.ticketId
       }))
     ]
 

@@ -10,10 +10,11 @@ interface CalendarEvent {
   id: string
   type: "quotation" | "paragon" | "erha"
   referenceId: string
-  companyName: string
   productionDate: string
   totalAmount: number
   billTo: string
+  displayTitle: string
+  projectName?: string
 }
 
 export function FloatingCalendar() {
@@ -314,10 +315,10 @@ export function FloatingCalendar() {
                                     }}
                                   >
                                     <div className="font-medium text-foreground">
-                                      {event.referenceId}
+                                      {event.displayTitle}
                                     </div>
                                     <div className="text-muted-foreground">
-                                      {event.billTo}
+                                      {event.referenceId}
                                     </div>
                                     <div className="text-muted-foreground">
                                       {formatCurrency(event.totalAmount)}

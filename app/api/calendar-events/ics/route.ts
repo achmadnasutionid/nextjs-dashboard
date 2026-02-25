@@ -86,6 +86,7 @@ export async function GET() {
         productionDate: true,
         totalAmount: true,
         billTo: true,
+        projectName: true,
         updatedAt: true,
       }
     })
@@ -107,6 +108,7 @@ export async function GET() {
         productionDate: true,
         totalAmount: true,
         billTo: true,
+        projectName: true,
         updatedAt: true,
       }
     })
@@ -126,7 +128,6 @@ export async function GET() {
       select: {
         id: true,
         invoiceId: true,
-        companyName: true,
         billTo: true,
         totalAmount: true,
         paidDate: true,
@@ -166,7 +167,8 @@ export async function GET() {
       const eventEnd = new Date(q.productionDate)
       eventEnd.setHours(23, 59, 59)
 
-      const summary = `🎬 ${escapeICSText(q.billTo)}`
+      const title = q.billTo || q.quotationId
+      const summary = `🎬 ${escapeICSText(title)}`
       const description = [
         `Type: Quotation`,
         `ID: ${q.quotationId}`,
@@ -196,7 +198,8 @@ export async function GET() {
       const eventEnd = new Date(t.productionDate)
       eventEnd.setHours(23, 59, 59)
 
-      const summary = `🏥 Paragon - ${escapeICSText(t.billTo)}`
+      const title = (t.projectName?.trim() || t.billTo) || t.ticketId
+      const summary = `🏥 Paragon - ${escapeICSText(title)}`
       const description = [
         `Type: Paragon Ticket`,
         `ID: ${t.ticketId}`,
@@ -226,7 +229,8 @@ export async function GET() {
       const eventEnd = new Date(t.productionDate)
       eventEnd.setHours(23, 59, 59)
 
-      const summary = `💆 Erha - ${escapeICSText(t.billTo)}`
+      const title = (t.projectName?.trim() || t.billTo) || t.ticketId
+      const summary = `💆 Erha - ${escapeICSText(title)}`
       const description = [
         `Type: Erha Ticket`,
         `ID: ${t.ticketId}`,
@@ -266,7 +270,7 @@ export async function GET() {
           : 0
         const overdueText = daysOverdue > 0 ? ` (${daysOverdue} days overdue)` : ' (Due today)'
         
-        return `• ${inv.invoiceId} - ${inv.companyName} - ${formatCurrency(inv.totalAmount)}${overdueText}`
+        return `• ${inv.invoiceId} - ${inv.billTo} - ${formatCurrency(inv.totalAmount)}${overdueText}`
       }).join('\\n')
 
       const summary = `💰 ${pendingInvoices.length} Pending Invoice${pendingInvoices.length > 1 ? 's' : ''} - Payment Reminder`
