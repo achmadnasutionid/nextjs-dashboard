@@ -68,24 +68,32 @@ export async function POST(request: Request) {
         totalAmount: parseFloat(body.totalAmount) || 0,
         expense: parseFloat(body.expense) || 0,
         productAmounts: body.productAmounts || {},
+        cellNotes: body.cellNotes ?? {},
         notes: body.notes || null,
         status: body.status || "pending"
       }
     })
 
-    // Invalidate caches after creating tracker
-    await Promise.all([
-      cache.delete(cacheKeys.dashboardStats()),
-      cache.delete('tracker:list:*'),
-    ])
+    // Invalidate caches after creating tracker (non-fatal)
+    try {
+      await Promise.all([
+        cache.delete(cacheKeys.dashboardStats()),
+        cache.delete('tracker:list:*'),
+      ])
+    } catch (cacheErr) {
+      console.warn("Cache invalidation failed after create:", cacheErr)
+    }
 
     return NextResponse.json(tracker, { status: 201 })
   } catch (error: any) {
     console.error("Error creating production tracker:", error)
+    const message = error?.message || "Unknown error"
+    const isPrisma = message.includes("column") && message.includes("does not exist")
     return NextResponse.json(
-      { 
+      {
         error: "Failed to create production tracker",
-        details: error.message || "Unknown error"
+        details: message,
+        hint: isPrisma ? "Run: npx prisma migrate deploy" : undefined
       },
       { status: 500 }
     )

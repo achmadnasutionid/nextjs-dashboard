@@ -57,6 +57,7 @@ export async function PUT(
         totalAmount: body.totalAmount !== undefined ? parseFloat(body.totalAmount) : undefined,
         expense: body.expense !== undefined ? parseFloat(body.expense) : undefined,
         productAmounts: body.productAmounts !== undefined ? body.productAmounts : undefined,
+        cellNotes: body.cellNotes !== undefined ? body.cellNotes : undefined,
         notes: body.notes !== undefined ? body.notes : undefined,
         status: body.status !== undefined ? body.status : undefined
       }

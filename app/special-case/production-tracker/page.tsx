@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react"
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { NumericFormat } from "react-number-format"
 import {
@@ -47,6 +48,7 @@ interface ProductionTracker {
   totalAmount: number
   expense: number
   productAmounts: Record<string, number>
+  cellNotes?: Record<string, string> | null
   notes?: string | null
   status: string
   createdAt: string
@@ -69,11 +71,32 @@ const PRODUCT_COLUMNS = [
   "PRINT"
 ]
 
+// Column keys that have a per-cell note (stored in row's cellNotes)
+const NOTEABLE_FIELDS = [
+  "projectName",
+  "date",
+  "totalAmount",
+  ...PRODUCT_COLUMNS.map((p) => `product_${p}`),
+] as const
+
 // Display names for headers (shorter versions)
 const PRODUCT_DISPLAY_NAMES: Record<string, string> = {
   "MODEL/HANDMODEL": "MODEL",
   "ACCOMMODATION": "ACCOM"
 }
+
+// Note row: same column order as table. Index → note field key or null.
+const NOTE_ROW_FIELDS_BY_COL: (string | null)[] = [
+  null, // ID
+  "projectName",
+  "date",
+  "totalAmount",
+  null, // Expense (computed)
+  "product_PHOTOGRAPHER",
+  ...PRODUCT_COLUMNS.slice(1).map((p) => `product_${p}`),
+  null, // Status
+  null, // Action
+]
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
@@ -90,6 +113,8 @@ export default function ProductionTrackerPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
   const [editingCell, setEditingCell] = useState<{rowId: string, field: string} | null>(null)
   const [editValue, setEditValue] = useState<any>("")
+  const [expandedNoteRowId, setExpandedNoteRowId] = useState<string | null>(null)
+  const [localCellNotes, setLocalCellNotes] = useState<Record<string, Record<string, string>>>({})
   const [creating, setCreating] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -120,6 +145,24 @@ export default function ProductionTrackerPage() {
     }
     el.addEventListener("wheel", handleWheel, { passive: false, capture: true })
     return () => el.removeEventListener("wheel", handleWheel, true)
+  }, [])
+
+  // Close expanded note row when clicking outside the table (ref so handler always has latest state)
+  const saveAndCloseNotesRef = useRef<() => void>(() => {})
+  saveAndCloseNotesRef.current = () => {
+    if (!expandedNoteRowId) return
+    const tracker = trackers.find((t) => t.id === expandedNoteRowId)
+    if (tracker) saveCellNotesForRow(tracker)
+    setExpandedNoteRowId(null)
+  }
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const el = tableRef.current
+      if (!el || el.contains(e.target as Node)) return
+      saveAndCloseNotesRef.current()
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   // Calculate expense from all product columns except PHOTOGRAPHER
@@ -277,7 +320,10 @@ export default function ProductionTrackerPage() {
         setTrackers([newTracker, ...trackers])
         toast.success("New row created")
       } else {
-        toast.error("Failed to create row")
+        const err = await response.json().catch(() => ({}))
+        const msg = err?.details || err?.error || "Failed to create row"
+        toast.error(msg)
+        if (err?.hint) toast.info(err.hint)
       }
     } catch (error) {
       console.error("Error creating row:", error)
@@ -298,6 +344,13 @@ export default function ProductionTrackerPage() {
     // Don't allow editing status via cell click (use dropdown instead)
     if (field === 'status') return
     
+    // When editing a cell, also open the note row for this row (save previous row's notes if switching)
+    if (expandedNoteRowId && expandedNoteRowId !== tracker.id) {
+      const prev = trackers.find((t) => t.id === expandedNoteRowId)
+      if (prev) saveCellNotesForRow(prev)
+    }
+    setExpandedNoteRowId(tracker.id)
+    
     setEditingCell({ rowId: tracker.id, field })
     
     // Set initial value based on field type
@@ -310,6 +363,44 @@ export default function ProductionTrackerPage() {
       setEditValue(tracker.invoiceId || "")
     } else {
       setEditValue((tracker as any)[field] || "")
+    }
+  }
+
+  const getCellNote = (tracker: ProductionTracker, field: string): string => {
+    const local = localCellNotes[tracker.id]?.[field]
+    if (local !== undefined) return local
+    return (tracker.cellNotes && tracker.cellNotes[field]) || ""
+  }
+
+  const setCellNote = (trackerId: string, field: string, value: string) => {
+    setLocalCellNotes((prev) => ({
+      ...prev,
+      [trackerId]: { ...(prev[trackerId] ?? {}), [field]: value },
+    }))
+  }
+
+  const saveCellNotesForRow = async (tracker: ProductionTracker) => {
+    const merged = { ...(tracker.cellNotes ?? {}), ...(localCellNotes[tracker.id] ?? {}) }
+    const isEmpty = Object.keys(merged).every((k) => !merged[k]?.trim())
+    if (isEmpty && !tracker.cellNotes) return
+    try {
+      const response = await fetch(`/api/production-tracker/${tracker.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cellNotes: merged }),
+      })
+      if (response.ok) {
+        const updated = await response.json()
+        setTrackers((prev) => prev.map((t) => (t.id === tracker.id ? updated : t)))
+        setLocalCellNotes((prev) => {
+          const next = { ...prev }
+          delete next[tracker.id]
+          return next
+        })
+      }
+    } catch (e) {
+      console.error("Error saving cell notes:", e)
+      toast.error("Failed to save notes")
     }
   }
 
@@ -440,6 +531,14 @@ export default function ProductionTrackerPage() {
         if (editingCell?.rowId === idToDelete) {
           setEditingCell(null)
         }
+        if (expandedNoteRowId === idToDelete) {
+          setExpandedNoteRowId(null)
+        }
+        setLocalCellNotes((prev) => {
+          const next = { ...prev }
+          delete next[idToDelete]
+          return next
+        })
         toast.success("Row deleted")
       } else {
         toast.error("Failed to delete row")
@@ -655,7 +754,7 @@ export default function ProductionTrackerPage() {
                         </td>
                       ))}
                       {/* Status - Right Sticky - Red */}
-                      <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
+                      <td className="sticky right-[80px] z-20 border-l border-r border-b border-border p-1.5 bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
                         <Skeleton className="h-4 w-full" />
                       </td>
                       {/* Action Column - Right Sticky - Red */}
@@ -673,7 +772,13 @@ export default function ProductionTrackerPage() {
                 ) : (
                   filteredTrackers.map((tracker) => {
                     return (
-                      <tr key={tracker.id} className="group transition-colors">
+                      <React.Fragment key={tracker.id}>
+                      <tr
+                        className={cn(
+                          "group transition-colors",
+                          expandedNoteRowId === tracker.id && "bg-lime-50/50"
+                        )}
+                      >
                         {/* ID + Link (merged) - Gray: link opens invoice, pencil edits */}
                         <td className="sticky left-0 z-20 border-r border-b border-border p-1.5 bg-gray-50 shadow-[2px_0_4px_rgba(0,0,0,0.05)] w-[92px] min-w-[92px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50 group-focus-within:!shadow-[inset_2px_0_0_0_hsl(var(--primary))]">
                           {editingCell?.rowId === tracker.id && editingCell?.field === 'invoiceId' ? (
@@ -718,10 +823,7 @@ export default function ProductionTrackerPage() {
                         {/* Project Name - Editable - Blue - fixed width, truncate + tooltip */}
                         <td 
                           className="sticky left-[92px] z-20 border-r border-b border-border p-1.5 bg-blue-50 cursor-pointer hover:bg-blue-100 w-[200px] min-w-[200px] max-w-[200px] overflow-hidden group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
-                          onMouseDown={(e) => {
-                            e.preventDefault()
-                            handleCellClick(tracker, 'projectName')
-                          }}
+                          onMouseDown={(e) => { e.preventDefault(); handleCellClick(tracker, 'projectName') }}
                         >
                           {editingCell?.rowId === tracker.id && editingCell?.field === 'projectName' ? (
                             <Input
@@ -738,9 +840,7 @@ export default function ProductionTrackerPage() {
                         </td>
                         
                         {/* Date - Click to pick - Blue */}
-                        <td 
-                          className="sticky left-[292px] z-20 border-r border-b border-border p-1.5 bg-blue-50 w-[110px] min-w-[110px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
-                        >
+                        <td className="sticky left-[292px] z-20 border-r border-b border-border p-1.5 bg-blue-50 w-[110px] min-w-[110px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50">
                           <Popover>
                             <PopoverTrigger asChild>
                               <button className="flex items-center gap-1 text-xs hover:underline w-full justify-start">
@@ -787,10 +887,7 @@ export default function ProductionTrackerPage() {
                         {/* Total, Expense, PHOTOGRAPHER - Left Sticky */}
                         <td 
                           className="sticky left-[402px] z-20 border-r border-b border-border p-2 text-right bg-green-50 cursor-pointer hover:bg-green-100 w-[130px] min-w-[130px] max-w-[130px] shadow-[2px_0_4px_rgba(0,0,0,0.05)] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
-                          onMouseDown={(e) => {
-                            e.preventDefault()
-                            handleCellClick(tracker, 'totalAmount')
-                          }}
+                          onMouseDown={(e) => { e.preventDefault(); handleCellClick(tracker, 'totalAmount') }}
                         >
                           {editingCell?.rowId === tracker.id && editingCell?.field === 'totalAmount' ? (
                             <NumericFormat
@@ -810,16 +907,12 @@ export default function ProductionTrackerPage() {
                             <span className="text-xs font-medium">{formatCurrency(tracker.totalAmount)}</span>
                           )}
                         </td>
-                        <td 
-                          className="sticky left-[532px] z-20 border-b border-border p-2 text-right bg-green-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
-                        >
+                        <td className="sticky left-[532px] z-20 border-b border-border p-2 text-right bg-green-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50">
                           <span className="text-xs font-medium text-green-700">
                             {formatCurrency(calculateExpense(tracker.productAmounts || {}))}
                           </span>
                         </td>
-                        <td 
-                          className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 text-right bg-green-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50"
-                        >
+                        <td className="sticky left-[662px] z-20 border-l border-r border-b border-border p-2 text-right bg-green-50 w-[130px] min-w-[130px] max-w-[130px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50">
                           <span className="text-xs font-medium text-green-700">
                             {formatCurrency(calculatePhotographer(tracker.totalAmount, tracker.productAmounts || {}))}
                           </span>
@@ -838,10 +931,7 @@ export default function ProductionTrackerPage() {
                                 "border-r border-b border-border p-2 text-right bg-purple-50 cursor-pointer hover:bg-purple-100 w-[110px] min-w-[110px] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50",
                                 index === PRODUCT_COLUMNS.slice(1).length - 1 && "border-r-2"
                               )}
-                              onMouseDown={(e) => {
-                                e.preventDefault()
-                                handleCellClick(tracker, fieldName)
-                              }}
+                              onMouseDown={(e) => { e.preventDefault(); handleCellClick(tracker, fieldName) }}
                             >
                               {isEditing ? (
                                 <NumericFormat
@@ -899,6 +989,55 @@ export default function ProductionTrackerPage() {
                           </Button>
                         </td>
                       </tr>
+
+                      {/* Expanded note row: one note per column for this row */}
+                      {expandedNoteRowId === tracker.id && (
+                        <tr key={`${tracker.id}-note`} className="bg-slate-100 border-b border-border">
+                          {NOTE_ROW_FIELDS_BY_COL.map((fieldKey, colIndex) => {
+                            const baseTdClass = "border-r border-border p-1 align-top text-xs"
+                            const isSticky0 = colIndex === 0
+                            const isSticky1 = colIndex === 1
+                            const isSticky2 = colIndex === 2
+                            const isSticky3 = colIndex === 3
+                            const isSticky4 = colIndex === 4
+                            const isSticky5 = colIndex === 5
+                            const isStickyRight1 = colIndex === NOTE_ROW_FIELDS_BY_COL.length - 2
+                            const isStickyRight0 = colIndex === NOTE_ROW_FIELDS_BY_COL.length - 1
+                            const stickyClass = isSticky0
+? "sticky left-0 z-20 w-[92px] min-w-[92px] bg-slate-100 shadow-[2px_0_4px_rgba(0,0,0,0.05)]"
+                              : isSticky1
+                                ? "sticky left-[92px] z-20 w-[200px] min-w-[200px] max-w-[200px] bg-slate-100"
+                                : isSticky2
+                                  ? "sticky left-[292px] z-20 w-[110px] min-w-[110px] bg-slate-100"
+                                    : isSticky3
+                                    ? "sticky left-[402px] z-20 w-[130px] min-w-[130px] max-w-[130px] bg-slate-100 shadow-[2px_0_4px_rgba(0,0,0,0.05)]"
+                                    : isSticky4
+                                      ? "sticky left-[532px] z-20 w-[130px] min-w-[130px] max-w-[130px] bg-slate-100"
+                                      : isSticky5
+                                        ? "sticky left-[662px] z-20 w-[130px] min-w-[130px] max-w-[130px] bg-slate-100 border-l"
+                                        : isStickyRight1
+                                          ? "sticky right-[60px] z-20 w-[90px] min-w-[90px] bg-slate-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]"
+                                          : isStickyRight0
+                                            ? "sticky right-0 z-20 w-[60px] min-w-[60px] bg-slate-100"
+                                            : "w-[110px] min-w-[110px] bg-slate-100"
+                            if (!fieldKey) {
+                              return <td key={colIndex} className={cn(baseTdClass, stickyClass)} />
+                            }
+                            return (
+                              <td key={colIndex} className={cn(baseTdClass, stickyClass)}>
+                                <Textarea
+                                  value={getCellNote(tracker, fieldKey)}
+                                  onChange={(e) => setCellNote(tracker.id, fieldKey, e.target.value)}
+                                  onBlur={() => saveCellNotesForRow(tracker)}
+                                  className="min-h-[72px] resize-y text-xs bg-background/80 border-slate-300"
+                                  rows={3}
+                                />
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      )}
+                    </React.Fragment>
                     )
                   })
                 )}

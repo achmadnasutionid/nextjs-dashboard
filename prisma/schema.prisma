@@ -569,6 +569,7 @@ model ProductionTracker {
   totalAmount    Float     @default(0)
   expense        Float     @default(0)
   productAmounts Json      @default("{}")
+  cellNotes      Json?     @default("{}")
   notes          String?
   status         String    @default("pending")
   deletedAt      DateTime?

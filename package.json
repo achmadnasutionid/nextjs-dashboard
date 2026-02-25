@@ -17,6 +17,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:deploy:both": "node scripts/deploy-migrations-both-dbs.mjs",
+    "db:add-cell-notes-local": "node scripts/add-cell-notes-local.mjs",
     "db:migrate:deploy:backup": "prisma migrate deploy --schema=prisma-backup/schema.prisma",
     "db:studio": "prisma studio",
     "db:studio:test": "dotenv -e .env -- prisma studio",
