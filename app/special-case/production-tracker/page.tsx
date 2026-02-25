@@ -100,7 +100,7 @@ const NOTE_ROW_FIELDS_BY_COL: (string | null)[] = [
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  { value: "in progress", label: "In Progress", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "active", label: "Active", color: "bg-blue-50 text-blue-700 border-blue-200" },
   { value: "paid", label: "Paid", color: "bg-green-50 text-green-700 border-green-200" }
 ]
 
