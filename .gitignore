@@ -65,6 +65,8 @@ prisma/dev.db-journal
 
 # scripts folder (local/one-off; remove this block to track scripts/ in git)
 /scripts
+!/scripts/add-cell-notes-local.mjs
+!/scripts/deploy-migrations-both-dbs.mjs
 
 # temporary / one-off root scripts
 check-test-data.js
