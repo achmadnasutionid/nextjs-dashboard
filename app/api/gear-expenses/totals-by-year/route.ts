@@ -9,11 +9,12 @@ export async function GET() {
   try {
     const expenses = await prisma.gearExpense.findMany({
       where: { deletedAt: null },
-      select: { year: true, amount: true },
+      select: { date: true, amount: true },
     })
     const byYear: Record<string, number> = {}
     expenses.forEach((r) => {
-      byYear[r.year] = (byYear[r.year] ?? 0) + r.amount
+      const year = r.date ? new Date(r.date).getFullYear() : new Date().getFullYear()
+      byYear[year] = (byYear[year] ?? 0) + r.amount
     })
     const years = Object.keys(byYear)
       .map(Number)

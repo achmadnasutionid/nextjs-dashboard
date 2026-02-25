@@ -218,17 +218,14 @@ export default function GearExpensesPage() {
           name: newExpense.name,
           amount: parseFloat(newExpense.amount),
           date: newExpense.date ? newExpense.date.toISOString() : null,
-          year: selectedYear,
         }),
       })
 
       if (res.ok) {
-        const newItem = await res.json()
-        // Update local state immediately
-        setExpenses((prev) => [newItem, ...prev])
-        setAllYearsTotal((prev) => prev + parseFloat(newExpense.amount))
         setNewExpense({ name: "", amount: "", date: undefined })
         setIsAdding(false)
+        await fetchAllYearsTotal()
+        await fetchExpenses()
         toast.success("Expense added")
       } else {
         toast.error("Failed to add expense")
@@ -275,19 +272,13 @@ export default function GearExpensesPage() {
           name: editingData.name,
           amount: parseFloat(editingData.amount),
           date: editingData.date ? editingData.date.toISOString() : null,
-          year: expense.year,
         }),
       })
 
       if (res.ok) {
-        const updatedItem = await res.json()
-        const oldExpense = expenses.find((e) => e.id === editingId)
-        const amountDiff = parseFloat(editingData.amount) - (oldExpense?.amount || 0)
-        // Update local state immediately
-        setExpenses((prev) =>
-          prev.map((e) => (e.id === editingId ? updatedItem : e))
-        )
-        setAllYearsTotal((prev) => prev + amountDiff)
+        await fetchAllYearsTotal()
+        // Refetch so list reflects date-based year filter (expense may move to another year)
+        await fetchExpenses()
         setEditingId(null)
         setEditingData(null)
         toast.success("Expense updated")

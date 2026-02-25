@@ -10,11 +10,16 @@ export async function GET(request: NextRequest) {
     const showDeleted = searchParams.get("showDeleted") === "true"
 
     const whereClause: any = {}
-    
+
+    // Year is a filter: show expenses whose date falls in that year (not stored year)
     if (year && year !== "all") {
-      whereClause.year = parseInt(year)
+      const y = parseInt(year)
+      whereClause.date = {
+        gte: new Date(y, 0, 1),
+        lt: new Date(y + 1, 0, 1),
+      }
     }
-    
+
     if (!showDeleted) {
       whereClause.deletedAt = null
     }
@@ -38,21 +43,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, amount, date, year } = body
+    const { name, amount, date } = body
 
-    if (!name || amount === undefined || !year) {
+    if (!name || amount === undefined) {
       return NextResponse.json(
-        { error: "Name, amount, and year are required" },
+        { error: "Name and amount are required" },
         { status: 400 }
       )
     }
+
+    const dateObj = date ? new Date(date) : null
+    const year = dateObj ? dateObj.getFullYear() : new Date().getFullYear()
 
     const expense = await prisma.bigExpense.create({
       data: {
         name,
         amount: parseFloat(amount),
-        date: date ? new Date(date) : null,
-        year: parseInt(year),
+        date: dateObj,
+        year,
       },
     })
 

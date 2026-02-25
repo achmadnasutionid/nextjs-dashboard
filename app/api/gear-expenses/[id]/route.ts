@@ -39,15 +39,21 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { name, amount, date, year } = body
+    const { name, amount, date } = body
+
+    const dateObj = date !== undefined ? (date ? new Date(date) : null) : undefined
+    const year =
+      dateObj !== undefined
+        ? (dateObj ? dateObj.getFullYear() : new Date().getFullYear())
+        : undefined
 
     const expense = await prisma.gearExpense.update({
       where: { id },
       data: {
-        name,
-        amount: parseFloat(amount),
-        date: date ? new Date(date) : null,
-        year: parseInt(year),
+        ...(name !== undefined && { name }),
+        ...(amount !== undefined && { amount: parseFloat(amount) }),
+        ...(dateObj !== undefined && { date: dateObj }),
+        ...(year !== undefined && { year }),
       },
     })
 
