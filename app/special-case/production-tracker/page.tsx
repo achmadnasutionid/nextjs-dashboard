@@ -708,7 +708,7 @@ export default function ProductionTrackerPage() {
                   ))}
                   
                   {/* Status - Right Sticky - Red */}
-                  <th className="sticky right-[60px] z-40 border-l border-r border-b border-border p-1.5 text-center font-semibold w-[90px] min-w-[90px] bg-red-50 shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
+                  <th className="sticky right-[60px] z-40 border-l border-r border-b border-border p-1.5 text-center font-semibold w-[110px] min-w-[110px] max-w-[110px] bg-red-50 shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                     Status
                   </th>
                   {/* Action Column - Right Sticky - Red */}
@@ -754,7 +754,7 @@ export default function ProductionTrackerPage() {
                         </td>
                       ))}
                       {/* Status - Right Sticky - Red */}
-                      <td className="sticky right-[80px] z-20 border-l border-r border-b border-border p-1.5 bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
+                      <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 bg-red-50 w-[110px] min-w-[110px] max-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)]">
                         <Skeleton className="h-4 w-full" />
                       </td>
                       {/* Action Column - Right Sticky - Red */}
@@ -957,7 +957,7 @@ export default function ProductionTrackerPage() {
                         })}
                         
                         {/* Status - Right Sticky - Red */}
-                        <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 text-center bg-red-50 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50">
+                        <td className="sticky right-[60px] z-20 border-l border-r border-b border-border p-1.5 text-center bg-red-50 w-[110px] min-w-[110px] max-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.05)] group-hover:!bg-lime-50 group-focus-within:!bg-lime-50 whitespace-nowrap">
                           <Select value={tracker.status} onValueChange={(value) => handleStatusChange(tracker.id, value)}>
                             <SelectTrigger className={cn(
                               "h-7 text-xs border w-full min-w-0",
@@ -1016,7 +1016,7 @@ export default function ProductionTrackerPage() {
                                       : isSticky5
                                         ? "sticky left-[662px] z-20 w-[130px] min-w-[130px] max-w-[130px] bg-slate-100 border-l"
                                         : isStickyRight1
-                                          ? "sticky right-[60px] z-20 w-[90px] min-w-[90px] bg-slate-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]"
+                                          ? "sticky right-[60px] z-20 w-[110px] min-w-[110px] max-w-[110px] bg-slate-100 shadow-[-2px_0_4px_rgba(0,0,0,0.05)]"
                                           : isStickyRight0
                                             ? "sticky right-0 z-20 w-[60px] min-w-[60px] bg-slate-100"
                                             : "w-[110px] min-w-[110px] bg-slate-100"
@@ -1085,7 +1085,7 @@ export default function ProductionTrackerPage() {
                   ))}
                   
                   {/* Status - Right Sticky - Gray */}
-                  <td className="sticky right-[60px] z-40 border-l border-r border-slate-300 p-1.5 text-center bg-slate-100 w-[90px] min-w-[90px] shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
+                  <td className="sticky right-[60px] z-40 border-l border-r border-slate-300 p-1.5 text-center bg-slate-100 w-[110px] min-w-[110px] max-w-[110px] shadow-[-2px_0_4px_rgba(0,0,0,0.1)]">
                     <span className="text-xs text-slate-600">-</span>
                   </td>
                   
