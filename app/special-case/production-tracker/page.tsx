@@ -85,16 +85,16 @@ const PRODUCT_DISPLAY_NAMES: Record<string, string> = {
   "ACCOMMODATION": "ACCOM"
 }
 
-// Note row: same column order as table. Index → note field key or null.
+// Note row: same column order as table. Index → note field key or null. Notes for all columns except ID and Action.
 const NOTE_ROW_FIELDS_BY_COL: (string | null)[] = [
   null, // ID
   "projectName",
   "date",
   "totalAmount",
-  null, // Expense (computed)
+  "expense",
   "product_PHOTOGRAPHER",
   ...PRODUCT_COLUMNS.slice(1).map((p) => `product_${p}`),
-  null, // Status
+  "status",
   null, // Action
 ]
 
