@@ -16,6 +16,9 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20")))
     const search = (searchParams.get("search") || "").trim()
+    const searchIds = search.includes(",")
+      ? search.split(",").map((s) => s.trim()).filter(Boolean)
+      : null
 
     const orderBy = sortBy === "oldest" ? "asc" as const : "desc" as const
     const takePerSource = page * limit
@@ -34,11 +37,15 @@ export async function GET(request: Request) {
       }
     }
     if (search) {
-      invWhere.OR = [
-        { invoiceId: { contains: search, mode: "insensitive" } },
-        { companyName: { contains: search, mode: "insensitive" } },
-        { billTo: { contains: search, mode: "insensitive" } }
-      ]
+      if (searchIds && searchIds.length > 0) {
+        invWhere.invoiceId = { in: searchIds }
+      } else {
+        invWhere.OR = [
+          { invoiceId: { contains: search, mode: "insensitive" } },
+          { companyName: { contains: search, mode: "insensitive" } },
+          { billTo: { contains: search, mode: "insensitive" } }
+        ]
+      }
     }
 
     // Paragon/Erha: draft/pending/final – map paid → final, pending → draft + pending
@@ -53,13 +60,20 @@ export async function GET(request: Request) {
       }
     }
     if (search) {
-      ticketWhere.OR = [
-        { quotationId: { contains: search, mode: "insensitive" } },
-        { invoiceId: { contains: search, mode: "insensitive" } },
-        { companyName: { contains: search, mode: "insensitive" } },
-        { billTo: { contains: search, mode: "insensitive" } },
-        { projectName: { contains: search, mode: "insensitive" } }
-      ]
+      if (searchIds && searchIds.length > 0) {
+        ticketWhere.OR = [
+          { quotationId: { in: searchIds } },
+          { invoiceId: { in: searchIds } }
+        ]
+      } else {
+        ticketWhere.OR = [
+          { quotationId: { contains: search, mode: "insensitive" } },
+          { invoiceId: { contains: search, mode: "insensitive" } },
+          { companyName: { contains: search, mode: "insensitive" } },
+          { billTo: { contains: search, mode: "insensitive" } },
+          { projectName: { contains: search, mode: "insensitive" } }
+        ]
+      }
     }
 
     const [invoices, paragonTickets, erhaTickets, totalInv, totalP, totalE] = await Promise.all([
