@@ -140,28 +140,6 @@ export interface QuotationSignature {
   updatedAt: Date
 }
 
-export interface GearExpense {
-  id: string
-  name: string
-  amount: number
-  date: Date | null
-  year: number
-  deletedAt: Date | null
-  createdAt: Date
-  updatedAt: Date
-}
-
-export interface BigExpense {
-  id: string
-  name: string
-  amount: number
-  date: Date | null
-  year: number
-  deletedAt: Date | null
-  createdAt: Date
-  updatedAt: Date
-}
-
 // ============================================================================
 // Dashboard Statistics Types
 // ============================================================================
@@ -178,11 +156,6 @@ export interface QuotationStats {
   draft: number
   pending: number
   accepted: number
-}
-
-export interface ExtraExpenses {
-  gearTotal: number
-  bigTotal: number
 }
 
 export interface MonthlyTrend {
@@ -255,8 +228,6 @@ export interface DashboardStatsResponse {
   invoices: Invoice[]
   quotations: Quotation[]
   products: Product[]
-  gearExpenses: GearExpense[]
-  bigExpenses: BigExpense[]
   timestamp: string
 }
 

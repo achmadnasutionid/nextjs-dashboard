@@ -1,11 +1,8 @@
 import type {
   Invoice,
   Quotation,
-  GearExpense,
-  BigExpense,
   InvoiceStats,
   QuotationStats,
-  ExtraExpenses,
   ActionItems,
   RecentActivity,
   ThisMonthSummary,
@@ -80,30 +77,6 @@ export function calculateStats(
       accepted: quotationAccepted,
     },
   }
-}
-
-/**
- * Calculate extra expenses (gear and big expenses)
- */
-export function calculateExtraExpenses(
-  gearExpenses: GearExpense[],
-  bigExpenses: BigExpense[],
-  year: string
-): ExtraExpenses {
-  const filteredGear =
-    year === "all"
-      ? gearExpenses
-      : gearExpenses.filter((exp) => exp.year.toString() === year)
-
-  const filteredBig =
-    year === "all"
-      ? bigExpenses
-      : bigExpenses.filter((exp) => exp.year.toString() === year)
-
-  const gearTotal = filteredGear.reduce((sum, exp) => sum + (exp.amount || 0), 0)
-  const bigTotal = filteredBig.reduce((sum, exp) => sum + (exp.amount || 0), 0)
-
-  return { gearTotal, bigTotal }
 }
 
 /**

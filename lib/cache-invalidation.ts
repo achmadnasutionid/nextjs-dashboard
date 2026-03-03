@@ -56,30 +56,6 @@ export async function invalidateQuotationCaches(quotationId?: string): Promise<v
 }
 
 /**
- * Invalidate gear expense caches
- * Call after: create, update, delete, restore gear expense
- */
-export async function invalidateGearExpenseCaches(): Promise<void> {
-  await Promise.all([
-    cache.delete(cacheKeys.dashboardStats()),
-    cache.delete('quick-stats:*'), // Quick stats cache (year-based)
-    cache.delete('gear-expense:*'), // All gear expense caches
-  ])
-}
-
-/**
- * Invalidate big expense caches
- * Call after: create, update, delete, restore big expense
- */
-export async function invalidateBigExpenseCaches(): Promise<void> {
-  await Promise.all([
-    cache.delete(cacheKeys.dashboardStats()),
-    cache.delete('quick-stats:*'), // Quick stats cache (year-based)
-    cache.delete('big-expense:*'), // All big expense caches
-  ])
-}
-
-/**
  * Invalidate Paragon ticket caches
  * Call after: create, update, delete, finalize, copy Paragon ticket
  */

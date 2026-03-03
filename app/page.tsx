@@ -32,8 +32,6 @@ const ALL_CARDS: DashboardCard[] = [
   // Special Case
   { id: "paragon", section: "Special Case", title: "Paragon", keywords: "paragon special", route: "/special-case/paragon", icon: "building" },
   { id: "erha", section: "Special Case", title: "Erha", keywords: "erha special", route: "/special-case/erha", icon: "building" },
-  { id: "gear-expenses", section: "Special Case", title: "Gear Expenses", keywords: "gear expenses equipment", route: "/special-case/gear-expenses", icon: "wallet" },
-  { id: "big-expenses", section: "Special Case", title: "Big Expenses", keywords: "big expenses large", route: "/special-case/big-expenses", icon: "wallet" },
   
   // Management
   { id: "companies", section: "Management", title: "Companies", keywords: "companies company client master", route: "/companies", icon: "building" },
@@ -52,8 +50,6 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false)
   const [pendingProfitTotals, setPendingProfitTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [pendingProfitMissingIds, setPendingProfitMissingIds] = useState<string[]>([])
-  const [gearTotals, setGearTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
-  const [bigTotals, setBigTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [profitTotals, setProfitTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [profitMissingIds, setProfitMissingIds] = useState<string[]>([])
   const [selectedFinanceYear, setSelectedFinanceYear] = useState<string>("")
@@ -63,27 +59,21 @@ export default function Home() {
     setIsClient(true)
   }, [])
 
-  // Fetch Finance Overview data: pending profit, profit, gear, big expense totals by year
+  // Fetch Finance Overview data: pending profit and profit totals by year
   useEffect(() => {
     if (!isClient) return
     Promise.all([
       fetch("/api/invoice/pending-profit-by-year").then((r) => r.json()),
       fetch("/api/invoice/profit-totals-by-year").then((r) => r.json()),
-      fetch("/api/gear-expenses/totals-by-year").then((r) => r.json()),
-      fetch("/api/big-expenses/totals-by-year").then((r) => r.json()),
-    ]).then(([pendingProfit, profit, gear, big]) => {
+    ]).then(([pendingProfit, profit]) => {
       if (pendingProfit?.years && pendingProfit?.byYear) setPendingProfitTotals({ years: pendingProfit.years, byYear: pendingProfit.byYear })
       if (pendingProfit?.missingIds) setPendingProfitMissingIds(pendingProfit.missingIds)
       if (profit?.years && profit?.byYear) setProfitTotals({ years: profit.years, byYear: profit.byYear })
       if (profit?.missingIds) setProfitMissingIds(profit.missingIds)
-      if (gear?.years && gear?.byYear) setGearTotals({ years: gear.years, byYear: gear.byYear })
-      if (big?.years && big?.byYear) setBigTotals({ years: big.years, byYear: big.byYear })
       const allYears = [
         ...new Set([
           ...(pendingProfit?.years ?? []),
           ...(profit?.years ?? []),
-          ...(gear?.years ?? []),
-          ...(big?.years ?? []),
         ]),
       ].sort((a, b) => b - a)
       setSelectedFinanceYear((prev) => (prev ? prev : allYears.length > 0 ? String(allYears[0]) : "all"))
@@ -94,28 +84,14 @@ export default function Home() {
     const set = new Set<number>()
     pendingProfitTotals?.years.forEach((y) => set.add(y))
     profitTotals?.years.forEach((y) => set.add(y))
-    gearTotals?.years.forEach((y) => set.add(y))
-    bigTotals?.years.forEach((y) => set.add(y))
     return Array.from(set).sort((a, b) => b - a)
-  }, [pendingProfitTotals, profitTotals, gearTotals, bigTotals])
+  }, [pendingProfitTotals, profitTotals])
 
   const pendingProfitDisplayAmount = useMemo(() => {
     if (!pendingProfitTotals?.byYear) return 0
     if (selectedFinanceYear === "all") return Object.values(pendingProfitTotals.byYear).reduce((a, b) => a + b, 0)
     return pendingProfitTotals.byYear[selectedFinanceYear] ?? 0
   }, [pendingProfitTotals, selectedFinanceYear])
-
-  const gearDisplayAmount = useMemo(() => {
-    if (!gearTotals?.byYear) return 0
-    if (selectedFinanceYear === "all") return Object.values(gearTotals.byYear).reduce((a, b) => a + b, 0)
-    return gearTotals.byYear[selectedFinanceYear] ?? 0
-  }, [gearTotals, selectedFinanceYear])
-
-  const bigDisplayAmount = useMemo(() => {
-    if (!bigTotals?.byYear) return 0
-    if (selectedFinanceYear === "all") return Object.values(bigTotals.byYear).reduce((a, b) => a + b, 0)
-    return bigTotals.byYear[selectedFinanceYear] ?? 0
-  }, [bigTotals, selectedFinanceYear])
 
   const profitDisplayAmount = useMemo(() => {
     if (!profitTotals?.byYear) return 0
@@ -239,7 +215,7 @@ export default function Home() {
                   </Select>
                 </div>
               </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                 <Card
                   className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
                   onClick={() => handleNavigate("/invoice?status=pending")}
@@ -265,17 +241,6 @@ export default function Home() {
                     <h3 className="font-semibold text-lg mb-2">Profit</h3>
                     <p className="text-2xl font-semibold">
                       {profitTotals ? formatCurrency(profitDisplayAmount) : "—"}
-                    </p>
-                  </div>
-                </Card>
-                <Card className="transition-all">
-                  <div className="p-6">
-                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <Wallet className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">Expenses</h3>
-                    <p className="text-2xl font-semibold">
-                      {(gearTotals || bigTotals) ? formatCurrency(gearDisplayAmount + bigDisplayAmount) : "—"}
                     </p>
                   </div>
                 </Card>

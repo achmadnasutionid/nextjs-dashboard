@@ -24,8 +24,6 @@ export type EmptyStateType =
   | "quotations" 
   | "invoices" 
   | "paragon-tickets"
-  | "gear-expenses"
-  | "big-expenses"
   | "erha-tickets"
   | "templates"
   | "search"
@@ -103,24 +101,6 @@ const emptyStateConfig: Record<EmptyStateType, {
     defaultDescription: "Invoices will appear here once quotations are accepted.",
     searchTitle: "No invoices found",
     searchDescription: "Try adjusting your search or filter criteria.",
-    gradient: "from-rose-500/10 to-pink-500/10",
-    iconColor: "text-rose-500"
-  },
-  "gear-expenses": {
-    icon: Receipt,
-    defaultTitle: "No gear expenses yet",
-    defaultDescription: "Add your first gear expense for this year.",
-    searchTitle: "No gear expenses found",
-    searchDescription: "Try adjusting your search or filter.",
-    gradient: "from-amber-500/10 to-orange-500/10",
-    iconColor: "text-amber-500"
-  },
-  "big-expenses": {
-    icon: Receipt,
-    defaultTitle: "No big expenses yet",
-    defaultDescription: "Add your first big expense for this year.",
-    searchTitle: "No big expenses found",
-    searchDescription: "Try adjusting your search or filter.",
     gradient: "from-rose-500/10 to-pink-500/10",
     iconColor: "text-rose-500"
   },
