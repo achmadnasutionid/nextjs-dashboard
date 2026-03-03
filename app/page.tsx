@@ -55,6 +55,7 @@ export default function Home() {
   const [gearTotals, setGearTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [bigTotals, setBigTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
   const [profitTotals, setProfitTotals] = useState<{ years: number[]; byYear: Record<string, number> } | null>(null)
+  const [profitMissingIds, setProfitMissingIds] = useState<string[]>([])
   const [selectedFinanceYear, setSelectedFinanceYear] = useState<string>("")
 
   // Initialize client-side state
@@ -74,6 +75,7 @@ export default function Home() {
       if (pendingProfit?.years && pendingProfit?.byYear) setPendingProfitTotals({ years: pendingProfit.years, byYear: pendingProfit.byYear })
       if (pendingProfit?.missingIds) setPendingProfitMissingIds(pendingProfit.missingIds)
       if (profit?.years && profit?.byYear) setProfitTotals({ years: profit.years, byYear: profit.byYear })
+      if (profit?.missingIds) setProfitMissingIds(profit.missingIds)
       if (gear?.years && gear?.byYear) setGearTotals({ years: gear.years, byYear: gear.byYear })
       if (big?.years && big?.byYear) setBigTotals({ years: big.years, byYear: big.byYear })
       const allYears = [
@@ -289,6 +291,23 @@ export default function Home() {
                       <h3 className="font-semibold text-lg mb-2">Pending without tracker</h3>
                       <p className="text-sm text-muted-foreground mb-1">
                         {pendingProfitMissingIds.length} invoice(s) have no tracker data
+                      </p>
+                      <p className="text-xs text-amber-600 font-medium">Click to open filtered list</p>
+                    </div>
+                  </Card>
+                )}
+                {profitMissingIds.length > 0 && (
+                  <Card
+                    className="group cursor-pointer transition-all hover:shadow-lg hover:border-amber-500/50"
+                    onClick={() => handleNavigate(`/invoice?status=paid&search=${encodeURIComponent(profitMissingIds.join(","))}`)}
+                  >
+                    <div className="p-6">
+                      <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                        <TrendingUp className="h-6 w-6 text-amber-600" />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2">Paid without tracker</h3>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {profitMissingIds.length} paid invoice(s) have no tracker data
                       </p>
                       <p className="text-xs text-amber-600 font-medium">Click to open filtered list</p>
                     </div>
