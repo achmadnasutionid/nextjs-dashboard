@@ -27,9 +27,16 @@ export function useDebouncedInput<T>(
   const [debouncedValue, setDebouncedValue] = useState<T>(initialValue)
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
-  // Update local value immediately when prop changes
+  // Sync both local + debounced when prop changes.
+  // This prevents a stale debounced value from "writing back" the old value
+  // after parent state is updated programmatically (e.g. percentage adjustment).
   useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = undefined
+    }
     setLocalValue(initialValue)
+    setDebouncedValue(initialValue)
   }, [initialValue])
 
   // Debounce the local value to update debounced value
