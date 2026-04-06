@@ -198,10 +198,10 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
                     : `Price adjusted by ${adjustment.percentage > 0 ? "+" : ""}${adjustment.percentage}%.`}
                 </div>
               )}
-              {index === 2 && (
+              {item.id === "total" && (
                 <div className="border-t pt-2 mb-2" />
               )}
-              <div className={`flex justify-between ${index === 2 ? 'text-base font-bold' : 'text-sm'}`}>
+              <div className={`flex justify-between ${item.id === "total" ? 'text-base font-bold' : 'text-sm'}`}>
                 <div>
                   <span>{item.label}:</span>
                   {item.note && (
@@ -210,7 +210,7 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
                     </div>
                   )}
                 </div>
-                <span className={`font-medium ${index === 2 ? 'text-primary' : item.id === 'pph' ? 'text-green-600' : ''}`}>
+                <span className={`font-medium ${item.id === "total" ? 'text-primary' : item.id === 'pph' ? 'text-green-600' : ''}`}>
                   {item.id === 'pph' && '+ '}{item.value}
                 </span>
               </div>

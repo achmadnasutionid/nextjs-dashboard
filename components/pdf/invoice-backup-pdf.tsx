@@ -217,11 +217,13 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
   const pphNote = pphParts[1] ? "After reporting" + pphParts[1] : null
   const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "total"]
   const showPph = pphRate > 0
-  const summaryItems = summaryOrderRaw.filter((id) => (id === "pph" ? showPph : true)).map((id) => {
+  const summaryItemsAll = summaryOrderRaw.map((id) => {
     if (id === "subtotal") return { id: "subtotal", label: "Subtotal", value: netAmount }
     if (id === "pph") return { id: "pph", label: pphMainLabel, value: pphAmount, note: pphNote }
     return { id: "total", label: "Total Amount", value: grossAmount, isTotal: true }
   })
+  // If there's no tax (subtotal == total), show only final Total row in PDF.
+  const summaryItems = showPph ? summaryItemsAll : summaryItemsAll.filter((it) => it.id === "total")
   const mainSig = { name: data.signatureName, position: data.signatureRole || "" }
   const extraSigs = Array.isArray(data.signatures)
     ? data.signatures.filter((s) => s && s.name?.trim()).map((s) => ({ name: s.name, position: s.position || "" }))

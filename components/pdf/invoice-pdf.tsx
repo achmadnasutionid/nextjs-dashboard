@@ -380,9 +380,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
   const showPph = pphRate > 0
 
   // Create summary items based on order
-  const summaryItems = summaryOrderRaw
-    .filter((id) => (id === "pph" ? showPph : true))
-    .map(id => {
+  const summaryItemsAll = summaryOrderRaw.map(id => {
     if (id === 'subtotal') {
       return { id: 'subtotal', label: 'Subtotal', value: netAmount, showPlus: false }
     } else if (id === 'pph') {
@@ -391,6 +389,9 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
       return { id: 'total', label: 'Total Amount', value: grossAmount, showPlus: false, isTotal: true }
     }
   })
+
+  // If there's no tax (subtotal == total), show only final Total row in PDF.
+  const summaryItems = showPph ? summaryItemsAll : summaryItemsAll.filter((it) => it.id === "total")
 
   // Render signatures based on count
   const renderSignatures = () => {
@@ -757,9 +758,9 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
 
         {/* Summary */}
         <View style={styles.summary} wrap={false}>
-          {summaryItems.map((item, index) => (
+          {summaryItems.map((item) => (
             <View key={item.id}>
-              <View style={index === 2 ? styles.summaryTotal : styles.summaryRow}>
+              <View style={item.isTotal ? styles.summaryTotal : styles.summaryRow}>
                 <View style={{ flexDirection: "column" }}>
                   <Text>{item.label}:</Text>
                   {item.note && (
