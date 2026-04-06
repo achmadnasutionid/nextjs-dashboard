@@ -30,6 +30,13 @@ interface ReorderableSummaryProps {
   adjustment?: AdjustmentInfo | null
 }
 
+function isZeroMoneyValue(value: string) {
+  const digits = value.replace(/[^\d-]/g, "")
+  if (!digits) return false
+  const n = Number.parseInt(digits, 10)
+  return Number.isFinite(n) && n === 0
+}
+
 function SortableSummaryItem({ item }: { item: SummaryItem }) {
   const {
     attributes,
@@ -77,6 +84,7 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [sortedItems, setSortedItems] = useState(items)
   const containerRef = useRef<HTMLDivElement>(null)
+  const visibleItems = sortedItems.filter((item) => !(item.id === "pph" && isZeroMoneyValue(item.value)))
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -170,9 +178,9 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
 
       {isEditing ? (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={sortedItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={visibleItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-2">
-              {sortedItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SortableSummaryItem key={item.id} item={item} />
               ))}
             </div>
@@ -180,7 +188,7 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
         </DndContext>
       ) : (
         <div className="space-y-2">
-          {sortedItems.map((item, index) => (
+          {visibleItems.map((item, index) => (
             <div key={item.id}>
               {/* Show adjustment note before total (item with id 'total') */}
               {item.id === "total" && adjustment != null && (

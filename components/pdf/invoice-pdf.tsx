@@ -376,10 +376,13 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
   ]
 
   // Get summary order or use default
-  const summaryOrder = data.summaryOrder ? data.summaryOrder.split(',') : ['subtotal', 'pph', 'total']
+  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(',') : ['subtotal', 'pph', 'total']
+  const showPph = pphRate > 0
 
   // Create summary items based on order
-  const summaryItems = summaryOrder.map(id => {
+  const summaryItems = summaryOrderRaw
+    .filter((id) => (id === "pph" ? showPph : true))
+    .map(id => {
     if (id === 'subtotal') {
       return { id: 'subtotal', label: 'Subtotal', value: netAmount, showPlus: false }
     } else if (id === 'pph') {

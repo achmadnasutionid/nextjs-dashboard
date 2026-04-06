@@ -215,8 +215,9 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
   const pphParts = pphLabel.split(" - After reporting")
   const pphMainLabel = pphParts[0]
   const pphNote = pphParts[1] ? "After reporting" + pphParts[1] : null
-  const summaryOrder = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "total"]
-  const summaryItems = summaryOrder.map((id) => {
+  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "total"]
+  const showPph = pphRate > 0
+  const summaryItems = summaryOrderRaw.filter((id) => (id === "pph" ? showPph : true)).map((id) => {
     if (id === "subtotal") return { id: "subtotal", label: "Subtotal", value: netAmount }
     if (id === "pph") return { id: "pph", label: pphMainLabel, value: pphAmount, note: pphNote }
     return { id: "total", label: "Total Amount", value: grossAmount, isTotal: true }

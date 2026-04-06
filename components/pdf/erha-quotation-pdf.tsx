@@ -474,18 +474,27 @@ export const ErhaQuotationPDF: React.FC<ErhaQuotationPDFProps> = ({ data, forSyn
         {/* Summary */}
         <View style={styles.summarySection}>
           <View style={styles.summaryBox}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total Inc PPH</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(calculateGrossTotal())}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>PPH 23</Text>
-              <Text style={styles.summaryValueHighlight}>{formatCurrency(calculatePph())}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Nett</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(calculateNett())}</Text>
-            </View>
+            {parseFloat(data.pph || "0") > 0 ? (
+              <>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Total Inc PPH</Text>
+                  <Text style={styles.summaryValue}>{formatCurrency(calculateGrossTotal())}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>PPH 23</Text>
+                  <Text style={styles.summaryValueHighlight}>{formatCurrency(calculatePph())}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Nett</Text>
+                  <Text style={styles.summaryValue}>{formatCurrency(calculateNett())}</Text>
+                </View>
+              </>
+            ) : (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Total</Text>
+                <Text style={styles.summaryValue}>{formatCurrency(data.totalAmount)}</Text>
+              </View>
+            )}
           </View>
         </View>
 
