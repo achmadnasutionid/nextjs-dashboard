@@ -1,0 +1,31 @@
+lib/copy-down-payment.ts
+  6fc59b5f0ad68e0c 75-89
+app/api/invoice/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 7,98
+app/api/paragon/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 7
+app/api/erha/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 7,135-136
+app/api/quotation/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 7,97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "0e5f248815ed31e1e225a03f90c39969f5a9c0ea",
+  "prompts": {
+    "6fc59b5f0ad68e0c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "de2b29e6-d06e-45a9-a6ca-c637d1462c98",
+        "model": "default"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 828,
+      "total_deletions": 809,
+      "accepted_lines": 645,
+      "overriden_lines": 0
+    }
+  }
+}
