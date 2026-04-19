@@ -93,9 +93,12 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
     })
   )
 
+  // Parents often pass `items={summaryOrder.map(...)}` which is a new array every render.
+  // Sync state only when content changes, not reference — avoids infinite updates (React #185).
+  const itemsKey = JSON.stringify(items)
   useEffect(() => {
     setSortedItems(items)
-  }, [items])
+  }, [itemsKey])
 
   // Click outside handler
   useEffect(() => {
