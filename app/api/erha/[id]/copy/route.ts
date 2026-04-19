@@ -4,6 +4,7 @@ import {
   readCopyOptions,
   scaleItemsForDownPayment,
   sumScaledItemsTotal,
+  copyDocumentLabelSuffix,
 } from "@/lib/copy-down-payment"
 
 function extractIdNumber(id: string | null | undefined): number {
@@ -131,8 +132,8 @@ export async function POST(
           productionDate: originalErha.productionDate,
           quotationDate: originalErha.quotationDate,
           invoiceBastDate: originalErha.invoiceBastDate,
-          billTo: `${originalErha.billTo} - Copy`,
-          projectName: `${originalErha.projectName} - Copy`,
+          billTo: `${originalErha.billTo}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
+          projectName: `${originalErha.projectName}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
           billToAddress: originalErha.billToAddress,
           contactPerson: originalErha.contactPerson,
           contactPosition: originalErha.contactPosition,

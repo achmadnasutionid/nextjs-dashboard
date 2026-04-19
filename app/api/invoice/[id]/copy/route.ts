@@ -4,6 +4,7 @@ import {
   readCopyOptions,
   scaleItemsForDownPayment,
   sumScaledItemsTotal,
+  copyDocumentLabelSuffix,
 } from "@/lib/copy-down-payment"
 
 function extractIdNumber(id: string | null | undefined): number {
@@ -94,7 +95,7 @@ export async function POST(
         companyTelp: originalInvoice.companyTelp,
         companyEmail: originalInvoice.companyEmail,
         productionDate: originalInvoice.productionDate,
-        billTo: `${originalInvoice.billTo} - Copy`,
+        billTo: `${originalInvoice.billTo}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
         notes: originalInvoice.notes,
         billingName: originalInvoice.billingName,
         billingBankName: originalInvoice.billingBankName,

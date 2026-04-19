@@ -4,6 +4,7 @@ import {
   readCopyOptions,
   scaleItemsForDownPayment,
   sumScaledItemsTotal,
+  copyDocumentLabelSuffix,
 } from "@/lib/copy-down-payment"
 
 function extractIdNumber(id: string | null | undefined): number {
@@ -131,8 +132,8 @@ export async function POST(
           productionDate: originalParagon.productionDate,
           quotationDate: originalParagon.quotationDate,
           invoiceBastDate: originalParagon.invoiceBastDate,
-          billTo: `${originalParagon.billTo} - Copy`,
-          projectName: `${originalParagon.projectName} - Copy`,
+          billTo: `${originalParagon.billTo}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
+          projectName: `${originalParagon.projectName}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
           contactPerson: originalParagon.contactPerson,
           contactPosition: originalParagon.contactPosition,
           bastContactPerson: originalParagon.bastContactPerson,

@@ -72,6 +72,21 @@ export function sumScaledItemsTotal(items: ScaledItemCreate[]): number {
   return items.reduce((s, i) => s + i.total, 0)
 }
 
+function formatPercentageLabel(pct: number): string {
+  if (Number.isInteger(pct)) return String(pct)
+  const rounded = Math.round(pct * 100) / 100
+  return String(rounded)
+}
+
+/** Appended to billTo / projectName: general uses "Copy", down payment uses "Down Payment (X%)". */
+export function copyDocumentLabelSuffix(
+  useDownPayment: boolean,
+  downPaymentPercentage: number
+): string {
+  if (!useDownPayment) return " - Copy"
+  return ` - Down Payment (${formatPercentageLabel(downPaymentPercentage)}%)`
+}
+
 export function parseCopyOptionsFromJson(body: unknown): ParseCopyResult {
   if (body == null || typeof body !== "object") {
     return { ok: true, value: { mode: "general" } }
