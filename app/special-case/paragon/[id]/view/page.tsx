@@ -24,6 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  CopyDocumentDialog,
+  type CopyDocumentChoice,
+} from "@/components/copy-document-dialog"
 
 interface ParagonTicket {
   id: string
@@ -81,6 +85,7 @@ export default function ViewParagonTicketPage() {
   const [finalizing, setFinalizing] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false)
+  const [showCopyDialog, setShowCopyDialog] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: ticket, isLoading: loading, mutate } = useFetch<ParagonTicket>(
@@ -142,25 +147,35 @@ export default function ViewParagonTicketPage() {
 
   // Handle copy paragon ticket
   const [copying, setCopying] = useState(false)
-  const handleCopy = async () => {
+  const handleCopyConfirm = async (choice: CopyDocumentChoice) => {
     if (!ticket || copying) return
 
     setCopying(true)
     try {
+      const body =
+        choice.mode === "downPayment"
+          ? {
+              mode: "downPayment" as const,
+              downPaymentPercentage: choice.percentage,
+            }
+          : { mode: "general" as const }
       const response = await fetch(`/api/paragon/${ticket.id}/copy`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       })
 
       if (response.ok) {
         const copiedTicket = await response.json()
+        setShowCopyDialog(false)
         toast.success("Paragon ticket copied successfully", {
-          description: "Redirecting to the copied ticket..."
+          description: "Redirecting to the copied ticket...",
         })
         router.push(`/special-case/paragon/${copiedTicket.id}/edit`)
       } else {
         const errorData = await response.json()
         toast.error("Failed to copy paragon ticket", {
-          description: errorData.error || "An error occurred"
+          description: errorData.error || "An error occurred",
         })
       }
     } catch (error) {
@@ -376,7 +391,7 @@ export default function ViewParagonTicketPage() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={handleCopy}
+                onClick={() => setShowCopyDialog(true)}
                 disabled={copying}
                 title={copying ? "Copying..." : "Copy"}
               >
@@ -517,6 +532,14 @@ export default function ViewParagonTicketPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CopyDocumentDialog
+        open={showCopyDialog}
+        onOpenChange={setShowCopyDialog}
+        copying={copying}
+        title="Copy Paragon ticket"
+        onConfirm={handleCopyConfirm}
+      />
     </div>
   )
 }

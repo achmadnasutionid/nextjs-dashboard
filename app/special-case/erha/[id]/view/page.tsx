@@ -24,6 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  CopyDocumentDialog,
+  type CopyDocumentChoice,
+} from "@/components/copy-document-dialog"
 
 interface ErhaTicket {
   id: string
@@ -88,6 +92,7 @@ export default function ViewErhaTicketPage() {
   const [finalizing, setFinalizing] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false)
+  const [showCopyDialog, setShowCopyDialog] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: ticket, isLoading: loading, mutate } = useFetch<ErhaTicket>(
@@ -130,25 +135,35 @@ export default function ViewErhaTicketPage() {
 
   // Handle copy erha ticket
   const [copying, setCopying] = useState(false)
-  const handleCopy = async () => {
+  const handleCopyConfirm = async (choice: CopyDocumentChoice) => {
     if (!ticket || copying) return
 
     setCopying(true)
     try {
+      const body =
+        choice.mode === "downPayment"
+          ? {
+              mode: "downPayment" as const,
+              downPaymentPercentage: choice.percentage,
+            }
+          : { mode: "general" as const }
       const response = await fetch(`/api/erha/${ticket.id}/copy`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       })
 
       if (response.ok) {
         const copiedTicket = await response.json()
+        setShowCopyDialog(false)
         toast.success("Erha ticket copied successfully", {
-          description: "Redirecting to the copied ticket..."
+          description: "Redirecting to the copied ticket...",
         })
         router.push(`/special-case/erha/${copiedTicket.id}/edit`)
       } else {
         const errorData = await response.json()
         toast.error("Failed to copy erha ticket", {
-          description: errorData.error || "An error occurred"
+          description: errorData.error || "An error occurred",
         })
       }
     } catch (error) {
@@ -336,7 +351,7 @@ export default function ViewErhaTicketPage() {
               <Button
                 size="icon"
                 variant="outline"
-                onClick={handleCopy}
+                onClick={() => setShowCopyDialog(true)}
                 disabled={copying}
                 title={copying ? "Copying..." : "Copy"}
               >
@@ -474,6 +489,14 @@ export default function ViewErhaTicketPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CopyDocumentDialog
+        open={showCopyDialog}
+        onOpenChange={setShowCopyDialog}
+        copying={copying}
+        title="Copy Erha ticket"
+        onConfirm={handleCopyConfirm}
+      />
     </div>
   )
 }

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import {
+  readCopyOptions,
+  downPaymentItemCreate,
+  downPaymentAmountFromTotal,
+} from "@/lib/copy-down-payment"
 
 function extractIdNumber(id: string | null | undefined): number {
   if (!id) return 0
@@ -15,7 +20,15 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    
+
+    const parsed = await readCopyOptions(request)
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 })
+    }
+    const copyOpts = parsed.value
+    const useDownPayment = copyOpts.mode === "downPayment"
+    const dpPercentage = useDownPayment ? copyOpts.percentage : 0
+
     // Get the original invoice with all related data
     const originalInvoice = await prisma.invoice.findUnique({
       where: { id },
@@ -89,21 +102,25 @@ export async function POST(
         signatureRole: originalInvoice.signatureRole,
         signatureImageData: originalInvoice.signatureImageData,
         pph: originalInvoice.pph,
-        totalAmount: originalInvoice.totalAmount,
+        totalAmount: useDownPayment
+          ? downPaymentAmountFromTotal(originalInvoice.totalAmount, dpPercentage)
+          : originalInvoice.totalAmount,
         status: "draft", // Always create copy as draft
         items: {
-          create: originalInvoice.items.map(item => ({
-            productName: item.productName,
-            total: item.total,
-            details: {
-              create: item.details.map(detail => ({
-                detail: detail.detail,
-                unitPrice: detail.unitPrice,
-                qty: detail.qty,
-                amount: detail.amount
+          create: useDownPayment
+            ? [downPaymentItemCreate(originalInvoice.totalAmount, dpPercentage)]
+            : originalInvoice.items.map(item => ({
+                productName: item.productName,
+                total: item.total,
+                details: {
+                  create: item.details.map(detail => ({
+                    detail: detail.detail,
+                    unitPrice: detail.unitPrice,
+                    qty: detail.qty,
+                    amount: detail.amount
+                  }))
+                }
               }))
-            }
-          }))
         },
         remarks: {
           create: originalInvoice.remarks.map(remark => ({

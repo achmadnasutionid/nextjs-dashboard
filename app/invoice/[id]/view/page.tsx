@@ -22,6 +22,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  CopyDocumentDialog,
+  type CopyDocumentChoice,
+} from "@/components/copy-document-dialog"
 
 interface Invoice {
   invoiceId: string
@@ -72,6 +76,7 @@ export default function ViewInvoicePage() {
   const [showMarkPaidDialog, setShowMarkPaidDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showCopyDialog, setShowCopyDialog] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: Invoice, isLoading: loading, mutate } = useFetch<Invoice>(
@@ -135,25 +140,35 @@ export default function ViewInvoicePage() {
 
   // Handle copy invoice
   const [copying, setCopying] = useState(false)
-  const handleCopy = async () => {
+  const handleCopyConfirm = async (choice: CopyDocumentChoice) => {
     if (!Invoice || copying) return
 
     setCopying(true)
     try {
+      const body =
+        choice.mode === "downPayment"
+          ? {
+              mode: "downPayment" as const,
+              downPaymentPercentage: choice.percentage,
+            }
+          : { mode: "general" as const }
       const response = await fetch(`/api/invoice/${InvoiceId}/copy`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       })
 
       if (response.ok) {
         const copiedInvoice = await response.json()
+        setShowCopyDialog(false)
         toast.success("Invoice copied successfully", {
-          description: "Redirecting to the copied invoice..."
+          description: "Redirecting to the copied invoice...",
         })
         router.push(`/invoice/${copiedInvoice.id}/edit`)
       } else {
         const errorData = await response.json()
         toast.error("Failed to copy invoice", {
-          description: errorData.error || "An error occurred"
+          description: errorData.error || "An error occurred",
         })
       }
     } catch (error) {
@@ -296,7 +311,7 @@ export default function ViewInvoicePage() {
                 <>
                   <Button
                     variant="outline"
-                    onClick={handleCopy}
+                    onClick={() => setShowCopyDialog(true)}
                     disabled={copying}
                     size="icon"
                     title={copying ? "Copying..." : "Copy"}
@@ -410,6 +425,14 @@ export default function ViewInvoicePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CopyDocumentDialog
+        open={showCopyDialog}
+        onOpenChange={setShowCopyDialog}
+        copying={copying}
+        title="Copy invoice"
+        onConfirm={handleCopyConfirm}
+      />
     </div>
   )
 }

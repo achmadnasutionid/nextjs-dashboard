@@ -22,6 +22,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  CopyDocumentDialog,
+  type CopyDocumentChoice,
+} from "@/components/copy-document-dialog"
 
 interface Quotation {
   quotationId: string
@@ -74,6 +78,7 @@ export default function ViewQuotationPage() {
   const [showAcceptDialog, setShowAcceptDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showCopyDialog, setShowCopyDialog] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: quotation, isLoading: loading, mutate } = useFetch<Quotation>(
@@ -137,25 +142,35 @@ export default function ViewQuotationPage() {
 
   // Handle copy quotation
   const [copying, setCopying] = useState(false)
-  const handleCopy = async () => {
+  const handleCopyConfirm = async (choice: CopyDocumentChoice) => {
     if (!quotation || copying) return
 
     setCopying(true)
     try {
+      const body =
+        choice.mode === "downPayment"
+          ? {
+              mode: "downPayment" as const,
+              downPaymentPercentage: choice.percentage,
+            }
+          : { mode: "general" as const }
       const response = await fetch(`/api/quotation/${quotationId}/copy`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       })
 
       if (response.ok) {
         const copiedQuotation = await response.json()
+        setShowCopyDialog(false)
         toast.success("Quotation copied successfully", {
-          description: "Redirecting to the copied quotation..."
+          description: "Redirecting to the copied quotation...",
         })
         router.push(`/quotation/${copiedQuotation.id}/edit`)
       } else {
         const errorData = await response.json()
         toast.error("Failed to copy quotation", {
-          description: errorData.error || "An error occurred"
+          description: errorData.error || "An error occurred",
         })
       }
     } catch (error) {
@@ -409,7 +424,7 @@ export default function ViewQuotationPage() {
                 <>
                   <Button
                     variant="outline"
-                    onClick={handleCopy}
+                    onClick={() => setShowCopyDialog(true)}
                     disabled={copying}
                     size="icon"
                     title={copying ? "Copying..." : "Copy"}
@@ -523,6 +538,14 @@ export default function ViewQuotationPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CopyDocumentDialog
+        open={showCopyDialog}
+        onOpenChange={setShowCopyDialog}
+        copying={copying}
+        title="Copy quotation"
+        onConfirm={handleCopyConfirm}
+      />
     </div>
   )
 }
