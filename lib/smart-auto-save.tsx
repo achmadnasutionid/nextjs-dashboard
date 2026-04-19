@@ -42,6 +42,13 @@ const AUTO_SAVE_RULES = {
   minTimeBetweenSaves: 15000 // At least 15 seconds between saves
 }
 
+function isValidProductionDate(value: unknown): boolean {
+  if (value == null || value === "") return false
+  if (value instanceof Date) return !Number.isNaN(value.getTime())
+  if (typeof value === "string") return !Number.isNaN(Date.parse(value))
+  return false
+}
+
 /**
  * VALIDATION: Check if data is "good enough" to auto-save
  */
@@ -58,8 +65,8 @@ function canAutoSave(data: any, type: 'quotation' | 'invoice' | 'expense' | 'erh
     }
   }
   
-  // Check if production date is valid
-  if (data.productionDate && !(data.productionDate instanceof Date)) {
+  // productionDate may be a Date (some screens) or ISO string from getData()
+  if (!isValidProductionDate(data.productionDate)) {
     return { canSave: false, reason: 'Invalid date' }
   }
   
@@ -87,7 +94,8 @@ export function useSmartAutoSave({
   recordId: string
   getData: () => any
   type: 'quotation' | 'invoice' | 'expense' | 'erha' | 'paragon'
-  onSuccess?: () => void
+  /** Receives the PUT response body so callers can sync optimistic-lock version (e.g. updatedAt). */
+  onSuccess?: (result: unknown) => void
   onError?: (error: any) => void
 }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle')
@@ -116,7 +124,11 @@ export function useSmartAutoSave({
     
     // Get current form data
     const data = getData()
-    
+    if (data == null) {
+      console.log('[AUTO-SAVE] Skipped: getData() returned null')
+      return
+    }
+
     // Rule 3: Validate data is "good enough"
     const validation = canAutoSave(data, type)
     if (!validation.canSave) {
@@ -139,10 +151,11 @@ export function useSmartAutoSave({
       }, AUTO_SAVE_RULES.timeout)
       
       // Prepare payload (always save as draft for auto-save)
+      // Use data.updatedAt from getData(); do not use lastKnownUpdatedAt (was never set — wiped locking).
       const payload = {
         ...data,
         status: 'draft', // ALWAYS draft for auto-save
-        updatedAt: data.lastKnownUpdatedAt // For optimistic locking
+        updatedAt: data.updatedAt ?? data.lastKnownUpdatedAt,
       }
       
       // Make API call
@@ -167,9 +180,9 @@ export function useSmartAutoSave({
         setAutoSaveStatus('saved')
         console.log('[AUTO-SAVE] Success ✓')
         
-        // Call success callback
+        // Call success callback (pass API JSON so edit pages can refresh updatedAt for the next save)
         if (onSuccess) {
-          onSuccess()
+          onSuccess(result)
         }
         
         // Hide indicator after 2 seconds

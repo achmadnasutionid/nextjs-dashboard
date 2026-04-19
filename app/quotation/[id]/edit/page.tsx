@@ -182,6 +182,9 @@ export default function EditQuotationPage() {
       }
       
       return {
+        selectedCompanyId,
+        selectedBillingId,
+        selectedSignatureId,
         companyName: company.name,
         companyAddress: company.address,
         companyCity: company.city,
@@ -240,7 +243,10 @@ export default function EditQuotationPage() {
         }))
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result && typeof result === "object" && "updatedAt" in result && (result as { updatedAt?: string }).updatedAt) {
+        lastUpdatedAtRef.current = (result as { updatedAt: string }).updatedAt
+      }
       setHasUnsavedChanges(false)
     },
     onError: (error) => {
@@ -876,6 +882,10 @@ export default function EditQuotationPage() {
       })
 
       if (response.ok) {
+        const saved = await response.json()
+        if (saved?.updatedAt) {
+          lastUpdatedAtRef.current = saved.updatedAt
+        }
         const statusText = status === "accepted"
           ? "Changes saved. Status remains accepted."
           : status === "pending"

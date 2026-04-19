@@ -183,6 +183,9 @@ export default function EditInvoicePage() {
       }
       
       return {
+        selectedCompanyId,
+        selectedBillingId,
+        selectedSignatureId,
         companyName: company.name,
         companyAddress: company.address,
         companyCity: company.city,
@@ -211,6 +214,7 @@ export default function EditInvoicePage() {
         adjustmentNotes: adjustmentNotes.trim() || undefined,
         termsAndConditions: showTerms ? termsAndConditions : null,
         status: 'draft', // Always save as draft for auto-save
+        updatedAt: lastUpdatedAtRef.current,
         remarks: remarks.map(remark => ({
           id: remark.id,
           text: remark.text,
@@ -241,7 +245,10 @@ export default function EditInvoicePage() {
         }))
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result && typeof result === "object" && "updatedAt" in result && (result as { updatedAt?: string }).updatedAt) {
+        lastUpdatedAtRef.current = (result as { updatedAt: string }).updatedAt
+      }
       setHasUnsavedChanges(false)
     },
     onError: (error) => {
@@ -841,6 +848,7 @@ export default function EditInvoicePage() {
         adjustmentNotes: adjustmentNotes.trim() || undefined,
         termsAndConditions: showTerms ? termsAndConditions : null,
         status,
+        updatedAt: lastUpdatedAtRef.current,
         remarks: remarks.map(remark => ({
           id: remark.id,
           text: remark.text,
@@ -878,6 +886,10 @@ export default function EditInvoicePage() {
       })
 
       if (response.ok) {
+        const saved = await response.json()
+        if (saved?.updatedAt) {
+          lastUpdatedAtRef.current = saved.updatedAt
+        }
         const statusText = status === "paid"
           ? "Changes saved. Status remains paid."
           : status === "pending"
@@ -898,6 +910,18 @@ export default function EditInvoicePage() {
         }
       } else {
         const data = await response.json()
+        if (data.code === "OPTIMISTIC_LOCK_ERROR") {
+          toast.error("Conflict Detected", {
+            description: data.message || "This invoice was modified elsewhere. Please refresh and try again.",
+            duration: 5000,
+            action: {
+              label: "Refresh",
+              onClick: () => window.location.reload()
+            }
+          })
+          setShowStaleDataDialog(true)
+          return
+        }
         toast.error("Failed to update Invoice", {
           description: data.error || "An error occurred while updating."
         })

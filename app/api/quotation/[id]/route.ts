@@ -4,6 +4,7 @@ import { verifyRecordVersion, OptimisticLockError } from "@/lib/optimistic-locki
 import { invalidateQuotationCaches } from "@/lib/cache-invalidation"
 import { generateUniqueName } from "@/lib/name-validator"
 import { syncTracker, updateTrackerName } from "@/lib/tracker-sync"
+import { safeParseFloat } from "@/lib/number-validator"
 
 // GET single quotation
 export async function GET(
@@ -144,7 +145,7 @@ export async function PUT(
           signatureRole: body.signatureRole || null,
           signatureImageData: body.signatureImageData,
           pph: body.pph,
-          totalAmount: parseFloat(body.totalAmount),
+          totalAmount: safeParseFloat(body.totalAmount),
           summaryOrder: body.summaryOrder || "subtotal,pph,total",
           adjustmentPercentage: body.adjustmentPercentage != null ? parseFloat(body.adjustmentPercentage) : null,
           adjustmentNotes: body.adjustmentNotes ?? null,
