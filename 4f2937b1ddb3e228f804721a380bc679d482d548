@@ -1,0 +1,25 @@
+lib/smart-auto-save.tsx
+  a6f3c6880f6d6f09 45-51,68-69,97-98,127-131,154,158,183,185
+app/api/quotation/[id]/route.ts
+  a6f3c6880f6d6f09 7,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "4f2937b1ddb3e228f804721a380bc679d482d548",
+  "prompts": {
+    "a6f3c6880f6d6f09": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "31d9a4de-285b-4baf-8ef0-94b0e09f226c",
+        "model": "default"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 801,
+      "total_deletions": 787,
+      "accepted_lines": 795,
+      "overriden_lines": 0
+    }
+  }
+}
