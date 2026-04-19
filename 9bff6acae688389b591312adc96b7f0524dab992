@@ -1,0 +1,41 @@
+app/api/erha/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 3-7,148-150,153-165
+app/api/invoice/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 3-7,105-107,110-122
+lib/copy-down-payment.ts
+  6fc59b5f0ad68e0c 1-82
+app/quotation/[id]/view/page.tsx
+  6fc59b5f0ad68e0c 25-28,81,145,150-156,159-160,165,167,173,427,541-548
+app/invoice/[id]/view/page.tsx
+  6fc59b5f0ad68e0c 25-28,79,143,148-154,157-158,163,165,171,314,428-435
+components/copy-document-dialog.tsx
+  6fc59b5f0ad68e0c 1-139
+app/special-case/paragon/[id]/view/page.tsx
+  6fc59b5f0ad68e0c 27-30,88,150,155-161,164-165,170,172,178,394,535-542
+app/api/paragon/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 3-7,141-143,146-158
+app/api/quotation/[id]/copy/route.ts
+  6fc59b5f0ad68e0c 3-7,23-31,104-106,109-121
+app/special-case/erha/[id]/view/page.tsx
+  6fc59b5f0ad68e0c 27-30,95,138,143-149,152-153,158,160,166,354,492-499
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "9bff6acae688389b591312adc96b7f0524dab992",
+  "prompts": {
+    "6fc59b5f0ad68e0c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "de2b29e6-d06e-45a9-a6ca-c637d1462c98",
+        "model": "default"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 2981,
+      "total_deletions": 2624,
+      "accepted_lines": 2915,
+      "overriden_lines": 2
+    }
+  }
+}
