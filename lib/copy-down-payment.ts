@@ -1,6 +1,6 @@
 /**
  * Shared helpers for "copy document" with optional down-payment mode:
- * one line item named `Down Payment (X%)` with amount = round(originalTotal * X / 100).
+ * every line item and detail amount is scaled by (percentage / 100).
  */
 
 export type ParsedCopyOptions =
@@ -11,10 +11,29 @@ export type ParseCopyResult =
   | { ok: true; value: ParsedCopyOptions }
   | { ok: false; error: string }
 
-function formatPercentageLabel(pct: number): string {
-  if (Number.isInteger(pct)) return String(pct)
-  const rounded = Math.round(pct * 100) / 100
-  return String(rounded)
+type LineItemInput = {
+  productName: string
+  total: number
+  details: Array<{
+    detail: string
+    unitPrice: number
+    qty: number
+    amount: number
+  }>
+}
+
+/** Nested shape for Prisma `items: { create: [...] }` on quotation / invoice / tickets. */
+export type ScaledItemCreate = {
+  productName: string
+  total: number
+  details: {
+    create: Array<{
+      detail: string
+      unitPrice: number
+      qty: number
+      amount: number
+    }>
+  }
 }
 
 export function downPaymentAmountFromTotal(
@@ -24,27 +43,33 @@ export function downPaymentAmountFromTotal(
   return Math.round((originalTotal * percentage) / 100)
 }
 
-/** Prisma nested `create` shape for QuotationItem / InvoiceItem / Paragon / Erha items. */
-export function downPaymentItemCreate(
-  originalTotalAmount: number,
+/**
+ * Scale all line items and detail rows by the down-payment percentage.
+ * Per-line totals are the sum of scaled detail amounts (IDR rounding per row).
+ */
+export function scaleItemsForDownPayment(
+  items: LineItemInput[],
   percentage: number
-) {
-  const amount = downPaymentAmountFromTotal(originalTotalAmount, percentage)
-  const label = `Down Payment (${formatPercentageLabel(percentage)}%)`
-  return {
-    productName: label,
-    total: amount,
-    details: {
-      create: [
-        {
-          detail: label,
-          unitPrice: amount,
-          qty: 1,
-          amount: amount,
-        },
-      ],
-    },
-  }
+): ScaledItemCreate[] {
+  const factor = percentage / 100
+  return items.map((item) => {
+    const scaledDetails = item.details.map((d) => ({
+      detail: d.detail,
+      unitPrice: Math.round(d.unitPrice * factor),
+      qty: d.qty,
+      amount: Math.round(d.amount * factor),
+    }))
+    const lineTotal = scaledDetails.reduce((s, d) => s + d.amount, 0)
+    return {
+      productName: item.productName,
+      total: lineTotal,
+      details: { create: scaledDetails },
+    }
+  })
+}
+
+export function sumScaledItemsTotal(items: ScaledItemCreate[]): number {
+  return items.reduce((s, i) => s + i.total, 0)
 }
 
 export function parseCopyOptionsFromJson(body: unknown): ParseCopyResult {

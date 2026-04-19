@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import {
   readCopyOptions,
-  downPaymentItemCreate,
-  downPaymentAmountFromTotal,
+  scaleItemsForDownPayment,
+  sumScaledItemsTotal,
 } from "@/lib/copy-down-payment"
 
 function extractIdNumber(id: string | null | undefined): number {
@@ -79,6 +79,10 @@ export async function POST(
 
       const newInvoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
 
+      const scaledItems = useDownPayment
+        ? scaleItemsForDownPayment(originalInvoice.items, dpPercentage)
+        : null
+
       return tx.invoice.create({
         data: {
           invoiceId: newInvoiceId,
@@ -103,12 +107,12 @@ export async function POST(
         signatureImageData: originalInvoice.signatureImageData,
         pph: originalInvoice.pph,
         totalAmount: useDownPayment
-          ? downPaymentAmountFromTotal(originalInvoice.totalAmount, dpPercentage)
+          ? sumScaledItemsTotal(scaledItems!)
           : originalInvoice.totalAmount,
         status: "draft", // Always create copy as draft
         items: {
           create: useDownPayment
-            ? [downPaymentItemCreate(originalInvoice.totalAmount, dpPercentage)]
+            ? scaledItems!
             : originalInvoice.items.map(item => ({
                 productName: item.productName,
                 total: item.total,

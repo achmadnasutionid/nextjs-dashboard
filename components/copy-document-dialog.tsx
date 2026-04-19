@@ -63,8 +63,8 @@ export function CopyDocumentDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Choose how to copy line items. General keeps everything as-is. Down payment
-            replaces items with a single line based on the original total.
+            Choose how to copy line items. General keeps amounts as-is. Down payment
+            scales every line and detail by the percentage (same items, adjusted amounts).
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
@@ -98,7 +98,7 @@ export function CopyDocumentDialog({
             >
               Down payment
               <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                One item: Down Payment (%)
+                Scale all rows by this %
               </span>
             </button>
           </div>

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import {
   readCopyOptions,
-  downPaymentItemCreate,
-  downPaymentAmountFromTotal,
+  scaleItemsForDownPayment,
+  sumScaledItemsTotal,
 } from "@/lib/copy-down-payment"
 
 function extractIdNumber(id: string | null | undefined): number {
@@ -113,6 +113,10 @@ export async function POST(
       const quotationId = `QTN-${year}-${nextQuotationNum.toString().padStart(4, "0")}`
       const invoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
 
+      const scaledItems = useDownPayment
+        ? scaleItemsForDownPayment(originalErha.items, dpPercentage)
+        : null
+
       return tx.erhaTicket.create({
         data: {
           ticketId,
@@ -146,12 +150,12 @@ export async function POST(
           finalWorkImageData: originalErha.finalWorkImageData,
           pph: originalErha.pph,
           totalAmount: useDownPayment
-            ? downPaymentAmountFromTotal(originalErha.totalAmount, dpPercentage)
+            ? sumScaledItemsTotal(scaledItems!)
             : originalErha.totalAmount,
           status: "draft",
           items: {
             create: useDownPayment
-              ? [downPaymentItemCreate(originalErha.totalAmount, dpPercentage)]
+              ? scaledItems!
               : originalErha.items.map(item => ({
                   productName: item.productName,
                   total: item.total,
