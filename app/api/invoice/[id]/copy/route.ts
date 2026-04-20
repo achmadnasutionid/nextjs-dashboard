@@ -5,7 +5,10 @@ import {
   scaleItemsForDownPayment,
   sumScaledItemsTotal,
   copyDocumentLabelSuffix,
+  grandTotalFromSubtotalAndPph,
+  downPaymentDeductionLineCreate,
 } from "@/lib/copy-down-payment"
+import { invalidateInvoiceCaches } from "@/lib/cache-invalidation"
 
 function extractIdNumber(id: string | null | undefined): number {
   if (!id) return 0
@@ -84,7 +87,7 @@ export async function POST(
         ? scaleItemsForDownPayment(originalInvoice.items, dpPercentage)
         : null
 
-      return tx.invoice.create({
+      const created = await tx.invoice.create({
         data: {
           invoiceId: newInvoiceId,
         companyName: originalInvoice.companyName,
@@ -143,7 +146,50 @@ export async function POST(
         remarks: true
       }
     })
+
+      if (useDownPayment && scaledItems) {
+        const dpNet = sumScaledItemsTotal(scaledItems)
+        if (dpNet > 0) {
+          const maxOrder = originalInvoice.items.length
+            ? Math.max(...originalInvoice.items.map((i) => i.order))
+            : 0
+          const ded = downPaymentDeductionLineCreate(
+            dpNet,
+            dpPercentage,
+            newInvoiceId
+          )
+          await tx.invoiceItem.create({
+            data: {
+              invoiceId: id,
+              order: maxOrder + 1,
+              productName: ded.productName,
+              total: ded.total,
+              details: ded.details,
+            },
+          })
+          const oldSub = originalInvoice.items.reduce((s, i) => s + i.total, 0)
+          const newSub = oldSub - dpNet
+          await tx.invoice.update({
+            where: { id },
+            data: {
+              totalAmount: grandTotalFromSubtotalAndPph(
+                newSub,
+                originalInvoice.pph
+              ),
+            },
+          })
+        }
+      }
+
+      return created
     })
+
+    if (useDownPayment) {
+      await Promise.all([
+        invalidateInvoiceCaches(id),
+        invalidateInvoiceCaches(copiedInvoice.id),
+      ])
+    }
 
     return NextResponse.json(copiedInvoice, { status: 201 })
   } catch (error) {

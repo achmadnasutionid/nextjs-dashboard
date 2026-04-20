@@ -78,6 +78,43 @@ function formatPercentageLabel(pct: number): string {
   return String(rounded)
 }
 
+/** Grand total from net subtotal + PPh — matches quotation/invoice/Paragon/Erha edit screens. */
+export function grandTotalFromSubtotalAndPph(subtotal: number, pph: string): number {
+  const pphRate = parseFloat(pph)
+  if (Number.isNaN(pphRate) || pphRate <= 0) return subtotal
+  if (pphRate >= 100) return subtotal
+  return subtotal * (100 / (100 - pphRate))
+}
+
+/**
+ * Negative net line on the source document after a down payment copy:
+ * reduces remaining balance by the same net amount as the new document.
+ */
+export function downPaymentDeductionLineCreate(
+  deductionNetAmount: number,
+  percentage: number,
+  linkedDocumentNumber: string
+): ScaledItemCreate {
+  const pctLabel = formatPercentageLabel(percentage)
+  const t = -deductionNetAmount
+  const productName = `Down payment (${pctLabel}%) — ${linkedDocumentNumber}`
+  const detailLine = `Allocated to ${linkedDocumentNumber} (${pctLabel}% of prior net subtotal)`
+  return {
+    productName,
+    total: t,
+    details: {
+      create: [
+        {
+          detail: detailLine,
+          unitPrice: t,
+          qty: 1,
+          amount: t,
+        },
+      ],
+    },
+  }
+}
+
 /** Appended to billTo / projectName: general uses "Copy", down payment uses "Down Payment (X%)". */
 export function copyDocumentLabelSuffix(
   useDownPayment: boolean,

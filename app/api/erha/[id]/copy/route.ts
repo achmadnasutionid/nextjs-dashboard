@@ -5,7 +5,10 @@ import {
   scaleItemsForDownPayment,
   sumScaledItemsTotal,
   copyDocumentLabelSuffix,
+  grandTotalFromSubtotalAndPph,
+  downPaymentDeductionLineCreate,
 } from "@/lib/copy-down-payment"
+import { invalidateErhaCaches } from "@/lib/cache-invalidation"
 
 function extractIdNumber(id: string | null | undefined): number {
   if (!id) return 0
@@ -118,7 +121,7 @@ export async function POST(
         ? scaleItemsForDownPayment(originalErha.items, dpPercentage)
         : null
 
-      return tx.erhaTicket.create({
+      const created = await tx.erhaTicket.create({
         data: {
           ticketId,
           quotationId,
@@ -186,7 +189,50 @@ export async function POST(
           remarks: true
         }
       })
+
+      if (useDownPayment && scaledItems) {
+        const dpNet = sumScaledItemsTotal(scaledItems)
+        if (dpNet > 0) {
+          const maxOrder = originalErha.items.length
+            ? Math.max(...originalErha.items.map((i) => i.order))
+            : 0
+          const ded = downPaymentDeductionLineCreate(
+            dpNet,
+            dpPercentage,
+            quotationId
+          )
+          await tx.erhaTicketItem.create({
+            data: {
+              ticketId: id,
+              order: maxOrder + 1,
+              productName: ded.productName,
+              total: ded.total,
+              details: ded.details,
+            },
+          })
+          const oldSub = originalErha.items.reduce((s, i) => s + i.total, 0)
+          const newSub = oldSub - dpNet
+          await tx.erhaTicket.update({
+            where: { id },
+            data: {
+              totalAmount: grandTotalFromSubtotalAndPph(
+                newSub,
+                originalErha.pph
+              ),
+            },
+          })
+        }
+      }
+
+      return created
     })
+
+    if (useDownPayment) {
+      await Promise.all([
+        invalidateErhaCaches(id),
+        invalidateErhaCaches(copiedErha.id),
+      ])
+    }
 
     return NextResponse.json(copiedErha, { status: 201 })
   } catch (error) {

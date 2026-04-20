@@ -63,8 +63,9 @@ export function CopyDocumentDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Choose how to copy line items. General keeps amounts as-is. Down payment
-            scales every line and detail by the percentage (same items, adjusted amounts).
+            General copies amounts as-is. Down payment scales every line on the new
+            document and adds a matching deduction line on the original so its total
+            reflects the amount still owed.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">

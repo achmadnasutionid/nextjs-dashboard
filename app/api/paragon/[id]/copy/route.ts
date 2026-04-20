@@ -5,7 +5,10 @@ import {
   scaleItemsForDownPayment,
   sumScaledItemsTotal,
   copyDocumentLabelSuffix,
+  grandTotalFromSubtotalAndPph,
+  downPaymentDeductionLineCreate,
 } from "@/lib/copy-down-payment"
+import { invalidateParagonCaches } from "@/lib/cache-invalidation"
 
 function extractIdNumber(id: string | null | undefined): number {
   if (!id) return 0
@@ -118,7 +121,7 @@ export async function POST(
         ? scaleItemsForDownPayment(originalParagon.items, dpPercentage)
         : null
 
-      return tx.paragonTicket.create({
+      const created = await tx.paragonTicket.create({
         data: {
           ticketId,
           quotationId,
@@ -179,7 +182,50 @@ export async function POST(
           remarks: true
         }
       })
+
+      if (useDownPayment && scaledItems) {
+        const dpNet = sumScaledItemsTotal(scaledItems)
+        if (dpNet > 0) {
+          const maxOrder = originalParagon.items.length
+            ? Math.max(...originalParagon.items.map((i) => i.order))
+            : 0
+          const ded = downPaymentDeductionLineCreate(
+            dpNet,
+            dpPercentage,
+            quotationId
+          )
+          await tx.paragonTicketItem.create({
+            data: {
+              ticketId: id,
+              order: maxOrder + 1,
+              productName: ded.productName,
+              total: ded.total,
+              details: ded.details,
+            },
+          })
+          const oldSub = originalParagon.items.reduce((s, i) => s + i.total, 0)
+          const newSub = oldSub - dpNet
+          await tx.paragonTicket.update({
+            where: { id },
+            data: {
+              totalAmount: grandTotalFromSubtotalAndPph(
+                newSub,
+                originalParagon.pph
+              ),
+            },
+          })
+        }
+      }
+
+      return created
     })
+
+    if (useDownPayment) {
+      await Promise.all([
+        invalidateParagonCaches(id),
+        invalidateParagonCaches(copiedParagon.id),
+      ])
+    }
 
     return NextResponse.json(copiedParagon, { status: 201 })
   } catch (error) {

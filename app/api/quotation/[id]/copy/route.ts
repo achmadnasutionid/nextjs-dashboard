@@ -5,7 +5,10 @@ import {
   scaleItemsForDownPayment,
   sumScaledItemsTotal,
   copyDocumentLabelSuffix,
+  grandTotalFromSubtotalAndPph,
+  downPaymentDeductionLineCreate,
 } from "@/lib/copy-down-payment"
+import { invalidateQuotationCaches } from "@/lib/cache-invalidation"
 
 function extractIdNumber(id: string | null | undefined): number {
   if (!id) return 0
@@ -84,7 +87,7 @@ export async function POST(
         ? scaleItemsForDownPayment(originalQuotation.items, dpPercentage)
         : null
 
-      return tx.quotation.create({
+      const created = await tx.quotation.create({
         data: {
           quotationId: newQuotationId,
         companyName: originalQuotation.companyName,
@@ -142,7 +145,50 @@ export async function POST(
         remarks: true
       }
     })
+
+      if (useDownPayment && scaledItems) {
+        const dpNet = sumScaledItemsTotal(scaledItems)
+        if (dpNet > 0) {
+          const maxOrder = originalQuotation.items.length
+            ? Math.max(...originalQuotation.items.map((i) => i.order))
+            : 0
+          const ded = downPaymentDeductionLineCreate(
+            dpNet,
+            dpPercentage,
+            newQuotationId
+          )
+          await tx.quotationItem.create({
+            data: {
+              quotationId: id,
+              order: maxOrder + 1,
+              productName: ded.productName,
+              total: ded.total,
+              details: ded.details,
+            },
+          })
+          const oldSub = originalQuotation.items.reduce((s, i) => s + i.total, 0)
+          const newSub = oldSub - dpNet
+          await tx.quotation.update({
+            where: { id },
+            data: {
+              totalAmount: grandTotalFromSubtotalAndPph(
+                newSub,
+                originalQuotation.pph
+              ),
+            },
+          })
+        }
+      }
+
+      return created
     })
+
+    if (useDownPayment) {
+      await Promise.all([
+        invalidateQuotationCaches(id),
+        invalidateQuotationCaches(copiedQuotation.id),
+      ])
+    }
 
     return NextResponse.json(copiedQuotation, { status: 201 })
   } catch (error) {
