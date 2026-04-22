@@ -186,6 +186,7 @@ export type QuotationBackupPDFData = {
   signatureRole?: string
   signatureImageData?: string
   summaryOrder?: string
+  downPaymentPercentage?: number | null
   signatures?: Array<{ name: string; position: string; imageData?: string }>
   pph: string
   totalAmount: number
@@ -215,15 +216,39 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
   const pphParts = pphLabel.split(" - After reporting")
   const pphMainLabel = pphParts[0]
   const pphNote = pphParts[1] ? "After reporting" + pphParts[1] : null
-  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "total"]
+  const downPaymentRate = typeof data.downPaymentPercentage === "number" ? data.downPaymentPercentage : 0
+  const downPaymentAmount = downPaymentRate > 0 ? grossAmount * (downPaymentRate / 100) : 0
+  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "downPayment", "total"]
   const showPph = pphRate > 0
-  const summaryItemsAll = summaryOrderRaw.map((id) => {
-    if (id === "subtotal") return { id: "subtotal", label: "Subtotal", value: netAmount }
-    if (id === "pph") return { id: "pph", label: pphMainLabel, value: pphAmount, note: pphNote }
-    return { id: "total", label: "Total Amount", value: grossAmount, isTotal: true }
-  })
-  // If there's no tax (subtotal == total), show only final Total row in PDF.
-  const summaryItems = showPph ? summaryItemsAll : summaryItemsAll.filter((it) => it.id === "total")
+  const summaryItems = summaryOrderRaw.reduce<Array<{
+    id: string
+    label: string
+    value: number
+    note?: string | null
+    isTotal?: boolean
+  }>>((acc, id) => {
+    if (id === "subtotal") {
+      acc.push({ id: "subtotal", label: "Subtotal", value: netAmount })
+      return acc
+    }
+    if (id === "pph") {
+      if (!showPph) return acc
+      acc.push({ id: "pph", label: pphMainLabel, value: pphAmount, note: pphNote })
+      return acc
+    }
+    if (id === "downPayment") {
+      acc.push({
+        id: "downPayment",
+        label: `Down Payment (${downPaymentRate}%)`,
+        value: downPaymentAmount,
+      })
+      return acc
+    }
+    if (id === "total") {
+      acc.push({ id: "total", label: "Total Amount", value: grossAmount, isTotal: true })
+    }
+    return acc
+  }, [])
   const mainSig = { name: data.signatureName, position: data.signatureRole || "" }
   const extraSigs = Array.isArray(data.signatures)
     ? data.signatures.filter((s) => s && s.name?.trim()).map((s) => ({ name: s.name, position: s.position || "" }))

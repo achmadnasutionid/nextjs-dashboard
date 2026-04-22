@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { CurrencyInput } from "@/components/ui/currency-input"
-import { Save, CheckCircle, Plus, Trash2, GripVertical, Percent } from "lucide-react"
+import { Save, CheckCircle, Plus, Trash2, GripVertical } from "lucide-react"
 import { SortableItems } from "@/components/ui/sortable-items"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -31,7 +31,6 @@ import { PPH_OPTIONS } from "@/lib/constants"
 import { scrollToFirstError } from "@/lib/form-utils"
 import { compressFinalWorkScreenshot } from "@/lib/image-utils"
 import { formatProductName } from "@/lib/utils"
-import { AdjustByPercentageModal } from "@/components/ui/adjust-by-percentage-modal"
 
 interface Company {
   id: string
@@ -1136,15 +1135,6 @@ export default function CreateParagonTicketPage() {
                 <div className="space-y-3 rounded-lg border bg-card p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Summary</h3>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowAdjustModal(true)}
-                      title="Adjust all amounts by percentage"
-                    >
-                      <Percent className="h-4 w-4" />
-                    </Button>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -1157,25 +1147,11 @@ export default function CreateParagonTicketPage() {
                         + {formatCurrency(calculatePphAmount())}
                       </span>
                     </div>
-                    {adjustmentPercentage != null && (
-                      <div className="text-xs text-muted-foreground">
-                        {adjustmentNotes.trim()
-                          ? `Price adjusted by ${adjustmentPercentage > 0 ? "+" : ""}${adjustmentPercentage}% because ${adjustmentNotes.trim()}.`
-                          : `Price adjusted by ${adjustmentPercentage > 0 ? "+" : ""}${adjustmentPercentage}%.`}
-                      </div>
-                    )}
                     <div className="flex justify-between border-t pt-2 text-base font-bold">
                       <span>Total Amount:</span>
                       <span className="text-primary">{formatCurrency(calculateTotalAmount())}</span>
                     </div>
                   </div>
-                  <AdjustByPercentageModal
-                    open={showAdjustModal}
-                    onOpenChange={setShowAdjustModal}
-                    onConfirm={handleAdjustByPercentage}
-                    initialPercentage={adjustmentPercentage}
-                    initialNotes={adjustmentNotes}
-                  />
                 </div>
               )}
 

@@ -162,6 +162,7 @@ interface InvoicePDFProps {
     signatureRole?: string
     signatureImageData: string
     summaryOrder?: string
+    downPaymentPercentage?: number | null
     signatures?: Array<{
       name: string
       position: string
@@ -375,23 +376,43 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
     ...additionalSignatures
   ]
 
+  const downPaymentRate = typeof data.downPaymentPercentage === "number" ? data.downPaymentPercentage : 0
+  const downPaymentAmount = downPaymentRate > 0 ? grossAmount * (downPaymentRate / 100) : 0
+
   // Get summary order or use default
-  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(',') : ['subtotal', 'pph', 'total']
+  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(',') : ['subtotal', 'pph', 'downPayment', 'total']
   const showPph = pphRate > 0
 
   // Create summary items based on order
-  const summaryItemsAll = summaryOrderRaw.map(id => {
-    if (id === 'subtotal') {
-      return { id: 'subtotal', label: 'Subtotal', value: netAmount, showPlus: false }
-    } else if (id === 'pph') {
-      return { id: 'pph', label: pphMainLabel, value: pphAmount, showPlus: true, note: pphNote }
-    } else {
-      return { id: 'total', label: 'Total Amount', value: grossAmount, showPlus: false, isTotal: true }
+  const summaryItems = summaryOrderRaw.reduce<Array<{
+    id: string
+    label: string
+    value: number
+    note?: string | null
+    isTotal?: boolean
+  }>>((acc, id) => {
+    if (id === "subtotal") {
+      acc.push({ id: "subtotal", label: "Subtotal", value: netAmount })
+      return acc
     }
-  })
-
-  // If there's no tax (subtotal == total), show only final Total row in PDF.
-  const summaryItems = showPph ? summaryItemsAll : summaryItemsAll.filter((it) => it.id === "total")
+    if (id === "pph") {
+      if (!showPph) return acc
+      acc.push({ id: "pph", label: pphMainLabel, value: pphAmount, note: pphNote })
+      return acc
+    }
+    if (id === "downPayment") {
+      acc.push({
+        id: "downPayment",
+        label: `Down Payment (${downPaymentRate}%)`,
+        value: downPaymentAmount,
+      })
+      return acc
+    }
+    if (id === "total") {
+      acc.push({ id: "total", label: "Total Amount", value: grossAmount, isTotal: true })
+    }
+    return acc
+  }, [])
 
   // Render signatures based on count
   const renderSignatures = () => {

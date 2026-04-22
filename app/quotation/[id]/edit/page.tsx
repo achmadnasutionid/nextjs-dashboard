@@ -1469,14 +1469,12 @@ export default function EditQuotationPage() {
                     setHasUnsavedChanges(true)
                     setSummaryOrder(normalizeSummaryOrder(newOrder))
                   }}
-                  onAdjustByPercentage={handleAdjustByPercentage}
                   onSetDownPayment={(percentage) => {
                     setHasUnsavedChanges(true)
                     setDownPaymentPercentage(percentage === 0 ? null : percentage)
                     toast.success(`Down payment set to ${percentage}%`)
                   }}
                   downPaymentPercentage={downPaymentPercentage}
-                  adjustment={adjustmentPercentage != null ? { percentage: adjustmentPercentage, notes: adjustmentNotes.trim() || undefined } : null}
                 />
               )}
 

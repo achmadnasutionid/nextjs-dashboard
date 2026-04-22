@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Edit2, Check, GripVertical, Percent, Landmark } from "lucide-react"
-import { AdjustByPercentageModal } from "@/components/ui/adjust-by-percentage-modal"
+import { Edit2, Check, GripVertical, Landmark } from "lucide-react"
 import { DownPaymentModal } from "@/components/ui/down-payment-modal"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable"
@@ -16,23 +15,13 @@ interface SummaryItem {
   note?: string
 }
 
-/** When set, a line is shown before total: "Price adjusted by X%." or "Price adjusted by X% because (notes)." */
-export interface AdjustmentInfo {
-  percentage: number
-  notes?: string
-}
-
 interface ReorderableSummaryProps {
   items: SummaryItem[]
   onReorder: (newOrder: string[]) => void
-  /** When provided, shows an "Adjust by %" button that opens a modal to scale all line item amounts by a percentage. */
-  onAdjustByPercentage?: (percentage: number, notes?: string) => void
   /** When provided, shows a "Down payment %" button. */
   onSetDownPayment?: (percentage: number) => void
   /** Saved down payment percentage to prefill modal and render summary label. */
   downPaymentPercentage?: number | null
-  /** Saved adjustment to display before total. When set, shows "Price adjusted by X%." or "Price adjusted by X% because (notes)." */
-  adjustment?: AdjustmentInfo | null
 }
 
 function isZeroMoneyValue(value: string) {
@@ -87,13 +76,10 @@ function SortableSummaryItem({ item }: { item: SummaryItem }) {
 export function ReorderableSummary({
   items,
   onReorder,
-  onAdjustByPercentage,
   onSetDownPayment,
   downPaymentPercentage,
-  adjustment,
 }: ReorderableSummaryProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [showDownPaymentModal, setShowDownPaymentModal] = useState(false)
   const [sortedItems, setSortedItems] = useState(items)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -157,17 +143,6 @@ export function ReorderableSummary({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Summary</h3>
         <div className="flex items-center gap-1">
-          {onAdjustByPercentage != null && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowAdjustModal(true)}
-              title="Adjust all amounts by percentage"
-            >
-              <Percent className="h-4 w-4" />
-            </Button>
-          )}
           {onSetDownPayment != null && (
             <Button
               type="button"
@@ -193,15 +168,6 @@ export function ReorderableSummary({
           </Button>
         </div>
       </div>
-      {onAdjustByPercentage != null && (
-        <AdjustByPercentageModal
-          open={showAdjustModal}
-          onOpenChange={setShowAdjustModal}
-          onConfirm={onAdjustByPercentage}
-          initialPercentage={adjustment?.percentage}
-          initialNotes={adjustment?.notes}
-        />
-      )}
       {onSetDownPayment != null && (
         <DownPaymentModal
           open={showDownPaymentModal}
@@ -225,14 +191,6 @@ export function ReorderableSummary({
         <div className="space-y-2">
           {visibleItems.map((item, index) => (
             <div key={item.id}>
-              {/* Show adjustment note before total (item with id 'total') */}
-              {item.id === "total" && adjustment != null && (
-                <div className="text-xs text-muted-foreground mb-1">
-                  {adjustment.notes?.trim()
-                    ? `Price adjusted by ${adjustment.percentage > 0 ? "+" : ""}${adjustment.percentage}% because ${adjustment.notes.trim()}.`
-                    : `Price adjusted by ${adjustment.percentage > 0 ? "+" : ""}${adjustment.percentage}%.`}
-                </div>
-              )}
               {item.id === "total" && (
                 <div className="border-t pt-2 mb-2" />
               )}
