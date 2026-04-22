@@ -1,0 +1,37 @@
+components/ui/reorderable-summary.tsx
+  0d6203909182c366 5,7,30-33,87-94,97,171-181,205-212
+app/api/invoice/[id]/route.ts
+  0d6203909182c366 152,155
+components/ui/down-payment-modal.tsx
+  0d6203909182c366 1-94
+app/api/quotation/route.ts
+  0d6203909182c366 172,175
+app/api/quotation/[id]/route.ts
+  0d6203909182c366 149,152
+app/api/invoice/route.ts
+  0d6203909182c366 184,187
+prisma/schema.prisma
+  0d6203909182c366 105,108,218,221
+prisma/migrations/20260422000000_add_down_payment_percentage/migration.sql
+  0d6203909182c366 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "086e7c2714fcfa6800551b8fb05e11dba88a6287",
+  "prompts": {
+    "0d6203909182c366": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6fea2f00-ac8d-4d33-880e-706ff99e1451",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 2470,
+      "total_deletions": 2327,
+      "accepted_lines": 2470,
+      "overriden_lines": 0
+    }
+  }
+}
