@@ -1,0 +1,25 @@
+components/pdf/invoice-backup-pdf.tsx
+  0d6203909182c366 368
+components/pdf/quotation-backup-pdf.tsx
+  0d6203909182c366 368
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "d3d7b65e56cb0280026a23a2329c292c18b98c18",
+  "prompts": {
+    "0d6203909182c366": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6fea2f00-ac8d-4d33-880e-706ff99e1451",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 868,
+      "total_deletions": 882,
+      "accepted_lines": 868,
+      "overriden_lines": 0
+    }
+  }
+}
