@@ -108,13 +108,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTop: "1 solid #cfcfcf",
   },
-  downPaymentPrincipalRow: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between",
-    marginTop: 6,
-    fontSize: 8,
-    color: "#666",
-  },
   summaryLabelCol: {
     flexDirection: "column" as const,
   },
@@ -372,7 +365,7 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
                 <Text>{`Down Payment (${downPaymentRate}%)`}</Text>
                 <Text>{formatCurrency(downPaymentAmount)}</Text>
               </View>
-              <View style={styles.downPaymentPrincipalRow}>
+              <View style={styles.summaryRow}>
                 <Text>Principal Amount</Text>
                 <Text>{formatCurrency(principalAmount)}</Text>
               </View>

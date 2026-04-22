@@ -102,13 +102,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTop: "1 solid #cfcfcf",
   },
-  downPaymentPrincipalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-    fontSize: 8,
-    color: "#666",
-  },
   signature: {
     marginTop: 20,
     flexDirection: "row",
@@ -807,7 +800,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
                 <Text>{`Down Payment (${downPaymentRate}%)`}</Text>
                 <Text>{formatCurrency(downPaymentAmount)}</Text>
               </View>
-              <View style={styles.downPaymentPrincipalRow}>
+              <View style={styles.summaryRow}>
                 <Text>Principal Amount</Text>
                 <Text>{formatCurrency(principalAmount)}</Text>
               </View>
