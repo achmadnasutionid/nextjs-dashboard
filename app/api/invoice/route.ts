@@ -181,9 +181,10 @@ export async function POST(request: Request) {
         signatureImageData: body.signatureImageData || (isDraft ? "" : body.signatureImageData),
         pph: body.pph || (isDraft ? "" : body.pph),
         totalAmount: body.totalAmount ? parseFloat(body.totalAmount) : 0,
-        summaryOrder: body.summaryOrder || "subtotal,pph,total",
+        summaryOrder: body.summaryOrder || "subtotal,pph,downPayment,total",
         adjustmentPercentage: body.adjustmentPercentage != null ? parseFloat(body.adjustmentPercentage) : null,
         adjustmentNotes: body.adjustmentNotes ?? null,
+        downPaymentPercentage: body.downPaymentPercentage != null ? parseFloat(body.downPaymentPercentage) : null,
         status: body.status || "draft",
         items: {
           create: body.items?.map((item: any) => ({

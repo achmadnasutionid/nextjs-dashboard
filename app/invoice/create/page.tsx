@@ -87,6 +87,19 @@ interface CustomSignature {
   position: string
 }
 
+const SUMMARY_ITEM_IDS = ["subtotal", "pph", "downPayment", "total"] as const
+type SummaryItemId = (typeof SUMMARY_ITEM_IDS)[number]
+
+function normalizeSummaryOrder(input?: string[] | null): SummaryItemId[] {
+  const values = Array.isArray(input) ? input : []
+  const valid = values.filter((value): value is SummaryItemId =>
+    (SUMMARY_ITEM_IDS as readonly string[]).includes(value)
+  )
+  const unique = Array.from(new Set(valid))
+  const missing = SUMMARY_ITEM_IDS.filter((id) => !unique.includes(id))
+  return [...unique, ...missing]
+}
+
 export default function CreateInvoicePage() {
   const router = useRouter()
   
@@ -116,9 +129,10 @@ export default function CreateInvoicePage() {
   const [items, setItems] = useState<Item[]>([])
   const [customSignatures, setCustomSignatures] = useState<CustomSignature[]>([])
   const [showSignatures, setShowSignatures] = useState(false)
-  const [summaryOrder, setSummaryOrder] = useState<string[]>(["subtotal", "pph", "total"])
+  const [summaryOrder, setSummaryOrder] = useState<SummaryItemId[]>(normalizeSummaryOrder())
   const [adjustmentPercentage, setAdjustmentPercentage] = useState<number | null>(null)
   const [adjustmentNotes, setAdjustmentNotes] = useState<string>("")
+  const [downPaymentPercentage, setDownPaymentPercentage] = useState<number | null>(null)
   
   // Master data
   const [companies, setCompanies] = useState<Company[]>([])
@@ -440,6 +454,12 @@ export default function CreateInvoicePage() {
     return calculateSubtotal() + calculatePphAmount()
   }
 
+  const calculateDownPaymentAmount = () => {
+    const pct = downPaymentPercentage ?? 0
+    if (pct <= 0) return 0
+    return calculateTotalAmount() * (pct / 100)
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -584,6 +604,7 @@ export default function CreateInvoicePage() {
         summaryOrder: summaryOrder.join(","),
         adjustmentPercentage: adjustmentPercentage ?? undefined,
         adjustmentNotes: adjustmentNotes.trim() || undefined,
+        downPaymentPercentage: downPaymentPercentage ?? undefined,
         termsAndConditions: showTerms ? termsAndConditions : null,
         status,
         items: items.map(item => ({
@@ -1120,6 +1141,13 @@ export default function CreateInvoicePage() {
                         value: formatCurrency(calculatePphAmount()),
                         note: pphNote
                       }
+                    } else if (id === "downPayment") {
+                      const downPaymentPct = downPaymentPercentage ?? 0
+                      return {
+                        id: "downPayment",
+                        label: `Down Payment (${downPaymentPct}%)`,
+                        value: formatCurrency(calculateDownPaymentAmount()),
+                      }
                     } else {
                       return {
                         id: 'total',
@@ -1130,9 +1158,15 @@ export default function CreateInvoicePage() {
                   })}
                   onReorder={(newOrder) => {
                     markInteracted()
-                    setSummaryOrder(newOrder)
+                    setSummaryOrder(normalizeSummaryOrder(newOrder))
                   }}
                   onAdjustByPercentage={handleAdjustByPercentage}
+                  onSetDownPayment={(percentage) => {
+                    markInteracted()
+                    setDownPaymentPercentage(percentage === 0 ? null : percentage)
+                    toast.success(`Down payment set to ${percentage}%`)
+                  }}
+                  downPaymentPercentage={downPaymentPercentage}
                   adjustment={adjustmentPercentage != null ? { percentage: adjustmentPercentage, notes: adjustmentNotes.trim() || undefined } : null}
                 />
               )}

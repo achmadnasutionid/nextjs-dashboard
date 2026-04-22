@@ -100,6 +100,19 @@ interface CustomSignature {
   position: string
 }
 
+const SUMMARY_ITEM_IDS = ["subtotal", "pph", "downPayment", "total"] as const
+type SummaryItemId = (typeof SUMMARY_ITEM_IDS)[number]
+
+function normalizeSummaryOrder(input?: string[] | null): SummaryItemId[] {
+  const values = Array.isArray(input) ? input : []
+  const valid = values.filter((value): value is SummaryItemId =>
+    (SUMMARY_ITEM_IDS as readonly string[]).includes(value)
+  )
+  const unique = Array.from(new Set(valid))
+  const missing = SUMMARY_ITEM_IDS.filter((id) => !unique.includes(id))
+  return [...unique, ...missing]
+}
+
 const DEFAULT_REMARKS: Remark[] = [
   { id: "1", text: "Terms & Conditions :", isCompleted: false },
   { id: "2", text: "* Overtime Production Shooting Day 10 % dari Fee invoice", isCompleted: false },
@@ -132,9 +145,10 @@ export default function EditQuotationPage() {
   const [items, setItems] = useState<Item[]>([])
   const [customSignatures, setCustomSignatures] = useState<CustomSignature[]>([])
   const [showSignatures, setShowSignatures] = useState(false)
-  const [summaryOrder, setSummaryOrder] = useState<string[]>(["subtotal", "pph", "total"])
+  const [summaryOrder, setSummaryOrder] = useState<SummaryItemId[]>(normalizeSummaryOrder())
   const [adjustmentPercentage, setAdjustmentPercentage] = useState<number | null>(null)
   const [adjustmentNotes, setAdjustmentNotes] = useState<string>("")
+  const [downPaymentPercentage, setDownPaymentPercentage] = useState<number | null>(null)
   
   // Master data
   const [companies, setCompanies] = useState<Company[]>([])
@@ -210,6 +224,7 @@ export default function EditQuotationPage() {
         summaryOrder: summaryOrder.join(","),
         adjustmentPercentage: adjustmentPercentage ?? undefined,
         adjustmentNotes: adjustmentNotes.trim() || undefined,
+        downPaymentPercentage: downPaymentPercentage ?? undefined,
         termsAndConditions: showTerms ? termsAndConditions : null,
         status: 'draft', // Always save as draft for auto-save
         updatedAt: lastUpdatedAtRef.current,
@@ -288,9 +303,10 @@ export default function EditQuotationPage() {
       if (signature) setSelectedSignatureId(signature.id)
       
       setPph(quotationData.pph)
-      setSummaryOrder(quotationData.summaryOrder ? quotationData.summaryOrder.split(',') : ["subtotal", "pph", "total"])
+      setSummaryOrder(normalizeSummaryOrder(quotationData.summaryOrder ? quotationData.summaryOrder.split(',') : undefined))
       setAdjustmentPercentage(quotationData.adjustmentPercentage ?? null)
       setAdjustmentNotes(quotationData.adjustmentNotes ?? "")
+      setDownPaymentPercentage(quotationData.downPaymentPercentage ?? null)
       
       // Store the updatedAt timestamp for stale data detection
       lastUpdatedAtRef.current = quotationData.updatedAt
@@ -358,6 +374,10 @@ export default function EditQuotationPage() {
         selectedBillingId: billing?.id,
         selectedSignatureId: signature?.id,
         pph: quotationData.pph,
+        summaryOrder: normalizeSummaryOrder(quotationData.summaryOrder ? quotationData.summaryOrder.split(',') : undefined),
+        adjustmentPercentage: quotationData.adjustmentPercentage ?? null,
+        adjustmentNotes: quotationData.adjustmentNotes ?? "",
+        downPaymentPercentage: quotationData.downPaymentPercentage ?? null,
         remarks: loadedRemarks,
         items: loadedItems
       })
@@ -382,12 +402,16 @@ export default function EditQuotationPage() {
       selectedBillingId,
       selectedSignatureId,
       pph,
+      summaryOrder,
+      adjustmentPercentage,
+      adjustmentNotes,
+      downPaymentPercentage,
       remarks,
       items
     })
     
     setHasUnsavedChanges(currentData !== initialDataRef.current)
-  }, [selectedCompanyId, productionDate, billTo, notes, selectedBillingId, selectedSignatureId, pph, remarks, items, loading])
+  }, [selectedCompanyId, productionDate, billTo, notes, selectedBillingId, selectedSignatureId, pph, summaryOrder, adjustmentPercentage, adjustmentNotes, downPaymentPercentage, remarks, items, loading])
 
   // Trigger auto-save when data changes (only if mandatory fields filled)
   useEffect(() => {
@@ -397,7 +421,7 @@ export default function EditQuotationPage() {
     if (selectedCompanyId && productionDate && billTo.trim() && selectedBillingId && selectedSignatureId) {
       triggerAutoSave()
     }
-  }, [selectedCompanyId, productionDate, billTo, selectedBillingId, selectedSignatureId, items, notes, pph, remarks, termsAndConditions, customSignatures, summaryOrder, loading, quotationId, triggerAutoSave])
+  }, [selectedCompanyId, productionDate, billTo, selectedBillingId, selectedSignatureId, items, notes, pph, remarks, termsAndConditions, customSignatures, summaryOrder, downPaymentPercentage, loading, quotationId, triggerAutoSave])
 
   // Check for stale data when user returns to tab
   useEffect(() => {
@@ -689,6 +713,12 @@ export default function EditQuotationPage() {
     return subtotal + pphAmount
   }, [subtotal, pphAmount])
 
+  const downPaymentAmount = useMemo(() => {
+    const pct = downPaymentPercentage ?? 0
+    if (pct <= 0) return 0
+    return totalAmount * (pct / 100)
+  }, [downPaymentPercentage, totalAmount])
+
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -842,6 +872,7 @@ export default function EditQuotationPage() {
         summaryOrder: summaryOrder.join(","),
         adjustmentPercentage: adjustmentPercentage ?? undefined,
         adjustmentNotes: adjustmentNotes.trim() || undefined,
+        downPaymentPercentage: downPaymentPercentage ?? undefined,
         termsAndConditions: showTerms ? termsAndConditions : null,
         status,
         updatedAt: lastUpdatedAtRef.current, // OPTIMISTIC LOCKING: Send version
@@ -1419,6 +1450,13 @@ export default function EditQuotationPage() {
                         value: formatCurrency(pphAmount),
                         note: pphNote
                       }
+                    } else if (id === "downPayment") {
+                      const downPaymentPct = downPaymentPercentage ?? 0
+                      return {
+                        id: "downPayment",
+                        label: `Down Payment (${downPaymentPct}%)`,
+                        value: formatCurrency(downPaymentAmount),
+                      }
                     } else {
                       return {
                         id: 'total',
@@ -1429,9 +1467,15 @@ export default function EditQuotationPage() {
                   })}
                   onReorder={(newOrder) => {
                     setHasUnsavedChanges(true)
-                    setSummaryOrder(newOrder)
+                    setSummaryOrder(normalizeSummaryOrder(newOrder))
                   }}
                   onAdjustByPercentage={handleAdjustByPercentage}
+                  onSetDownPayment={(percentage) => {
+                    setHasUnsavedChanges(true)
+                    setDownPaymentPercentage(percentage === 0 ? null : percentage)
+                    toast.success(`Down payment set to ${percentage}%`)
+                  }}
+                  downPaymentPercentage={downPaymentPercentage}
                   adjustment={adjustmentPercentage != null ? { percentage: adjustmentPercentage, notes: adjustmentNotes.trim() || undefined } : null}
                 />
               )}

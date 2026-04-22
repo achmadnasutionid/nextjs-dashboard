@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Edit2, Check, GripVertical, Percent } from "lucide-react"
+import { Edit2, Check, GripVertical, Percent, Landmark } from "lucide-react"
 import { AdjustByPercentageModal } from "@/components/ui/adjust-by-percentage-modal"
+import { DownPaymentModal } from "@/components/ui/down-payment-modal"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -26,6 +27,10 @@ interface ReorderableSummaryProps {
   onReorder: (newOrder: string[]) => void
   /** When provided, shows an "Adjust by %" button that opens a modal to scale all line item amounts by a percentage. */
   onAdjustByPercentage?: (percentage: number, notes?: string) => void
+  /** When provided, shows a "Down payment %" button. */
+  onSetDownPayment?: (percentage: number) => void
+  /** Saved down payment percentage to prefill modal and render summary label. */
+  downPaymentPercentage?: number | null
   /** Saved adjustment to display before total. When set, shows "Price adjusted by X%." or "Price adjusted by X% because (notes)." */
   adjustment?: AdjustmentInfo | null
 }
@@ -79,9 +84,17 @@ function SortableSummaryItem({ item }: { item: SummaryItem }) {
   )
 }
 
-export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adjustment }: ReorderableSummaryProps) {
+export function ReorderableSummary({
+  items,
+  onReorder,
+  onAdjustByPercentage,
+  onSetDownPayment,
+  downPaymentPercentage,
+  adjustment,
+}: ReorderableSummaryProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [showAdjustModal, setShowAdjustModal] = useState(false)
+  const [showDownPaymentModal, setShowDownPaymentModal] = useState(false)
   const [sortedItems, setSortedItems] = useState(items)
   const containerRef = useRef<HTMLDivElement>(null)
   const visibleItems = sortedItems.filter((item) => !(item.id === "pph" && isZeroMoneyValue(item.value)))
@@ -155,6 +168,17 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
               <Percent className="h-4 w-4" />
             </Button>
           )}
+          {onSetDownPayment != null && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDownPaymentModal(true)}
+              title="Set down payment percentage"
+            >
+              <Landmark className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -176,6 +200,14 @@ export function ReorderableSummary({ items, onReorder, onAdjustByPercentage, adj
           onConfirm={onAdjustByPercentage}
           initialPercentage={adjustment?.percentage}
           initialNotes={adjustment?.notes}
+        />
+      )}
+      {onSetDownPayment != null && (
+        <DownPaymentModal
+          open={showDownPaymentModal}
+          onOpenChange={setShowDownPaymentModal}
+          onConfirm={onSetDownPayment}
+          initialPercentage={downPaymentPercentage}
         />
       )}
 

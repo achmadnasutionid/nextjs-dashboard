@@ -267,8 +267,19 @@ export default function EditErhaTicketPage() {
       setBastContactPerson(ticketData.bastContactPerson ?? "")
       setBastContactPosition(ticketData.bastContactPosition ?? "")
       setPph(ticketData.pph)
-      setAdjustmentPercentage(ticketData.adjustmentPercentage ?? null)
-      setAdjustmentNotes(ticketData.adjustmentNotes ?? "")
+      const rawAdjustmentPercentage = ticketData.adjustmentPercentage
+      const parsedAdjustmentPercentage =
+        rawAdjustmentPercentage === null ||
+        rawAdjustmentPercentage === undefined ||
+        rawAdjustmentPercentage === ""
+          ? null
+          : Number(rawAdjustmentPercentage)
+      setAdjustmentPercentage(
+        parsedAdjustmentPercentage !== null && Number.isFinite(parsedAdjustmentPercentage)
+          ? parsedAdjustmentPercentage
+          : null
+      )
+      setAdjustmentNotes(typeof ticketData.adjustmentNotes === "string" ? ticketData.adjustmentNotes : "")
       
       // Find matching company
       const matchingCompany = companiesData.find((c: Company) => c.name === ticketData.companyName)
@@ -620,20 +631,28 @@ export default function EditErhaTicketPage() {
     setAdjustmentPercentage(percentage === 0 ? null : percentage)
     setAdjustmentNotes(percentage === 0 ? "" : (notes ?? ""))
     // One adjustment only: apply new % to logical base (undo previous % then apply new %). 0% = cancel adjustment.
-    const prevMultiplier = 1 + (adjustmentPercentage ?? 0) / 100
+    const safePreviousPercentage = typeof adjustmentPercentage === "number" ? adjustmentPercentage : 0
+    const prevMultiplier = 1 + safePreviousPercentage / 100
     const newMultiplier = percentage === 0 ? 1 : 1 + percentage / 100
-    const multiplier = newMultiplier / prevMultiplier
+    const safePrevMultiplier = prevMultiplier === 0 ? 1 : prevMultiplier
+    const multiplier = newMultiplier / safePrevMultiplier
+    if (prevMultiplier === 0 && percentage !== 0) {
+      toast.info("Previous adjustment was -100%. New percentage is applied to current values.")
+    }
     setItems(prevItems =>
       prevItems.map(item => {
         const updatedDetails = item.details.map(detail => {
           const unitPrice = parseFloat(detail.unitPrice) || 0
           const qty = parseFloat(detail.qty) || 0
           const newUnitPrice = unitPrice * multiplier
+          const roundedUnitPrice = Math.round(newUnitPrice)
           const newAmount = Math.round(newUnitPrice * qty)
+          const safeRoundedUnitPrice = Number.isFinite(roundedUnitPrice) ? roundedUnitPrice : 0
+          const safeAmount = Number.isFinite(newAmount) ? newAmount : 0
           return {
             ...detail,
-            unitPrice: String(Math.round(newUnitPrice)),
-            amount: newAmount,
+            unitPrice: String(safeRoundedUnitPrice),
+            amount: safeAmount,
           }
         })
         const total = updatedDetails.reduce((sum, d) => sum + d.amount, 0)

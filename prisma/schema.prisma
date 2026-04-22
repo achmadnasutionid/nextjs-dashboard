@@ -102,9 +102,10 @@ model Quotation {
   signatureImageData     String
   pph                    String
   totalAmount            Float
-  summaryOrder           String?              @default("subtotal,pph,total")
+  summaryOrder           String?              @default("subtotal,pph,downPayment,total")
   adjustmentPercentage   Float?
   adjustmentNotes        String?
+  downPaymentPercentage  Float?
   termsAndConditions     String?
   status                 String               @default("draft")
   generatedInvoiceId     String?              @unique
@@ -214,9 +215,10 @@ model Invoice {
   signatureImageData     String
   pph                    String
   totalAmount            Float
-  summaryOrder           String?            @default("subtotal,pph,total")
+  summaryOrder           String?            @default("subtotal,pph,downPayment,total")
   adjustmentPercentage   Float?
   adjustmentNotes        String?
+  downPaymentPercentage  Float?
   termsAndConditions     String?
   status                 String             @default("draft")
   sourceQuotationId      String?            @unique
