@@ -103,6 +103,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "bold",
   },
+  downPaymentBlock: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTop: "1 solid #cfcfcf",
+  },
+  downPaymentPrincipalRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between",
+    marginTop: 6,
+    fontSize: 8,
+    color: "#666",
+  },
   summaryLabelCol: {
     flexDirection: "column" as const,
   },
@@ -218,7 +230,8 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
   const pphNote = pphParts[1] ? "After reporting" + pphParts[1] : null
   const downPaymentRate = typeof data.downPaymentPercentage === "number" ? data.downPaymentPercentage : 0
   const downPaymentAmount = downPaymentRate > 0 ? grossAmount * (downPaymentRate / 100) : 0
-  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "downPayment", "total"]
+  const principalAmount = grossAmount - downPaymentAmount
+  const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "total"]
   const showPph = pphRate > 0
   const summaryItems = summaryOrderRaw.reduce<Array<{
     id: string
@@ -234,14 +247,6 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
     if (id === "pph") {
       if (!showPph) return acc
       acc.push({ id: "pph", label: pphMainLabel, value: pphAmount, note: pphNote })
-      return acc
-    }
-    if (id === "downPayment") {
-      acc.push({
-        id: "downPayment",
-        label: `Down Payment (${downPaymentRate}%)`,
-        value: downPaymentAmount,
-      })
       return acc
     }
     if (id === "total") {
@@ -361,6 +366,18 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
               </View>
             </View>
           ))}
+          {downPaymentRate > 0 ? (
+            <View style={styles.downPaymentBlock}>
+              <View style={styles.summaryRow}>
+                <Text>{`Down Payment (${downPaymentRate}%)`}</Text>
+                <Text>{formatCurrency(downPaymentAmount)}</Text>
+              </View>
+              <View style={styles.downPaymentPrincipalRow}>
+                <Text>Principal Amount</Text>
+                <Text>{formatCurrency(principalAmount)}</Text>
+              </View>
+            </View>
+          ) : null}
         </View>
 
         {data.remarks && data.remarks.length > 0 ? (

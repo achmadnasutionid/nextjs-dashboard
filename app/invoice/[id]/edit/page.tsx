@@ -100,7 +100,7 @@ interface CustomSignature {
   position: string
 }
 
-const SUMMARY_ITEM_IDS = ["subtotal", "pph", "downPayment", "total"] as const
+const SUMMARY_ITEM_IDS = ["subtotal", "pph", "total"] as const
 type SummaryItemId = (typeof SUMMARY_ITEM_IDS)[number]
 
 function normalizeSummaryOrder(input?: string[] | null): SummaryItemId[] {
@@ -1464,13 +1464,6 @@ export default function EditInvoicePage() {
                         label: pphMainLabel,
                         value: formatCurrency(pphAmount),
                         note: pphNote
-                      }
-                    } else if (id === "downPayment") {
-                      const downPaymentPct = downPaymentPercentage ?? 0
-                      return {
-                        id: "downPayment",
-                        label: `Down Payment (${downPaymentPct}%)`,
-                        value: formatCurrency(downPaymentAmount),
                       }
                     } else {
                       return {
