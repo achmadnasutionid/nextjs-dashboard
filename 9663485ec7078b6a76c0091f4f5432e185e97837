@@ -1,0 +1,84 @@
+app/api/barclay/[id]/copy/route.ts
+  4534468aec5fdafb 61,65,79-83,96-100,119,125
+lib/name-validator.ts
+  4534468aec5fdafb 11,22,58,68,135,144
+components/layout/page-header.tsx
+  4534468aec5fdafb 54
+app/api/invoice/list-with-tickets/route.ts
+  4534468aec5fdafb 5,8,26,51,79,124-138,141-142,146,196-209,216,226
+app/api/paragon/route.ts
+  4534468aec5fdafb 151,154-155,173-176,188-191,199-200,206-207
+app/page.tsx
+  4534468aec5fdafb 35
+lib/cache-invalidation.ts
+  4534468aec5fdafb 94-111
+app/api/quotation/list-with-tickets/route.ts
+  4534468aec5fdafb 5,8,43,64,110-124,127-128,132,186-200,207,217
+lib/backup-export.ts
+  4534468aec5fdafb 30-33
+app/special-case/barclay/[id]/view/page.tsx
+  4534468aec5fdafb 110,445,503
+app/api/barclay/route.ts
+  4534468aec5fdafb 141,149,151,153-155,165,170-173,181,186-189,198-200,205-207
+app/api/erha/route.ts
+  4534468aec5fdafb 151,154-155,173-176,188-191,199-200,206-207
+app/api/paragon/[id]/copy/route.ts
+  4534468aec5fdafb 62,66,84-88,104-108,120,126
+app/invoice/page.tsx
+  4534468aec5fdafb 48,365,372-374,451-457
+app/api/calendar-events/route.ts
+  4534468aec5fdafb 44,82-99,131-140
+app/special-case/paragon/[id]/view/page.tsx
+  4534468aec5fdafb 110,445,503
+components/ui/empty-state.tsx
+  4534468aec5fdafb 28,126-134
+lib/backup-json-drive-sync.ts
+  4534468aec5fdafb 3-4,14,58-59,91-97,108-110,247-281
+lib/smart-auto-save.tsx
+  4534468aec5fdafb 28-29,56,97
+app/api/barclay/[id]/finalize/route.ts
+  4534468aec5fdafb 3,34-35
+prisma/migrations/migration_lock.toml
+  0c9e044e52474dda 1
+prisma/schema.prisma
+  4534468aec5fdafb 497-587
+app/api/calendar-events/ics/route.ts
+  4534468aec5fdafb 115-135,278-308
+lib/id-generator.ts
+  4534468aec5fdafb 42,58,67,79-82,88-89,94,106-109,115-116,124,148,199-200
+app/api/erha/[id]/copy/route.ts
+  4534468aec5fdafb 62,66,84-88,104-108,120,126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "9663485ec7078b6a76c0091f4f5432e185e97837",
+  "prompts": {
+    "0c9e044e52474dda": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "226f53f6-26e7-4753-b33b-923abb1637b0",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "4534468aec5fdafb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "79ceb7c2-8101-4919-b817-22af1e1424a2",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 5911,
+      "total_deletions": 5502,
+      "accepted_lines": 5911,
+      "overriden_lines": 0
+    }
+  }
+}
