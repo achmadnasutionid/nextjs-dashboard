@@ -1,0 +1,49 @@
+app/api/barclay/[id]/route.ts
+  8380be4c8289f43a 85-96,99,156
+app/api/erha/[id]/route.ts
+  8380be4c8289f43a 85-96,99,163
+app/api/erha/[id]/copy/route.ts
+  8380be4c8289f43a 169
+app/api/barclay/[id]/copy/route.ts
+  8380be4c8289f43a 162
+prisma/schema.prisma
+  8380be4c8289f43a 331,431,524
+app/api/paragon/route.ts
+  8380be4c8289f43a 254
+app/api/paragon/[id]/copy/route.ts
+  8380be4c8289f43a 162
+app/api/paragon/[id]/route.ts
+  8380be4c8289f43a 85-96,99,156
+app/api/erha/route.ts
+  8380be4c8289f43a 261
+components/pdf/paragon-bast-pdf.tsx
+  8380be4c8289f43a 95-98,138,278-280
+components/pdf/erha-bast-pdf.tsx
+  8380be4c8289f43a 159-162,215,423-425
+components/pdf/barclay-bast-pdf.tsx
+  8380be4c8289f43a 112,199-201
+app/api/barclay/route.ts
+  8380be4c8289f43a 254
+prisma/migrations/20260423193000_add_final_work_drive_link/migration.sql
+  8380be4c8289f43a 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "95682a52037fa3e289830947b7e2a7278ec155f3",
+  "prompts": {
+    "8380be4c8289f43a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8e9e3a21-cd10-40e2-9d13-56514ba30b59",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 4705,
+      "total_deletions": 4645,
+      "accepted_lines": 4701,
+      "overriden_lines": 0
+    }
+  }
+}
