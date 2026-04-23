@@ -1,0 +1,23 @@
+components/pdf/barclay-bast-pdf.tsx
+  8380be4c8289f43a 7-10,12,16,18,21,39,42,59,64,71,88,97-98,102,104,108-109,113,118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "d201e3fa3ade97f602bc00e55edccceded4840ac",
+  "prompts": {
+    "8380be4c8289f43a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8e9e3a21-cd10-40e2-9d13-56514ba30b59",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 270,
+      "total_deletions": 270,
+      "accepted_lines": 270,
+      "overriden_lines": 0
+    }
+  }
+}
