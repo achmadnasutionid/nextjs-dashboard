@@ -1,0 +1,27 @@
+lib/barclay.ts
+  0c9e044e52474dda 1-21
+app/special-case/paragon/[id]/view/page.tsx
+  0c9e044e52474dda 15,32,96,113-115,450,508
+components/pdf/barclay-bast-pdf.tsx
+  0c9e044e52474dda 1-228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "633246b8b056184da022fdcb82b60309ebd6a992",
+  "prompts": {
+    "0c9e044e52474dda": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "226f53f6-26e7-4753-b33b-923abb1637b0",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 800,
+      "total_deletions": 546,
+      "accepted_lines": 799,
+      "overriden_lines": 0
+    }
+  }
+}
