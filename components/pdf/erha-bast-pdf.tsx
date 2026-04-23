@@ -156,6 +156,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textDecoration: "underline",
   },
+  driveLinkText: {
+    fontSize: 9,
+    marginBottom: 6,
+  },
   buktiImageSingle: {
     maxWidth: 400,
     maxHeight: 220,
@@ -208,6 +212,7 @@ interface ErhaBASTPDFProps {
     signatureRole?: string
     signatureImageData: string
     finalWorkImageData?: string
+    finalWorkDriveLink?: string
     billingName?: string
     billingBankName?: string
     billingBankAccount?: string
@@ -415,6 +420,9 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data, forSync = false 
         {/* Bukti Pekerjaan - under signatures, same page so proof is part of signed document */}
         <View style={styles.buktiSection} wrap={false}>
           <Text style={styles.buktiTitle}>Bukti Pekerjaan</Text>
+          {data.finalWorkDriveLink ? (
+            <Text style={styles.driveLinkText}>Google Drive: {data.finalWorkDriveLink}</Text>
+          ) : null}
           {data.finalWorkImageData && !forSync ? (
             <Image src={data.finalWorkImageData} style={styles.buktiImage} />
           ) : data.finalWorkImageData && forSync ? (

@@ -159,6 +159,7 @@ export async function POST(
           signatureRole: originalParagon.signatureRole,
           signatureImageData: originalParagon.signatureImageData,
           finalWorkImageData: originalParagon.finalWorkImageData,
+          finalWorkDriveLink: originalParagon.finalWorkDriveLink,
           pph: originalParagon.pph,
           totalAmount: useDownPayment
             ? sumScaledItemsTotal(scaledItems!)

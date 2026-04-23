@@ -115,6 +115,7 @@ export default function CreateErhaTicketPage() {
   const [pph, setPph] = useState("2") // Auto-select PPH 23 2%
   const [items, setItems] = useState<Item[]>([])
   const [finalWorkImage, setFinalWorkImage] = useState<string>("")
+  const [finalWorkDriveLink, setFinalWorkDriveLink] = useState("")
   const [adjustmentPercentage, setAdjustmentPercentage] = useState<number | null>(null)
   const [adjustmentNotes, setAdjustmentNotes] = useState<string>("")
   
@@ -625,6 +626,7 @@ export default function CreateErhaTicketPage() {
         signatureRole: signature?.role || null,
         signatureImageData: signature?.imageData || "",
         finalWorkImageData: finalWorkImage || null,
+        finalWorkDriveLink: finalWorkDriveLink.trim() || null,
         pph,
         totalAmount: calculateTotalAmount(),
         adjustmentPercentage: adjustmentPercentage ?? undefined,
@@ -1044,6 +1046,17 @@ export default function CreateErhaTicketPage() {
               {/* Screenshot Final Work */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Screenshot Final Work</h3>
+                <div className="space-y-2">
+                  <Label>Google Drive Link (for BAST PDF)</Label>
+                  <Input
+                    value={finalWorkDriveLink}
+                    onChange={(e) => {
+                      markInteracted()
+                      setFinalWorkDriveLink(e.target.value)
+                    }}
+                    placeholder="https://drive.google.com/..."
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>Upload Screenshot (for BAST PDF)</Label>
                   <div>

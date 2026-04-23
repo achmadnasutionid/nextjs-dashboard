@@ -119,6 +119,7 @@ export default function EditErhaTicketPage() {
   const [pph, setPph] = useState("2") // Auto-select PPH 23 2%
   const [items, setItems] = useState<Item[]>([])
   const [finalWorkImage, setFinalWorkImage] = useState<string>("")
+  const [finalWorkDriveLink, setFinalWorkDriveLink] = useState("")
   const [adjustmentPercentage, setAdjustmentPercentage] = useState<number | null>(null)
   const [adjustmentNotes, setAdjustmentNotes] = useState<string>("")
   const [currentStatus, setCurrentStatus] = useState<string>("draft")
@@ -192,6 +193,7 @@ export default function EditErhaTicketPage() {
         signatureRole: signature?.role || null,
         signatureImageData: signature?.imageData,
         finalWorkImageData: finalWorkImage || null,
+        finalWorkDriveLink: finalWorkDriveLink.trim() || null,
         pph,
         totalAmount,
         adjustmentPercentage: adjustmentPercentage ?? undefined,
@@ -321,6 +323,7 @@ export default function EditErhaTicketPage() {
       
       // Set final work image
       setFinalWorkImage(ticketData.finalWorkImageData || "")
+      setFinalWorkDriveLink(ticketData.finalWorkDriveLink || "")
       
       setLoading(false)
       
@@ -357,7 +360,8 @@ export default function EditErhaTicketPage() {
         pph,
         items: loadedItems,
         remarks: loadedRemarks,
-        finalWorkImage: ticketData.finalWorkImageData || ""
+        finalWorkImage: ticketData.finalWorkImageData || "",
+        finalWorkDriveLink: ticketData.finalWorkDriveLink || "",
       })
     }).catch(error => {
       console.error("Error fetching data:", error)
@@ -387,11 +391,12 @@ export default function EditErhaTicketPage() {
       pph,
       items,
       remarks,
-      finalWorkImage
+      finalWorkImage,
+      finalWorkDriveLink,
     })
     
     setHasUnsavedChanges(currentData !== initialDataRef.current)
-  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, projectName, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, loading])
+  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, projectName, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, finalWorkDriveLink, loading])
 
   // Auto-save trigger when data changes (only if mandatory fields filled)
   useEffect(() => {
@@ -406,7 +411,7 @@ export default function EditErhaTicketPage() {
     if (mandatoryFilled) {
       triggerAutoSave()
     }
-  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, projectName, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, loading, isSavingManually, triggerAutoSave])
+  }, [selectedCompanyId, productionDate, quotationDate, invoiceBastDate, billTo, projectName, billToAddress, contactPerson, contactPosition, bastContactPerson, bastContactPosition, selectedBillingId, selectedSignatureId, pph, items, remarks, finalWorkImage, finalWorkDriveLink, loading, isSavingManually, triggerAutoSave])
 
   // Check for stale data when user returns to tab
   useEffect(() => {
@@ -887,6 +892,7 @@ export default function EditErhaTicketPage() {
         signatureRole: signature.role || null,
         signatureImageData: signature.imageData,
         finalWorkImageData: finalWorkImage || null,
+        finalWorkDriveLink: finalWorkDriveLink.trim() || null,
         pph,
         totalAmount: totalAmount,
         adjustmentPercentage: adjustmentPercentage ?? undefined,
@@ -1353,6 +1359,14 @@ export default function EditErhaTicketPage() {
               {/* Screenshot Final Work */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Screenshot Final Work</h3>
+                <div className="space-y-2">
+                  <Label>Google Drive Link (for BAST PDF)</Label>
+                  <Input
+                    value={finalWorkDriveLink}
+                    onChange={(e) => setFinalWorkDriveLink(e.target.value)}
+                    placeholder="https://drive.google.com/..."
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>Upload Screenshot (for BAST PDF)</Label>
                   <div>

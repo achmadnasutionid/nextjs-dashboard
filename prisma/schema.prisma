@@ -328,6 +328,7 @@ model ParagonTicket {
   signatureRole      String?
   signatureImageData String
   finalWorkImageData String?
+  finalWorkDriveLink String?
   pph                String
   totalAmount        Float
   adjustmentPercentage Float?
@@ -427,6 +428,7 @@ model ErhaTicket {
   signatureRole          String?
   signatureImageData     String
   finalWorkImageData     String?
+  finalWorkDriveLink     String?
   pph                    String
   totalAmount            Float
   adjustmentPercentage   Float?
@@ -519,6 +521,7 @@ model BarclayTicket {
   signatureRole        String?
   signatureImageData   String
   finalWorkImageData   String?
+  finalWorkDriveLink   String?
   pph                  String
   totalAmount          Float
   adjustmentPercentage Float?

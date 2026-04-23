@@ -209,6 +209,7 @@ export function toParagonPdfData(t: {
   signatureRole: string | null
   signatureImageData: string
   finalWorkImageData: string | null
+  finalWorkDriveLink: string | null
   pph: string
   totalAmount: number
   updatedAt: Date
@@ -243,6 +244,7 @@ export function toParagonPdfData(t: {
     signatureRole: t.signatureRole ?? undefined,
     signatureImageData: t.signatureImageData,
     finalWorkImageData: t.finalWorkImageData ?? undefined,
+    finalWorkDriveLink: t.finalWorkDriveLink ?? undefined,
     pph: t.pph,
     totalAmount: t.totalAmount,
     updatedAt: t.updatedAt.toISOString(),
@@ -291,6 +293,7 @@ export function toErhaPdfData(t: {
   signatureRole: string | null
   signatureImageData: string
   finalWorkImageData: string | null
+  finalWorkDriveLink: string | null
   pph: string
   totalAmount: number
   updatedAt: Date
@@ -331,6 +334,7 @@ export function toErhaPdfData(t: {
     signatureRole: t.signatureRole ?? undefined,
     signatureImageData: t.signatureImageData,
     finalWorkImageData: t.finalWorkImageData ?? undefined,
+    finalWorkDriveLink: t.finalWorkDriveLink ?? undefined,
     pph: t.pph,
     totalAmount: t.totalAmount,
     updatedAt: t.updatedAt.toISOString(),
@@ -372,6 +376,7 @@ export function toBarclayPdfData(t: {
   signatureRole: string | null
   signatureImageData: string
   finalWorkImageData: string | null
+  finalWorkDriveLink: string | null
   pph: string
   totalAmount: number
   updatedAt: Date

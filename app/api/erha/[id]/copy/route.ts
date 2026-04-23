@@ -166,6 +166,7 @@ export async function POST(
           signatureRole: originalErha.signatureRole,
           signatureImageData: originalErha.signatureImageData,
           finalWorkImageData: originalErha.finalWorkImageData,
+          finalWorkDriveLink: originalErha.finalWorkDriveLink,
           pph: originalErha.pph,
           totalAmount: useDownPayment
             ? sumScaledItemsTotal(scaledItems!)

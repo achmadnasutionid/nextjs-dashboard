@@ -159,6 +159,7 @@ export async function POST(
           signatureRole: originalBarclay.signatureRole,
           signatureImageData: originalBarclay.signatureImageData,
           finalWorkImageData: originalBarclay.finalWorkImageData,
+          finalWorkDriveLink: originalBarclay.finalWorkDriveLink,
           pph: originalBarclay.pph,
           totalAmount: useDownPayment
             ? sumScaledItemsTotal(scaledItems!)

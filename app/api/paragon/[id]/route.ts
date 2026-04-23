@@ -82,13 +82,21 @@ export async function PUT(
       return NextResponse.json(ticket)
     }
 
-    // If only finalWorkImageData is provided, just update the screenshot
-    if (body.finalWorkImageData !== undefined && Object.keys(body).length === 1) {
+    // If only finalWorkImageData/finalWorkDriveLink is provided, update final work evidence quickly
+    if (
+      (body.finalWorkImageData !== undefined || body.finalWorkDriveLink !== undefined) &&
+      Object.keys(body).length === 1
+    ) {
+      const finalWorkData: { finalWorkImageData?: string | null; finalWorkDriveLink?: string | null } = {}
+      if (body.finalWorkImageData !== undefined) {
+        finalWorkData.finalWorkImageData = body.finalWorkImageData
+      }
+      if (body.finalWorkDriveLink !== undefined) {
+        finalWorkData.finalWorkDriveLink = body.finalWorkDriveLink?.trim() || null
+      }
       const ticket = await prisma.paragonTicket.update({
         where: { id },
-        data: {
-          finalWorkImageData: body.finalWorkImageData
-        },
+        data: finalWorkData,
         include: {
           items: {
             include: {
@@ -145,6 +153,7 @@ export async function PUT(
           signatureRole: body.signatureRole || null,
           signatureImageData: body.signatureImageData,
           finalWorkImageData: body.finalWorkImageData || null,
+          finalWorkDriveLink: body.finalWorkDriveLink?.trim() || null,
           pph: body.pph,
           totalAmount: parseFloat(body.totalAmount),
           adjustmentPercentage: body.adjustmentPercentage != null ? parseFloat(body.adjustmentPercentage) : null,

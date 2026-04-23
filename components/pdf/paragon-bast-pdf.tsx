@@ -92,6 +92,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 8,
   },
+  driveLinkText: {
+    fontSize: 9,
+    marginBottom: 6,
+  },
   buktiImage: {
     maxWidth: 400,
     maxHeight: 220,
@@ -131,6 +135,7 @@ interface ParagonBASTPDFProps {
     signatureRole?: string
     signatureImageData: string
     finalWorkImageData?: string // Screenshot final work
+    finalWorkDriveLink?: string
     pph: string
     totalAmount: number
     remarks?: Array<{
@@ -270,6 +275,9 @@ export const ParagonBASTPDF: React.FC<ParagonBASTPDFProps> = ({ data, forSync = 
         {/* Bukti Pekerjaan - under signatures, same page so proof is part of signed document */}
         <View style={styles.buktiSection} wrap={false}>
           <Text style={styles.buktiTitle}>Bukti Pekerjaan</Text>
+          {data.finalWorkDriveLink ? (
+            <Text style={styles.driveLinkText}>Google Drive: {data.finalWorkDriveLink}</Text>
+          ) : null}
           {data.finalWorkImageData && !forSync ? (
             <Image src={data.finalWorkImageData} style={styles.buktiImage} />
           ) : data.finalWorkImageData && forSync ? (

@@ -109,6 +109,7 @@ interface BarclayBASTPDFProps {
     signatureName: string
     signatureRole?: string
     signatureImageData: string
+    finalWorkDriveLink?: string | null
     billingName?: string
   }
 }
@@ -195,6 +196,9 @@ export const BarclayBASTPDF: React.FC<BarclayBASTPDFProps> = ({ data, forSync = 
             {providerCompany} telah mengadakan pelaksanaan pekerjaan {data.projectName || "-"} yang sudah diselesaikan
             dan diserahkan hasilnya dalam kondisi baik berupa link drive kepada {clientCompany} pada tanggal {bastDate}.
           </Text>
+          {data.finalWorkDriveLink ? (
+            <Text style={styles.paragraph}>Link Google Drive: {data.finalWorkDriveLink}</Text>
+          ) : null}
           <Text style={styles.paragraph}>
             Demikian Berita Acara Serah Terima Pekerjaan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.
           </Text>
