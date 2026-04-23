@@ -4,21 +4,21 @@ import { extractClientNameFromBillTo } from "@/lib/barclay"
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 52,
-    paddingBottom: 52,
-    paddingHorizontal: 64,
-    fontSize: 10.5,
+    paddingTop: 42,
+    paddingBottom: 42,
+    paddingHorizontal: 56,
+    fontSize: 9.6,
     fontFamily: "Times-Roman",
-    lineHeight: 1.4,
+    lineHeight: 1.25,
   },
   title: {
     textAlign: "center",
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "bold",
-    marginBottom: 28,
+    marginBottom: 18,
   },
   section: {
-    marginBottom: 18,
+    marginBottom: 10,
   },
   row: {
     flexDirection: "row",
@@ -36,10 +36,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   signerIntro: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
   signerBlock: {
-    marginBottom: 10,
+    marginBottom: 6,
   },
   signerTitleRow: {
     flexDirection: "row",
@@ -56,19 +56,19 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     textAlign: "justify",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   signatureContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 18,
+    marginTop: 8,
   },
   signatureColumn: {
     width: "44%",
   },
   signatureCompany: {
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 4,
   },
   signatureImage: {
     width: 82,
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     border: "1 solid #ccc",
   },
   signatureSpacer: {
-    height: 60,
+    height: 40,
   },
   signatureName: {
     marginTop: 2,
@@ -94,28 +94,28 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   buktiSection: {
-    marginTop: 24,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 6,
     borderTop: "1px solid #ccc",
   },
   buktiTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 4,
     textDecoration: "underline",
   },
   driveLinkText: {
-    fontSize: 9,
-    marginBottom: 6,
+    fontSize: 8,
+    marginBottom: 4,
   },
   buktiImage: {
     maxWidth: 400,
-    maxHeight: 220,
+    maxHeight: 150,
     objectFit: "contain",
   },
   buktiImagePlaceholder: {
     width: 400,
-    height: 220,
+    height: 150,
     backgroundColor: "#f0f0f0",
     border: "1 solid #ccc",
   },
