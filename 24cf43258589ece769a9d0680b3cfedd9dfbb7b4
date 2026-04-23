@@ -1,0 +1,23 @@
+components/pdf/paragon-quotation-pdf.tsx
+  0c9e044e52474dda 355,438-443
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "24cf43258589ece769a9d0680b3cfedd9dfbb7b4",
+  "prompts": {
+    "0c9e044e52474dda": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "226f53f6-26e7-4753-b33b-923abb1637b0",
+        "model": "premium"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 521,
+      "total_deletions": 518,
+      "accepted_lines": 520,
+      "overriden_lines": 0
+    }
+  }
+}
