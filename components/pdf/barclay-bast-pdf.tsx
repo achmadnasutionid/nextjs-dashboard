@@ -15,10 +15,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 15,
     fontWeight: "bold",
-    marginBottom: 18,
+    marginBottom: 22,
   },
   section: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   row: {
     flexDirection: "row",
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   signatureContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 8,
+    marginTop: 12,
   },
   signatureColumn: {
     width: "44%",
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   buktiSection: {
-    marginTop: 10,
+    marginTop: 14,
     paddingTop: 6,
     borderTop: "1px solid #ccc",
   },
