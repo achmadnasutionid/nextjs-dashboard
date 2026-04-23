@@ -93,6 +93,32 @@ const styles = StyleSheet.create({
   signatureRole: {
     marginTop: 1,
   },
+  buktiSection: {
+    marginTop: 24,
+    paddingTop: 12,
+    borderTop: "1px solid #ccc",
+  },
+  buktiTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textDecoration: "underline",
+  },
+  driveLinkText: {
+    fontSize: 9,
+    marginBottom: 6,
+  },
+  buktiImage: {
+    maxWidth: 400,
+    maxHeight: 220,
+    objectFit: "contain",
+  },
+  buktiImagePlaceholder: {
+    width: 400,
+    height: 220,
+    backgroundColor: "#f0f0f0",
+    border: "1 solid #ccc",
+  },
 })
 
 interface BarclayBASTPDFProps {
@@ -109,6 +135,7 @@ interface BarclayBASTPDFProps {
     signatureName: string
     signatureRole?: string
     signatureImageData: string
+    finalWorkImageData?: string
     finalWorkDriveLink?: string | null
     billingName?: string
   }
@@ -196,9 +223,6 @@ export const BarclayBASTPDF: React.FC<BarclayBASTPDFProps> = ({ data, forSync = 
             {providerCompany} telah mengadakan pelaksanaan pekerjaan {data.projectName || "-"} yang sudah diselesaikan
             dan diserahkan hasilnya dalam kondisi baik berupa link drive kepada {clientCompany} pada tanggal {bastDate}.
           </Text>
-          {data.finalWorkDriveLink ? (
-            <Text style={styles.paragraph}>Link Google Drive: {data.finalWorkDriveLink}</Text>
-          ) : null}
           <Text style={styles.paragraph}>
             Demikian Berita Acara Serah Terima Pekerjaan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.
           </Text>
@@ -225,6 +249,20 @@ export const BarclayBASTPDF: React.FC<BarclayBASTPDFProps> = ({ data, forSync = 
             <Text style={styles.signatureName}>{contactPerson || "-"}</Text>
             <Text style={styles.signatureRole}>{contactPosition || "-"}</Text>
           </View>
+        </View>
+
+        <View style={styles.buktiSection} wrap={false}>
+          <Text style={styles.buktiTitle}>Bukti Pekerjaan</Text>
+          {data.finalWorkDriveLink ? (
+            <Text style={styles.driveLinkText}>Google Drive: {data.finalWorkDriveLink}</Text>
+          ) : null}
+          {data.finalWorkImageData && !forSync ? (
+            <Image src={data.finalWorkImageData} style={styles.buktiImage} />
+          ) : data.finalWorkImageData && forSync ? (
+            <View style={styles.buktiImagePlaceholder} />
+          ) : (
+            <Text style={{ fontSize: 10, color: "#666" }}>No work evidence uploaded yet.</Text>
+          )}
         </View>
       </Page>
     </Document>
