@@ -1,0 +1,645 @@
+"use client"
+
+import { useEffect, useState, memo, useCallback, Suspense } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
+import { PageHeader } from "@/components/layout/page-header"
+import { Footer } from "@/components/layout/footer"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, Pencil, Trash2, Eye, Search, CheckCircle, FileText, Loader2 } from "lucide-react"
+import { TicketTableCardSkeleton } from "@/components/ui/skeleton"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Pagination } from "@/components/ui/pagination"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+interface BarclayTicketItemDetail {
+  id: string
+  detail: string
+  unitPrice: number
+  qty: number
+  amount: number
+}
+
+interface BarclayTicketItem {
+  id: string
+  productName: string
+  total: number
+  details: BarclayTicketItemDetail[]
+}
+
+interface BarclayTicket {
+  id: string
+  ticketId: string
+  companyName: string
+  billTo: string
+  projectName: string
+  productionDate: string
+  totalAmount: number
+  status: string
+  generatedInvoiceId?: string
+  createdAt: string
+  updatedAt: string
+  items: BarclayTicketItem[]
+}
+
+function BarclayTicketPageContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [tickets, setTickets] = useState<BarclayTicket[]>([])
+  const [loading, setLoading] = useState(true)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [sortBy, setSortBy] = useState<string>("newest")
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  const [accepting, setAccepting] = useState<string | null>(null)
+  const [generatingInvoice, setGeneratingInvoice] = useState<string | null>(null)
+  const [finalizeDialogId, setFinalizeDialogId] = useState<string | null>(null)
+  const [generateInvoiceDialogId, setGenerateInvoiceDialogId] = useState<string | null>(null)
+  
+  // Server-side pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const ITEMS_PER_PAGE = 20
+
+  // Set initial filter from URL query parameter
+  useEffect(() => {
+    const statusParam = searchParams.get("status")
+    if (statusParam && ["draft", "final"].includes(statusParam)) {
+      setStatusFilter(statusParam)
+    }
+  }, [searchParams])
+
+  const fetchTickets = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (statusFilter !== "all") params.append("status", statusFilter)
+      params.append("sortBy", sortBy)
+      params.append("page", currentPage.toString())
+      params.append("limit", ITEMS_PER_PAGE.toString())
+      if (debouncedSearchQuery.trim()) params.append("search", debouncedSearchQuery.trim())
+
+      const response = await fetch(`/api/barclay?${params}`, { cache: 'no-store' })
+      if (response.ok) {
+        const result = await response.json()
+        if (Array.isArray(result)) {
+          setTickets(result)
+          setTotalPages(1)
+          setTotalItems(result.length)
+        } else {
+          setTickets(result.data || [])
+          setTotalPages(result.pagination?.totalPages || 1)
+          setTotalItems(result.pagination?.total || 0)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching Barclay Tickets:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter, sortBy, currentPage, debouncedSearchQuery, ITEMS_PER_PAGE])
+
+  useEffect(() => {
+    setLoading(true)
+    fetchTickets()
+  }, [fetchTickets])
+
+  // Reset to page 1 when search/filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearchQuery, statusFilter])
+
+  // Refetch when page becomes visible (e.g., after navigation back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchTickets()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', fetchTickets)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', fetchTickets)
+    }
+  }, [fetchTickets])
+
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!deleteId || isDeleting) return
+
+    setIsDeleting(true)
+    const idToDelete = deleteId
+    setDeleteId(null)
+
+    try {
+      const response = await fetch(`/api/barclay/${idToDelete}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        // Refresh the list FIRST, THEN show success toast
+        await fetchTickets()
+        toast.success("Barclay Ticket deleted", {
+          description: "The ticket has been removed."
+        })
+      } else {
+        toast.error("Failed to delete Barclay Ticket", {
+          description: "An error occurred while deleting."
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting Barclay Ticket:", error)
+      toast.error("Failed to delete Barclay Ticket", {
+        description: "An unexpected error occurred."
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleFinalize = async (ticketId: string) => {
+    if (accepting) return
+    
+    // Optimistic update: update status immediately
+    const previousTickets = [...tickets]
+    setTickets(tickets.map(t => 
+      t.id === ticketId ? { ...t, status: "final" } : t
+    ))
+    
+    setAccepting(ticketId)
+    try {
+      const response = await fetch(`/api/barclay/${ticketId}/finalize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      if (response.ok) {
+        toast.success("Ticket finalized", {
+          description: "Ticket status has been set to final."
+        })
+        // Refresh to get updated data (invoice ID, etc.)
+        fetchTickets()
+      } else {
+        // Revert optimistic update on error
+        setTickets(previousTickets)
+        const errorData = await response.json()
+        toast.error("Failed to finalize ticket", {
+          description: errorData.error || "An error occurred"
+        })
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setTickets(previousTickets)
+      console.error("Error finalizing ticket:", error)
+      toast.error("Failed to finalize ticket")
+    } finally {
+      setAccepting(null)
+    }
+  }
+
+  const handleGenerateInvoice = async (ticketId: string) => {
+    if (generatingInvoice) return
+    setGeneratingInvoice(ticketId)
+    try {
+      const response = await fetch(`/api/barclay/${ticketId}/generate-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketId })
+      })
+
+      if (response.ok) {
+        const newInvoice = await response.json()
+        toast.success("Invoice generated!", {
+          description: "Redirecting to invoice edit page..."
+        })
+        
+        // Redirect to invoice edit page
+        router.push(`/invoice/${newInvoice.id}/edit`)
+      } else {
+        const data = await response.json()
+        toast.error("Failed to generate invoice", {
+          description: data.error || "An error occurred."
+        })
+      }
+    } catch (error) {
+      console.error("Error generating invoice:", error)
+      toast.error("Failed to generate invoice", {
+        description: "An unexpected error occurred."
+      })
+    } finally {
+      setGeneratingInvoice(null)
+    }
+  }
+
+  const handleViewInvoice = async (invoiceId: string) => {
+    try {
+      const res = await fetch(`/api/invoice/${invoiceId}`)
+      const invoiceData = await res.json()
+      
+      if (invoiceData.status === "paid") {
+        router.push(`/invoice/${invoiceId}/view`)
+      } else {
+        router.push(`/invoice/${invoiceId}/edit`)
+      }
+    } catch (error) {
+      console.error("Error fetching invoice:", error)
+      toast.error("Failed to load invoice")
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <PageHeader title="Barclay Ticket" showBackButton={true} />
+        <main className="flex flex-1 flex-col bg-gradient-to-br from-background via-background to-muted px-4 py-12">
+          <div className="container mx-auto max-w-7xl space-y-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+              <div className="flex gap-2">
+                <div className="h-10 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-10 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-10 w-44 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+            <div className="h-10 w-full animate-pulse rounded bg-muted" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <TicketTableCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <PageHeader title="Barclay Ticket" showBackButton={true} />
+      <main className="flex flex-1 flex-col bg-gradient-to-br from-background via-background to-muted px-4 py-12">
+        <div className="container mx-auto max-w-7xl space-y-6">
+          {/* Header with filters and create button */}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-xl font-bold tracking-tight">Barclay Ticket List</h2>
+              <div className="flex flex-wrap gap-2">
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Filter status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="final">Final</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Sort */}
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="oldest">Oldest</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Create Button */}
+                <Link href="/special-case/barclay/create">
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Barclay Ticket
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by Ticket ID or Client Name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          {/* Ticket List */}
+          {tickets.length === 0 ? (
+            <Card>
+              <CardContent className="py-0">
+                <EmptyState
+                  type="barclay-tickets"
+                  isSearchResult={!!debouncedSearchQuery}
+                  searchQuery={debouncedSearchQuery}
+                  showAction={false}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {tickets.map((ticket) => (
+                <Card key={ticket.id} className="transition-all hover:shadow-lg">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">
+                          {ticket.ticketId} - {ticket.projectName}
+                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                              ticket.status === "accepted"
+                                ? "bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100"
+                                : ticket.status === "pending"
+                                ? "bg-slate-300 text-slate-900 dark:bg-slate-600 dark:text-slate-100"
+                                : "bg-slate-300 text-slate-900 dark:bg-slate-600 dark:text-slate-100"
+                            }`}
+                          >
+                            {ticket.status.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href={`/special-case/barclay/${ticket.id}/view`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Link href={`/special-case/barclay/${ticket.id}/edit`}>
+                          <Button variant="outline" size="sm">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        {/* Separator */}
+                        <div className="h-8 w-px bg-border mx-1" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDeleteId(ticket.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Company and Date Info */}
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
+                      <span><span className="font-medium text-foreground">{ticket.projectName}</span></span>
+                      <span>•</span>
+                      <span>Production: {new Date(ticket.productionDate).toLocaleDateString()}</span>
+                    </div>
+
+                    {/* Product Items Table */}
+                    {ticket.items && ticket.items.length > 0 && (
+                      <div className="overflow-x-auto rounded-md border">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-medium">Product Name</th>
+                              <th className="px-3 py-2 text-left font-medium">Details</th>
+                              <th className="px-3 py-2 text-right font-medium">Qty</th>
+                              <th className="px-3 py-2 text-right font-medium">Unit Price</th>
+                              <th className="px-3 py-2 text-right font-medium">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ticket.items.map((item, itemIdx) => (
+                              item.details && item.details.length > 0 ? (
+                                item.details.map((detail, detailIdx) => (
+                                  <tr key={`${ticket.id}-${item.id ?? itemIdx}-${detail.id ?? detailIdx}`} className={itemIdx % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+                                    <td className="px-3 py-2 font-medium">
+                                      {detailIdx === 0 ? item.productName : ""}
+                                    </td>
+                                    <td className="px-3 py-2">{detail.detail}</td>
+                                    <td className="px-3 py-2 text-right">{detail.qty}</td>
+                                    <td className="px-3 py-2 text-right">{formatCurrency(detail.unitPrice)}</td>
+                                    <td className="px-3 py-2 text-right">{formatCurrency(detail.amount)}</td>
+                                  </tr>
+                                ))
+                              ) : (
+                                <tr key={`${ticket.id}-item-${item.id ?? itemIdx}`} className={itemIdx % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+                                  <td className="px-3 py-2 font-medium">{item.productName}</td>
+                                  <td className="px-3 py-2 text-muted-foreground italic">No details</td>
+                                  <td className="px-3 py-2 text-right">-</td>
+                                  <td className="px-3 py-2 text-right">-</td>
+                                  <td className="px-3 py-2 text-right">{formatCurrency(item.total)}</td>
+                                </tr>
+                              )
+                            ))}
+                          </tbody>
+                          <tfoot className="border-t bg-muted/50">
+                            <tr>
+                              <td colSpan={4} className="px-3 py-2 text-right font-semibold">Total Amount:</td>
+                              <td className="px-3 py-2 text-right font-bold">{formatCurrency(ticket.totalAmount)}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+
+                    {(!ticket.items || ticket.items.length === 0) && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">No product items</span>
+                        <span className="font-semibold">Total: {formatCurrency(ticket.totalAmount)}</span>
+                      </div>
+                    )}
+                    {ticket.status === "pending" && (
+                      <div className="flex justify-end pt-2">
+                        <Button
+                          onClick={() => setFinalizeDialogId(ticket.id)}
+                          disabled={accepting === ticket.id}
+                          size="sm"
+                        >
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          {accepting === ticket.id ? "Finalizing..." : "Finalize Ticket"}
+                        </Button>
+                      </div>
+                    )}
+                    {ticket.status === "accepted" && (
+                      <div className="flex justify-end pt-2">
+                        {ticket.generatedInvoiceId ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewInvoice(ticket.generatedInvoiceId!)}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            View Invoice
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setGenerateInvoiceDialogId(ticket.id)}
+                            disabled={generatingInvoice === ticket.id}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            {generatingInvoice === ticket.id ? "Generating..." : "Generate Invoice"}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                totalItems={totalItems}
+                itemsPerPage={ITEMS_PER_PAGE}
+              />
+            </div>
+          )}
+        </div>
+      </main>
+      <Footer />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !isDeleting && !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the Barclay Ticket.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Finalize Confirmation Dialog */}
+      <AlertDialog open={!!finalizeDialogId} onOpenChange={(open) => !accepting && !open && setFinalizeDialogId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalize Ticket?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will finalize the ticket. You can then generate quotation, invoice, and BAST documents. You can still edit the ticket later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!accepting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (finalizeDialogId) {
+                  handleFinalize(finalizeDialogId)
+                  setFinalizeDialogId(null)
+                }
+              }}
+              disabled={!!accepting}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              {accepting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Finalizing...
+                </>
+              ) : (
+                "Finalize"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Generate Invoice Confirmation Dialog */}
+      <AlertDialog open={!!generateInvoiceDialogId} onOpenChange={(open) => !generatingInvoice && !open && setGenerateInvoiceDialogId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate Invoice?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a new invoice based on this ticket&apos;s quotation. The invoice will be linked to this ticket.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!generatingInvoice}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (generateInvoiceDialogId) {
+                  handleGenerateInvoice(generateInvoiceDialogId)
+                  setGenerateInvoiceDialogId(null)
+                }
+              }}
+              disabled={!!generatingInvoice}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              {generatingInvoice ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate Invoice"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
+
+export default function BarclayTicketPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <BarclayTicketPageContent />
+    </Suspense>
+  )
+}
+
+

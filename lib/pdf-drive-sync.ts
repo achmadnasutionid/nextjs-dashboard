@@ -1,9 +1,9 @@
 /**
  * PDF → Google Drive sync. Runs in background when backup trigger runs (24h).
  * - Quotations / Invoices: status not draft (pending + accepted/paid), same ID = replace in Drive.
- * - Paragon / Erha: status not draft, non-deleted (same as Quotations/Invoices); 3 PDFs per ticket
+ * - Paragon / Erha / Barclay: status not draft, non-deleted (same as Quotations/Invoices); 3 PDFs per ticket
  *   (quotation, invoice, BAST). Same file name = replace. Skips quotation/invoice PDF if ID empty.
- * Folder structure: root/Quotations, root/Invoices, root/Paragon/{projectName}, root/Erha/{projectName}.
+ * Folder structure: root/Quotations, root/Invoices, root/Paragon/{projectName}, root/Erha/{projectName}, root/Barclay/{projectName}.
  */
 
 import React from "react"
@@ -32,7 +32,6 @@ import { BarclayBASTPDF } from "@/components/pdf/barclay-bast-pdf"
 import { ErhaQuotationPDF } from "@/components/pdf/erha-quotation-pdf"
 import { ErhaInvoicePDF } from "@/components/pdf/erha-invoice-pdf"
 import { ErhaBASTPDF } from "@/components/pdf/erha-bast-pdf"
-import { isBarclayTicket } from "@/lib/barclay"
 
 const ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID!
 
@@ -349,6 +348,43 @@ export function toErhaPdfData(t: {
   }
 }
 
+export function toBarclayPdfData(t: {
+  ticketId: string
+  quotationId: string
+  invoiceId: string
+  companyName: string
+  companyAddress: string
+  companyCity: string
+  companyProvince: string
+  companyPostalCode: string | null
+  companyTelp: string | null
+  companyEmail: string | null
+  productionDate: Date
+  quotationDate: Date
+  invoiceBastDate: Date
+  billTo: string
+  projectName: string
+  contactPerson: string
+  contactPosition: string
+  bastContactPerson: string | null
+  bastContactPosition: string | null
+  signatureName: string
+  signatureRole: string | null
+  signatureImageData: string
+  finalWorkImageData: string | null
+  pph: string
+  totalAmount: number
+  updatedAt: Date
+  items: Array<{
+    productName: string
+    total: number
+    details: Array<{ detail: string; unitPrice: number; qty: number; amount: number }>
+  }>
+  remarks: Array<{ text: string; isCompleted: boolean }>
+}) {
+  return toParagonPdfData(t)
+}
+
 function pdfFileName(id: string, billTo: string): string {
   const safe = sanitizeName(billTo).replace(/\s+/g, "_").slice(0, 80)
   return `${id}_${safe}.pdf`
@@ -392,7 +428,8 @@ export async function runPdfDriveSync(): Promise<{
     const invoicesFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Invoices")
     const paragonFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Paragon")
     const erhaFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Erha")
-    if (!quotationsFolderId || !invoicesFolderId || !paragonFolderId || !erhaFolderId) {
+    const barclayFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Barclay")
+    if (!quotationsFolderId || !invoicesFolderId || !paragonFolderId || !erhaFolderId || !barclayFolderId) {
       return { ok: false, error: "Failed to get or create Drive folders" }
     }
 
@@ -426,6 +463,13 @@ export async function runPdfDriveSync(): Promise<{
         remarks: { orderBy: { order: "asc" as const } },
       },
     })
+    const barclayTickets = await prisma.barclayTicket.findMany({
+      where: { status: { not: "draft" }, deletedAt: null },
+      include: {
+        items: { include: { details: true }, orderBy: { order: "asc" as const } },
+        remarks: { orderBy: { order: "asc" as const } },
+      },
+    })
     console.log(
       "[pdf-drive-sync] Syncing:",
       quotations.length,
@@ -435,7 +479,9 @@ export async function runPdfDriveSync(): Promise<{
       paragonTickets.length,
       "Paragon tickets,",
       erhaTickets.length,
-      "Erha tickets"
+      "Erha tickets,",
+      barclayTickets.length,
+      "Barclay tickets"
     )
 
     setBackupSyncRunning("Quotations", quotations.length)
@@ -525,10 +571,7 @@ export async function runPdfDriveSync(): Promise<{
       const projectFolderId = await getOrCreateFolder(paragonFolderId, folderName)
       if (!projectFolderId) continue
       const data = toParagonPdfData(t)
-      const bastComponent = isBarclayTicket(t.billTo, t.projectName)
-        ? React.createElement(BarclayBASTPDF, { data, forSync: true })
-        : React.createElement(ParagonBASTPDF, { data, forSync: true })
-      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", bastComponent]]
+      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ParagonBASTPDF, { data, forSync: true })]]
       if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data, forSync: true })])
       if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data, forSync: true })])
       for (const [fileName, el] of files) {
@@ -551,6 +594,48 @@ export async function runPdfDriveSync(): Promise<{
           skipped += 1
           setFirstSkipReason(`Paragon ${t.ticketId} ${fileName} render`, e)
           console.error("[pdf-drive-sync] Paragon", t.ticketId, fileName, "skipped:", e)
+          const errStr = e instanceof Error ? e.message : String(e)
+          if (recordBackupSyncFailure(errStr)) {
+            setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${errStr}`)
+            return { ok: false, error: firstError ?? "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+          }
+        }
+      }
+      await delay(200)
+    }
+
+    updateBackupSyncProgress({ phase: "Barclay", current: 0, total: barclayTickets.length })
+    let barclayIndex = 0
+    for (const t of barclayTickets) {
+      barclayIndex += 1
+      updateBackupSyncProgress({ phase: "Barclay", current: barclayIndex, total: barclayTickets.length, uploaded, failed: skipped })
+      const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
+      const projectFolderId = await getOrCreateFolder(barclayFolderId, folderName)
+      if (!projectFolderId) continue
+      const data = toBarclayPdfData(t)
+      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(BarclayBASTPDF, { data, forSync: true })]]
+      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data, forSync: true })])
+      if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data, forSync: true })])
+      for (const [fileName, el] of files) {
+        try {
+          const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
+          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
+          if (uploadResult.ok) {
+            uploaded += 1
+            updateBackupSyncProgress({ uploaded })
+          } else {
+            skipped += 1
+            setFirstSkipReason(`Barclay ${fileName} upload`, uploadResult.error)
+            console.error("[pdf-drive-sync] Upload failed for Barclay:", fileName, uploadResult.error)
+            if (recordBackupSyncFailure(uploadResult.error ?? "Upload failed")) {
+              setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${uploadResult.error}`)
+              return { ok: false, error: "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+            }
+          }
+        } catch (e) {
+          skipped += 1
+          setFirstSkipReason(`Barclay ${t.ticketId} ${fileName} render`, e)
+          console.error("[pdf-drive-sync] Barclay", t.ticketId, fileName, "skipped:", e)
           const errStr = e instanceof Error ? e.message : String(e)
           if (recordBackupSyncFailure(errStr)) {
             setBackupSyncStopped(`Stopped after 3 failures to avoid burdening the service. Last error: ${errStr}`)

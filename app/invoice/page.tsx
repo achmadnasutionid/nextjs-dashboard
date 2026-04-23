@@ -45,7 +45,7 @@ type InvoiceListItem =
       viewHref: string
     }
   | {
-      source: "paragon" | "erha"
+      source: "paragon" | "erha" | "barclay"
       id: string
       documentId: string
       billTo: string
@@ -362,14 +362,16 @@ function InvoicePageContent() {
                   <Card key={`${row.source}-${row.id}`} className="transition-all hover:shadow-md">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-4">
-                        {/* Left: Source badge (Paragon/Erha) + ID - Bill To */}
+                        {/* Left: Source badge (Paragon/Erha/Barclay) + ID - Bill To */}
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           {row.source !== "invoice" && (
                             <span
                               className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
                                 row.source === "paragon"
                                   ? "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-100"
-                                  : "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-100"
+                                  : row.source === "erha"
+                                  ? "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-100"
+                                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-100"
                               }`}
                             >
                               {row.source}
@@ -441,6 +443,13 @@ function InvoicePageContent() {
                           )}
                           {row.source === "erha" && (
                             <Link href={`/special-case/erha/${row.id}/edit`}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          )}
+                          {row.source === "barclay" && (
+                            <Link href={`/special-case/barclay/${row.id}/edit`}>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />
                               </Button>

@@ -51,7 +51,7 @@ export function PageHeader({ title, showBackButton = false, backTo = "/", onBack
     }
     
     // Add refresh=true parameter for list pages to ensure fresh data
-    const listPages = ['/quotation', '/invoice', '/special-case/paragon', '/special-case/erha']
+    const listPages = ['/quotation', '/invoice', '/special-case/paragon', '/special-case/erha', '/special-case/barclay']
     const isListPage = listPages.some(page => backTo.startsWith(page))
     
     if (isListPage) {

@@ -8,7 +8,7 @@ import {
   grandTotalFromSubtotalAndPph,
   downPaymentDeductionLineCreate,
 } from "@/lib/copy-down-payment"
-import { invalidateParagonCaches } from "@/lib/cache-invalidation"
+import { invalidateBarclayCaches } from "@/lib/cache-invalidation"
 
 function extractIdNumber(id: string | null | undefined): number {
   if (!id) return 0
@@ -17,7 +17,7 @@ function extractIdNumber(id: string | null | undefined): number {
   return isNaN(num) ? 0 : num
 }
 
-// POST copy paragon ticket (generates new ticketId, quotationId, invoiceId)
+// POST copy barclay ticket (generates new ticketId, quotationId, invoiceId)
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -33,7 +33,7 @@ export async function POST(
     const useDownPayment = copyOpts.mode === "downPayment"
     const dpPercentage = useDownPayment ? copyOpts.percentage : 0
 
-    const originalParagon = await prisma.paragonTicket.findUnique({
+    const originalBarclay = await prisma.barclayTicket.findUnique({
       where: { id },
       include: {
         items: {
@@ -45,16 +45,16 @@ export async function POST(
       }
     })
 
-    if (!originalParagon) {
+    if (!originalBarclay) {
       return NextResponse.json(
-        { error: "Paragon ticket not found" },
+        { error: "Barclay ticket not found" },
         { status: 404 }
       )
     }
 
     const year = new Date().getFullYear()
 
-    const copiedParagon = await prisma.$transaction(async (tx) => {
+    const copiedBarclay = await prisma.$transaction(async (tx) => {
       const [
         latestTicket,
         latestQuotation,
@@ -66,8 +66,8 @@ export async function POST(
         latestBarclayInvoice,
         latestErhaInvoice
       ] = await Promise.all([
-        tx.paragonTicket.findFirst({
-          where: { ticketId: { startsWith: `PRG-${year}-` } },
+        tx.barclayTicket.findFirst({
+          where: { ticketId: { startsWith: `BRC-${year}-` } },
           orderBy: { ticketId: "desc" },
           select: { ticketId: true }
         }),
@@ -127,47 +127,47 @@ export async function POST(
         extractIdNumber(latestErhaInvoice?.invoiceId)
       ) + 1
 
-      const ticketId = `PRG-${year}-${nextTicketNum.toString().padStart(4, "0")}`
+      const ticketId = `BRC-${year}-${nextTicketNum.toString().padStart(4, "0")}`
       const quotationId = `QTN-${year}-${nextQuotationNum.toString().padStart(4, "0")}`
       const invoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
 
       const scaledItems = useDownPayment
-        ? scaleItemsForDownPayment(originalParagon.items, dpPercentage)
+        ? scaleItemsForDownPayment(originalBarclay.items, dpPercentage)
         : null
 
-      const created = await tx.paragonTicket.create({
+      const created = await tx.barclayTicket.create({
         data: {
           ticketId,
           quotationId,
           invoiceId,
-          companyName: originalParagon.companyName,
-        companyAddress: originalParagon.companyAddress,
-        companyCity: originalParagon.companyCity,
-        companyProvince: originalParagon.companyProvince,
-          companyTelp: originalParagon.companyTelp,
-          companyEmail: originalParagon.companyEmail,
-          productionDate: originalParagon.productionDate,
-          quotationDate: originalParagon.quotationDate,
-          invoiceBastDate: originalParagon.invoiceBastDate,
-          billTo: `${originalParagon.billTo}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
-          projectName: `${originalParagon.projectName}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
-          contactPerson: originalParagon.contactPerson,
-          contactPosition: originalParagon.contactPosition,
-          bastContactPerson: originalParagon.bastContactPerson,
-          bastContactPosition: originalParagon.bastContactPosition,
-          signatureName: originalParagon.signatureName,
-          signatureRole: originalParagon.signatureRole,
-          signatureImageData: originalParagon.signatureImageData,
-          finalWorkImageData: originalParagon.finalWorkImageData,
-          pph: originalParagon.pph,
+          companyName: originalBarclay.companyName,
+        companyAddress: originalBarclay.companyAddress,
+        companyCity: originalBarclay.companyCity,
+        companyProvince: originalBarclay.companyProvince,
+          companyTelp: originalBarclay.companyTelp,
+          companyEmail: originalBarclay.companyEmail,
+          productionDate: originalBarclay.productionDate,
+          quotationDate: originalBarclay.quotationDate,
+          invoiceBastDate: originalBarclay.invoiceBastDate,
+          billTo: `${originalBarclay.billTo}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
+          projectName: `${originalBarclay.projectName}${copyDocumentLabelSuffix(useDownPayment, dpPercentage)}`,
+          contactPerson: originalBarclay.contactPerson,
+          contactPosition: originalBarclay.contactPosition,
+          bastContactPerson: originalBarclay.bastContactPerson,
+          bastContactPosition: originalBarclay.bastContactPosition,
+          signatureName: originalBarclay.signatureName,
+          signatureRole: originalBarclay.signatureRole,
+          signatureImageData: originalBarclay.signatureImageData,
+          finalWorkImageData: originalBarclay.finalWorkImageData,
+          pph: originalBarclay.pph,
           totalAmount: useDownPayment
             ? sumScaledItemsTotal(scaledItems!)
-            : originalParagon.totalAmount,
+            : originalBarclay.totalAmount,
           status: "draft",
           items: {
             create: useDownPayment
               ? scaledItems!
-              : originalParagon.items.map(item => ({
+              : originalBarclay.items.map(item => ({
                   productName: item.productName,
                   total: item.total,
                   details: {
@@ -181,7 +181,7 @@ export async function POST(
                 }))
           },
           remarks: {
-            create: originalParagon.remarks.map(remark => ({
+            create: originalBarclay.remarks.map(remark => ({
               text: remark.text,
               isCompleted: remark.isCompleted
             }))
@@ -200,15 +200,15 @@ export async function POST(
       if (useDownPayment && scaledItems) {
         const dpNet = sumScaledItemsTotal(scaledItems)
         if (dpNet > 0) {
-          const maxOrder = originalParagon.items.length
-            ? Math.max(...originalParagon.items.map((i) => i.order))
+          const maxOrder = originalBarclay.items.length
+            ? Math.max(...originalBarclay.items.map((i) => i.order))
             : 0
           const ded = downPaymentDeductionLineCreate(
             dpNet,
             dpPercentage,
             quotationId
           )
-          await tx.paragonTicketItem.create({
+          await tx.barclayTicketItem.create({
             data: {
               ticketId: id,
               order: maxOrder + 1,
@@ -217,14 +217,14 @@ export async function POST(
               details: ded.details,
             },
           })
-          const oldSub = originalParagon.items.reduce((s, i) => s + i.total, 0)
+          const oldSub = originalBarclay.items.reduce((s, i) => s + i.total, 0)
           const newSub = oldSub - dpNet
-          await tx.paragonTicket.update({
+          await tx.barclayTicket.update({
             where: { id },
             data: {
               totalAmount: grandTotalFromSubtotalAndPph(
                 newSub,
-                originalParagon.pph
+                originalBarclay.pph
               ),
             },
           })
@@ -236,17 +236,18 @@ export async function POST(
 
     if (useDownPayment) {
       await Promise.all([
-        invalidateParagonCaches(id),
-        invalidateParagonCaches(copiedParagon.id),
+        invalidateBarclayCaches(id),
+        invalidateBarclayCaches(copiedBarclay.id),
       ])
     }
 
-    return NextResponse.json(copiedParagon, { status: 201 })
+    return NextResponse.json(copiedBarclay, { status: 201 })
   } catch (error) {
-    console.error("Error copying paragon ticket:", error)
+    console.error("Error copying barclay ticket:", error)
     return NextResponse.json(
-      { error: "Failed to copy paragon ticket" },
+      { error: "Failed to copy barclay ticket" },
       { status: 500 }
     )
   }
 }
+

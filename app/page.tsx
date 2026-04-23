@@ -32,6 +32,7 @@ const ALL_CARDS: DashboardCard[] = [
   // Special Case
   { id: "paragon", section: "Special Case", title: "Paragon", keywords: "paragon special", route: "/special-case/paragon", icon: "building" },
   { id: "erha", section: "Special Case", title: "Erha", keywords: "erha special", route: "/special-case/erha", icon: "building" },
+  { id: "barclay", section: "Special Case", title: "Barclay", keywords: "barclay special", route: "/special-case/barclay", icon: "building" },
   
   // Management
   { id: "companies", section: "Management", title: "Companies", keywords: "companies company client master", route: "/companies", icon: "building" },

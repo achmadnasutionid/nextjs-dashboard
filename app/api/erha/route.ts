@@ -148,9 +148,11 @@ export async function POST(request: Request) {
         quotationIds,
         paragonQuotationIds,
         erhaQuotationIds,
+        barclayQuotationIds,
         invoiceIds,
         paragonInvoiceIds,
-        erhaInvoiceIds
+        erhaInvoiceIds,
+        barclayInvoiceIds
       ] = await Promise.all([
         tx.erhaTicket.findMany({
           where: { ticketId: { startsWith: `ERH-${year}-` } },
@@ -168,6 +170,10 @@ export async function POST(request: Request) {
           where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
           select: { quotationId: true }
         }),
+        tx.barclayTicket.findMany({
+          where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
+          select: { quotationId: true }
+        }),
         tx.invoice.findMany({
           where: { invoiceId: { startsWith: `INV-${year}-` } },
           select: { invoiceId: true }
@@ -179,6 +185,10 @@ export async function POST(request: Request) {
         tx.erhaTicket.findMany({
           where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
           select: { invoiceId: true }
+        }),
+        tx.barclayTicket.findMany({
+          where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
+          select: { invoiceId: true }
         })
       ])
 
@@ -186,13 +196,15 @@ export async function POST(request: Request) {
         0,
         ...quotationIds.map((r) => extractIdNumber(r.quotationId)),
         ...paragonQuotationIds.map((r) => extractIdNumber(r.quotationId)),
-        ...erhaQuotationIds.map((r) => extractIdNumber(r.quotationId))
+        ...erhaQuotationIds.map((r) => extractIdNumber(r.quotationId)),
+        ...barclayQuotationIds.map((r) => extractIdNumber(r.quotationId))
       )
       const maxInvoiceNum = Math.max(
         0,
         ...invoiceIds.map((r) => extractIdNumber(r.invoiceId)),
         ...paragonInvoiceIds.map((r) => extractIdNumber(r.invoiceId)),
-        ...erhaInvoiceIds.map((r) => extractIdNumber(r.invoiceId))
+        ...erhaInvoiceIds.map((r) => extractIdNumber(r.invoiceId)),
+        ...barclayInvoiceIds.map((r) => extractIdNumber(r.invoiceId))
       )
 
       let nextTicketNum = Math.max(0, ...erhaTicketIds.map((r) => extractIdNumber(r.ticketId))) + 1

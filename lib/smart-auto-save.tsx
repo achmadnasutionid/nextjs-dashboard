@@ -25,7 +25,8 @@ const AUTO_SAVE_RULES = {
     invoice: ['selectedCompanyId', 'productionDate', 'billTo', 'selectedBillingId', 'selectedSignatureId'],
     expense: ['projectName', 'productionDate'],
     erha: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'projectName', 'billToAddress', 'contactPerson', 'contactPosition', 'selectedBillingId', 'selectedSignatureId'],
-    paragon: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'projectName', 'contactPerson', 'contactPosition', 'selectedSignatureId']
+    paragon: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'projectName', 'contactPerson', 'contactPosition', 'selectedSignatureId'],
+    barclay: ['selectedCompanyId', 'productionDate', 'quotationDate', 'invoiceBastDate', 'billTo', 'projectName', 'contactPerson', 'contactPosition', 'selectedSignatureId']
   },
   
   // Don't auto-save if user is actively typing (wait for pause)
@@ -52,7 +53,7 @@ function isValidProductionDate(value: unknown): boolean {
 /**
  * VALIDATION: Check if data is "good enough" to auto-save
  */
-function canAutoSave(data: any, type: 'quotation' | 'invoice' | 'expense' | 'erha' | 'paragon'): { canSave: boolean; reason?: string } {
+function canAutoSave(data: any, type: 'quotation' | 'invoice' | 'expense' | 'erha' | 'paragon' | 'barclay'): { canSave: boolean; reason?: string } {
   const required = AUTO_SAVE_RULES.requiredFields[type]
   
   // Check mandatory fields
@@ -93,7 +94,7 @@ export function useSmartAutoSave({
 }: {
   recordId: string
   getData: () => any
-  type: 'quotation' | 'invoice' | 'expense' | 'erha' | 'paragon'
+  type: 'quotation' | 'invoice' | 'expense' | 'erha' | 'paragon' | 'barclay'
   /** Receives the PUT response body so callers can sync optimistic-lock version (e.g. updatedAt). */
   onSuccess?: (result: unknown) => void
   onError?: (error: any) => void

@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       }
     })
 
-    // Also fetch Paragon and Erha tickets (finalized status)
+    // Also fetch Paragon, Erha, and Barclay tickets (finalized status)
     const paragonTickets = await prisma.paragonTicket.findMany({
       where: {
         status: "finalized",
@@ -62,6 +62,24 @@ export async function GET(request: Request) {
     })
 
     const erhaTickets = await prisma.erhaTicket.findMany({
+      where: {
+        status: "finalized",
+        deletedAt: null,
+        productionDate: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      select: {
+        id: true,
+        ticketId: true,
+        productionDate: true,
+        totalAmount: true,
+        billTo: true,
+        projectName: true
+      }
+    })
+    const barclayTickets = await prisma.barclayTicket.findMany({
       where: {
         status: "finalized",
         deletedAt: null,
@@ -104,6 +122,16 @@ export async function GET(request: Request) {
       ...erhaTickets.map(t => ({
         id: t.id,
         type: "erha" as const,
+        referenceId: t.ticketId,
+        productionDate: t.productionDate,
+        totalAmount: t.totalAmount,
+        billTo: t.billTo,
+        projectName: t.projectName,
+        displayTitle: (t.projectName?.trim() || t.billTo) || t.ticketId
+      })),
+      ...barclayTickets.map(t => ({
+        id: t.id,
+        type: "barclay" as const,
         referenceId: t.ticketId,
         productionDate: t.productionDate,
         totalAmount: t.totalAmount,

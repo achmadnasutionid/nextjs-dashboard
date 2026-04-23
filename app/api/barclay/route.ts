@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { invalidateParagonCaches } from "@/lib/cache-invalidation"
+import { invalidateBarclayCaches } from "@/lib/cache-invalidation"
 import { generateUniqueName } from "@/lib/name-validator"
 import { syncTracker } from "@/lib/tracker-sync"
 
-// GET all paragon tickets (optimized with pagination)
+// GET all Barclay tickets (optimized with pagination)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -66,31 +66,31 @@ export async function GET(request: Request) {
     }
 
     // When showing all statuses: non-final first (by updatedAt), final at bottom
-    let tickets: Awaited<ReturnType<typeof prisma.paragonTicket.findMany<{ select: typeof select }>>>
+    let tickets: Awaited<ReturnType<typeof prisma.barclayTicket.findMany<{ select: typeof select }>>>
     let total: number
 
     if (!status || status === "all") {
       const whereNonFinal = { ...where, status: { in: ["draft", "pending"] } }
       const whereFinal = { ...where, status: "final" }
       const [nonFinal, final, countNonFinal, countFinal] = await Promise.all([
-        prisma.paragonTicket.findMany({ where: whereNonFinal, orderBy: orderByUpdated, select }),
-        prisma.paragonTicket.findMany({ where: whereFinal, orderBy: orderByUpdated, select }),
-        prisma.paragonTicket.count({ where: whereNonFinal }),
-        prisma.paragonTicket.count({ where: whereFinal })
+        prisma.barclayTicket.findMany({ where: whereNonFinal, orderBy: orderByUpdated, select }),
+        prisma.barclayTicket.findMany({ where: whereFinal, orderBy: orderByUpdated, select }),
+        prisma.barclayTicket.count({ where: whereNonFinal }),
+        prisma.barclayTicket.count({ where: whereFinal })
       ])
       const merged = [...nonFinal, ...final]
       total = countNonFinal + countFinal
       tickets = merged.slice(skip, skip + limit)
     } else {
       const [data, count] = await Promise.all([
-        prisma.paragonTicket.findMany({
+        prisma.barclayTicket.findMany({
           where,
           orderBy: orderByUpdated,
           select,
           take: limit,
           skip
         }),
-        prisma.paragonTicket.count({ where })
+        prisma.barclayTicket.count({ where })
       ])
       tickets = data
       total = count
@@ -106,15 +106,15 @@ export async function GET(request: Request) {
       }
     })
   } catch (error) {
-    console.error("Error fetching paragon tickets:", error)
+    console.error("Error fetching Barclay tickets:", error)
     return NextResponse.json(
-      { error: "Failed to fetch paragon tickets" },
+      { error: "Failed to fetch Barclay tickets" },
       { status: 500 }
     )
   }
 }
 
-// Helper to extract number from ID (e.g., "PRG-2024-0001" -> 1)
+// Helper to extract number from ID (e.g., "BRC-2024-0001" -> 1)
 function extractIdNumber(id: string | null | undefined): number {
   if (!id) return 0
   const parts = id.split("-")
@@ -129,7 +129,7 @@ function combinedBillTo(billToPart: string | undefined, projectNamePart: string 
   return [a, b].filter(Boolean).join(" - ") || ""
 }
 
-// POST create new paragon ticket
+// POST create new Barclay ticket
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -138,13 +138,13 @@ export async function POST(request: Request) {
     const isDraft = body.status === "draft"
     const projectNameStored = (body.projectName ?? "").trim()
     const combined = combinedBillTo(body.billTo, body.projectName)
-    const uniqueBillTo = combined ? await generateUniqueName(combined, 'paragon') : (isDraft ? "" : combined)
+    const uniqueBillTo = combined ? await generateUniqueName(combined, 'barclay') : (isDraft ? "" : combined)
 
     // Use transaction for atomic ID generation and creation
     const ticket = await prisma.$transaction(async (tx) => {
       // Fetch all IDs with year prefix (numeric max is reliable; orderBy string desc is not)
       const [
-        paragonTicketIds,
+        barclayTicketIds,
         quotationIds,
         paragonQuotationIds,
         erhaQuotationIds,
@@ -154,8 +154,8 @@ export async function POST(request: Request) {
         erhaInvoiceIds,
         barclayInvoiceIds
       ] = await Promise.all([
-        tx.paragonTicket.findMany({
-          where: { ticketId: { startsWith: `PRG-${year}-` } },
+        tx.barclayTicket.findMany({
+          where: { ticketId: { startsWith: `BRC-${year}-` } },
           select: { ticketId: true }
         }),
         tx.quotation.findMany({
@@ -207,11 +207,11 @@ export async function POST(request: Request) {
         ...barclayInvoiceIds.map((r) => extractIdNumber(r.invoiceId))
       )
 
-      let nextTicketNum = Math.max(0, ...paragonTicketIds.map((r) => extractIdNumber(r.ticketId))) + 1
+      let nextTicketNum = Math.max(0, ...barclayTicketIds.map((r) => extractIdNumber(r.ticketId))) + 1
       let nextQuotationNum = maxQuotationNum + 1
       let nextInvoiceNum = maxInvoiceNum + 1
 
-      let ticketId = `PRG-${year}-${nextTicketNum.toString().padStart(4, "0")}`
+      let ticketId = `BRC-${year}-${nextTicketNum.toString().padStart(4, "0")}`
       let quotationId = `QTN-${year}-${nextQuotationNum.toString().padStart(4, "0")}`
       let invoiceId = `INV-${year}-${nextInvoiceNum.toString().padStart(4, "0")}`
 
@@ -226,7 +226,7 @@ export async function POST(request: Request) {
       }
 
       // Create ticket atomically
-      return tx.paragonTicket.create({
+      return tx.barclayTicket.create({
         data: {
           ticketId,
           quotationId,
@@ -305,13 +305,13 @@ export async function POST(request: Request) {
         })
       } catch (trackerError) {
         console.error("Error syncing tracker:", trackerError)
-        // Don't fail paragon creation if tracker sync fails
+        // Don't fail Barclay creation if tracker sync fails
       }
     }
 
     return NextResponse.json(ticket, { status: 201 })
   } catch (error) {
-    console.error("Error creating paragon ticket:", error)
+    console.error("Error creating Barclay ticket:", error)
     const message = error instanceof Error ? error.message : String(error)
     const isPayloadTooLarge =
       message.includes("body") ||
@@ -321,11 +321,13 @@ export async function POST(request: Request) {
       message.includes("limit")
     const userMessage = isPayloadTooLarge
       ? "Request too large. Try using smaller images for signature and screenshot."
-      : message || "Failed to create paragon ticket"
+      : message || "Failed to create Barclay ticket"
     return NextResponse.json(
       { error: userMessage },
       { status: 500 }
     )
   }
 }
+
+
 

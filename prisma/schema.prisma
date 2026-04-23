@@ -494,6 +494,97 @@ model ErhaTicketRemark {
   @@index([ticketId, order])
 }
 
+model BarclayTicket {
+  id                   String                    @id @default(cuid())
+  ticketId             String                    @unique
+  quotationId          String                    @unique @default("")
+  invoiceId            String                    @unique @default("")
+  companyName          String
+  companyAddress       String
+  companyCity          String
+  companyProvince      String
+  companyPostalCode    String?
+  companyTelp          String?
+  companyEmail         String?
+  productionDate       DateTime
+  quotationDate        DateTime
+  invoiceBastDate      DateTime
+  billTo               String
+  projectName          String
+  contactPerson        String
+  contactPosition      String
+  bastContactPerson    String?
+  bastContactPosition  String?
+  signatureName        String
+  signatureRole        String?
+  signatureImageData   String
+  finalWorkImageData   String?
+  pph                  String
+  totalAmount          Float
+  adjustmentPercentage Float?
+  adjustmentNotes      String?
+  termsAndConditions   String?
+  status               String                    @default("draft")
+  generatedInvoiceId   String?
+  deletedAt            DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  items                BarclayTicketItem[]
+  remarks              BarclayTicketRemark[]
+
+  @@index([status, deletedAt])
+  @@index([ticketId])
+  @@index([updatedAt])
+  @@index([productionDate, status, deletedAt])
+  @@index([status, updatedAt, deletedAt])
+  @@index([companyName, status, deletedAt])
+  @@index([deletedAt, updatedAt])
+  @@index([productionDate, deletedAt])
+}
+
+model BarclayTicketItem {
+  id          String                    @id @default(cuid())
+  ticketId    String
+  productName String
+  total       Float
+  order       Int                       @default(0)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  ticket      BarclayTicket             @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  details     BarclayTicketItemDetail[]
+
+  @@index([ticketId])
+  @@index([ticketId, order])
+}
+
+model BarclayTicketItemDetail {
+  id        String            @id @default(cuid())
+  itemId    String
+  detail    String
+  unitPrice Float
+  qty       Float
+  amount    Float
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  item      BarclayTicketItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+model BarclayTicketRemark {
+  id          String         @id @default(cuid())
+  ticketId    String
+  text        String
+  isCompleted Boolean        @default(false)
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  ticket      BarclayTicket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([ticketId, order])
+}
+
 model GearExpense {
   id        String    @id @default(cuid())
   name      String

@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 /**
- * GET invoice list including Paragon and Erha tickets (same list, source badge + link to ticket view).
+ * GET invoice list including Paragon, Erha, and Barclay tickets (same list, source badge + link to ticket view).
  * Query: status, sortBy, page, limit, search.
  *
- * Special case – Paragon and Erha use status: draft | pending | final (same three-state model).
+ * Special case – Paragon, Erha, and Barclay use status: draft | pending | final (same three-state model).
  * Mapping for list filter: draft → draft; pending → draft + pending (in progress); paid → final.
  */
 export async function GET(request: Request) {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const orderBy = sortBy === "oldest" ? "asc" as const : "desc" as const
     const takePerSource = page * limit
 
-    // Pending = in progress (draft + pending) for both invoice and Paragon/Erha; paid → final for tickets
+    // Pending = in progress (draft + pending) for both invoice and special tickets; paid → final for tickets
     const pendingStatuses: string[] = ["draft", "pending"]
 
     const invWhere: any = { deletedAt: null }
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // Paragon/Erha: draft/pending/final – map paid → final, pending → draft + pending
+    // Special tickets: draft/pending/final – map paid → final, pending → draft + pending
     const ticketWhere: any = { deletedAt: null }
     if (status !== "all") {
       if (status === "pending") {
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const [invoices, paragonTickets, erhaTickets, totalInv, totalP, totalE] = await Promise.all([
+    const [invoices, paragonTickets, erhaTickets, barclayTickets, totalInv, totalP, totalE, totalB] = await Promise.all([
       prisma.invoice.findMany({
         where: invWhere,
         select: {
@@ -121,13 +121,29 @@ export async function GET(request: Request) {
         orderBy: { updatedAt: orderBy },
         take: takePerSource
       }),
+      prisma.barclayTicket.findMany({
+        where: ticketWhere,
+        select: {
+          id: true,
+          invoiceId: true,
+          projectName: true,
+          productionDate: true,
+          totalAmount: true,
+          status: true,
+          generatedInvoiceId: true,
+          updatedAt: true
+        },
+        orderBy: { updatedAt: orderBy },
+        take: takePerSource
+      }),
       prisma.invoice.count({ where: invWhere }),
       prisma.paragonTicket.count({ where: ticketWhere }),
-      prisma.erhaTicket.count({ where: ticketWhere })
+      prisma.erhaTicket.count({ where: ticketWhere }),
+      prisma.barclayTicket.count({ where: ticketWhere })
     ])
 
     type Row = {
-      source: "invoice" | "paragon" | "erha"
+      source: "invoice" | "paragon" | "erha" | "barclay"
       id: string
       documentId: string
       billTo: string
@@ -177,13 +193,27 @@ export async function GET(request: Request) {
           updatedAt: t.updatedAt,
           viewHref: `/special-case/erha/${t.id}/view`
         }
+      }),
+      ...barclayTickets.map((t) => {
+        const docId = (t.invoiceId && t.invoiceId.trim()) ? t.invoiceId : "—"
+        return {
+          source: "barclay" as const,
+          id: t.id,
+          documentId: docId,
+          billTo: t.projectName,
+          productionDate: t.productionDate,
+          totalAmount: t.totalAmount,
+          status: t.status,
+          updatedAt: t.updatedAt,
+          viewHref: `/special-case/barclay/${t.id}/view`
+        }
       })
     ]
 
     // Non-final (draft/pending) first by updatedAt, paid/final at bottom
     const isFinalStatus = (r: Row) =>
       (r.source === "invoice" && r.status === "paid") ||
-      ((r.source === "paragon" || r.source === "erha") && r.status === "final")
+      ((r.source === "paragon" || r.source === "erha" || r.source === "barclay") && r.status === "final")
     rows.sort((a, b) => {
       const aFinal = isFinalStatus(a)
       const bFinal = isFinalStatus(b)
@@ -193,7 +223,7 @@ export async function GET(request: Request) {
         : a.updatedAt.getTime() - b.updatedAt.getTime()
     })
 
-    const total = totalInv + totalP + totalE
+    const total = totalInv + totalP + totalE + totalB
     const start = (page - 1) * limit
     const data = rows.slice(start, start + limit)
 

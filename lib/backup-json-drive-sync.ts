@@ -1,7 +1,7 @@
 /**
  * JSON → Google Drive backup sync. No PDF rendering; uploads one JSON file per document/ticket.
- * Same folder structure: root/Quotations, root/Invoices, root/Paragon/{projectName}, root/Erha/{projectName}.
- * Files: QTN-2026-1820.json, INV-2026-xxx.json, and one JSON per Paragon/Erha ticket (includes all data for 3 PDFs).
+ * Same folder structure: root/Quotations, root/Invoices, root/Paragon/{projectName}, root/Erha/{projectName}, root/Barclay/{projectName}.
+ * Files: QTN-2026-1820.json, INV-2026-xxx.json, and one JSON per special-case ticket.
  */
 
 import { prisma } from "@/lib/prisma"
@@ -11,6 +11,7 @@ import {
   toInvoicePdfData,
   toParagonPdfData,
   toErhaPdfData,
+  toBarclayPdfData,
 } from "@/lib/pdf-drive-sync"
 import {
   setBackupSyncRunning,
@@ -54,7 +55,8 @@ export async function runJsonDriveSync(): Promise<{
     const invoicesFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Invoices")
     const paragonFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Paragon")
     const erhaFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Erha")
-    if (!quotationsFolderId || !invoicesFolderId || !paragonFolderId || !erhaFolderId) {
+    const barclayFolderId = await getOrCreateFolder(ROOT_FOLDER_ID, "Barclay")
+    if (!quotationsFolderId || !invoicesFolderId || !paragonFolderId || !erhaFolderId || !barclayFolderId) {
       return { ok: false, error: "Failed to get or create Drive folders" }
     }
 
@@ -86,6 +88,13 @@ export async function runJsonDriveSync(): Promise<{
         remarks: { orderBy: { order: "asc" as const } },
       },
     })
+    const barclayTickets = await prisma.barclayTicket.findMany({
+      where: { status: { not: "draft" }, deletedAt: null },
+      include: {
+        items: { include: { details: true }, orderBy: { order: "asc" as const } },
+        remarks: { orderBy: { order: "asc" as const } },
+      },
+    })
 
     console.log(
       "[backup-json-drive-sync] Syncing:",
@@ -96,7 +105,9 @@ export async function runJsonDriveSync(): Promise<{
       paragonTickets.length,
       "Paragon tickets,",
       erhaTickets.length,
-      "Erha tickets"
+      "Erha tickets,",
+      barclayTickets.length,
+      "Barclay tickets"
     )
 
     setBackupSyncRunning("Quotations", quotations.length)
@@ -224,6 +235,41 @@ export async function runJsonDriveSync(): Promise<{
         }
       } catch (e) {
         captureError(e, `Erha ${t.ticketId}`)
+        const errStr = e instanceof Error ? e.message : String(e)
+        if (recordBackupSyncFailure(errStr)) {
+          setBackupSyncStopped(`Stopped after 3 failures. Last error: ${errStr}`)
+          return { ok: false, error: firstError ?? "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+        }
+      }
+      await delay(200)
+    }
+
+    updateBackupSyncProgress({ phase: "Barclay", current: 0, total: barclayTickets.length })
+    let barclayIndex = 0
+    for (const t of barclayTickets) {
+      barclayIndex += 1
+      updateBackupSyncProgress({ phase: "Barclay", current: barclayIndex, total: barclayTickets.length, uploaded, failed: skipped })
+      const folderName = (t.projectName?.trim() || t.billTo) || "unnamed"
+      const projectFolderId = await getOrCreateFolder(barclayFolderId, folderName)
+      if (!projectFolderId) continue
+      try {
+        const data = toBarclayPdfData(t)
+        const jsonStr = JSON.stringify(data)
+        const fileName = `${t.ticketId}.json`
+        const result = await uploadOrUpdateJsonFile(projectFolderId, fileName, jsonStr)
+        if (result.ok) {
+          uploaded += 1
+          updateBackupSyncProgress({ uploaded })
+        } else {
+          skipped += 1
+          setFirstSkipReason(`Barclay ${fileName} upload`, result.error)
+          if (recordBackupSyncFailure(result.error)) {
+            setBackupSyncStopped(`Stopped after 3 failures. Last error: ${result.error}`)
+            return { ok: false, error: "Stopped after 3 failures", uploaded, skipped, skipReason: firstSkipReason ?? undefined }
+          }
+        }
+      } catch (e) {
+        captureError(e, `Barclay ${t.ticketId}`)
         const errStr = e instanceof Error ? e.message : String(e)
         if (recordBackupSyncFailure(errStr)) {
           setBackupSyncStopped(`Stopped after 3 failures. Last error: ${errStr}`)

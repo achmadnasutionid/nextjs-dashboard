@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 /**
- * GET quotation list including Paragon and Erha tickets (same list, source badge + link to ticket view).
+ * GET quotation list including Paragon, Erha, and Barclay tickets (same list, source badge + link to ticket view).
  * Query: status, sortBy, page, limit, search, includeTickets (default true).
  *
- * Special case – Paragon and Erha use status: draft | pending | final (same three-state model).
+ * Special case – Paragon, Erha, and Barclay use status: draft | pending | final (same three-state model).
  * Mapping for list filter: draft → draft; pending → draft + pending (in progress); accepted → final.
  */
 export async function GET(request: Request) {
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       ]
     }
 
-    // Paragon/Erha: draft/pending/final – map accepted → final, pending → draft + pending
+    // Special tickets: draft/pending/final – map accepted → final, pending → draft + pending
     const ticketWhere: any = { deletedAt: null }
     if (status !== "all") {
       if (status === "accepted") {
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       ]
     }
 
-    const [quotations, paragonTickets, erhaTickets, totalQ, totalP, totalE] = await Promise.all([
+    const [quotations, paragonTickets, erhaTickets, barclayTickets, totalQ, totalP, totalE, totalB] = await Promise.all([
       prisma.quotation.findMany({
         where: qWhere,
         select: {
@@ -107,13 +107,29 @@ export async function GET(request: Request) {
         orderBy: { updatedAt: orderBy },
         take: takePerSource
       }),
+      prisma.barclayTicket.findMany({
+        where: ticketWhere,
+        select: {
+          id: true,
+          quotationId: true,
+          projectName: true,
+          productionDate: true,
+          totalAmount: true,
+          status: true,
+          generatedInvoiceId: true,
+          updatedAt: true
+        },
+        orderBy: { updatedAt: orderBy },
+        take: takePerSource
+      }),
       prisma.quotation.count({ where: qWhere }),
       prisma.paragonTicket.count({ where: ticketWhere }),
-      prisma.erhaTicket.count({ where: ticketWhere })
+      prisma.erhaTicket.count({ where: ticketWhere }),
+      prisma.barclayTicket.count({ where: ticketWhere })
     ])
 
     type Row = {
-      source: "quotation" | "paragon" | "erha"
+      source: "quotation" | "paragon" | "erha" | "barclay"
       id: string
       documentId: string
       billTo: string
@@ -167,13 +183,28 @@ export async function GET(request: Request) {
           viewHref: `/special-case/erha/${t.id}/view`,
           generatedInvoiceId: t.generatedInvoiceId
         }
+      }),
+      ...barclayTickets.map((t) => {
+        const docId = (t.quotationId && t.quotationId.trim()) ? t.quotationId : "—"
+        return {
+          source: "barclay" as const,
+          id: t.id,
+          documentId: docId,
+          billTo: t.projectName,
+          productionDate: t.productionDate,
+          totalAmount: t.totalAmount,
+          status: t.status,
+          updatedAt: t.updatedAt,
+          viewHref: `/special-case/barclay/${t.id}/view`,
+          generatedInvoiceId: t.generatedInvoiceId
+        }
       })
     ]
 
     // Non-final (draft/pending) first by updatedAt, final/accepted at bottom
     const isFinalStatus = (r: Row) =>
       (r.source === "quotation" && r.status === "accepted") ||
-      ((r.source === "paragon" || r.source === "erha") && r.status === "final")
+      ((r.source === "paragon" || r.source === "erha" || r.source === "barclay") && r.status === "final")
     rows.sort((a, b) => {
       const aFinal = isFinalStatus(a)
       const bFinal = isFinalStatus(b)
@@ -183,7 +214,7 @@ export async function GET(request: Request) {
         : a.updatedAt.getTime() - b.updatedAt.getTime()
     })
 
-    const total = totalQ + totalP + totalE
+    const total = totalQ + totalP + totalE + totalB
     const start = (page - 1) * limit
     const data = rows.slice(start, start + limit)
 

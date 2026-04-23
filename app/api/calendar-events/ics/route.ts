@@ -112,6 +112,27 @@ export async function GET() {
         updatedAt: true,
       }
     })
+    // Fetch Barclay tickets (finalized status)
+    const barclayTickets = await prisma.barclayTicket.findMany({
+      where: {
+        status: "finalized",
+        deletedAt: null,
+        productionDate: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      select: {
+        id: true,
+        ticketId: true,
+        companyName: true,
+        productionDate: true,
+        totalAmount: true,
+        billTo: true,
+        projectName: true,
+        updatedAt: true,
+      }
+    })
 
     // Fetch pending invoices (for daily reminder)
     const today = new Date()
@@ -249,6 +270,37 @@ export async function GET() {
         `DESCRIPTION:${description}`,
         `LAST-MODIFIED:${formatICSDate(new Date(t.updatedAt))}`,
         `CATEGORIES:Production,Erha`,
+        `STATUS:CONFIRMED`,
+        'END:VEVENT'
+      )
+    })
+
+    // Add Barclay ticket events
+    barclayTickets.forEach(t => {
+      const eventStart = new Date(t.productionDate)
+      const eventEnd = new Date(t.productionDate)
+      eventEnd.setHours(23, 59, 59)
+
+      const title = (t.projectName?.trim() || t.billTo) || t.ticketId
+      const summary = `🏦 Barclay - ${escapeICSText(title)}`
+      const description = [
+        `Type: Barclay Ticket`,
+        `ID: ${t.ticketId}`,
+        `Company: ${t.companyName}`,
+        `Bill To: ${t.billTo}`,
+        `Amount: ${formatCurrency(t.totalAmount)}`,
+      ].filter(Boolean).join('\\n')
+
+      icsLines.push(
+        'BEGIN:VEVENT',
+        `UID:barclay-${t.id}@master-dashboard`,
+        `DTSTAMP:${formatICSDate(now)}`,
+        `DTSTART;VALUE=DATE:${eventStart.toISOString().split('T')[0].replace(/-/g, '')}`,
+        `DTEND;VALUE=DATE:${eventEnd.toISOString().split('T')[0].replace(/-/g, '')}`,
+        `SUMMARY:${summary}`,
+        `DESCRIPTION:${description}`,
+        `LAST-MODIFIED:${formatICSDate(new Date(t.updatedAt))}`,
+        `CATEGORIES:Production,Barclay`,
         `STATUS:CONFIRMED`,
         'END:VEVENT'
       )

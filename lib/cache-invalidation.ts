@@ -92,6 +92,24 @@ export async function invalidateErhaCaches(ticketId?: string): Promise<void> {
 }
 
 /**
+ * Invalidate Barclay ticket caches
+ * Call after: create, update, delete, finalize, copy Barclay ticket
+ */
+export async function invalidateBarclayCaches(ticketId?: string): Promise<void> {
+  const promises = [
+    cache.delete(cacheKeys.dashboardStats()),
+    cache.delete('barclay:list:*'),
+    cache.delete('calendar:*'),
+  ]
+
+  if (ticketId) {
+    promises.push(cache.delete(`barclay:${ticketId}`))
+  }
+
+  await Promise.all(promises)
+}
+
+/**
  * Invalidate production tracker caches
  * Call after: create, update, delete production tracker
  */

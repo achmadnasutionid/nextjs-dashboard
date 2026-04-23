@@ -25,6 +25,7 @@ export type EmptyStateType =
   | "invoices" 
   | "paragon-tickets"
   | "erha-tickets"
+  | "barclay-tickets"
   | "templates"
   | "search"
   | "generic"
@@ -121,6 +122,15 @@ const emptyStateConfig: Record<EmptyStateType, {
     searchDescription: "Try adjusting your search or filter criteria.",
     gradient: "from-cyan-500/10 to-teal-500/10",
     iconColor: "text-cyan-500"
+  },
+  "barclay-tickets": {
+    icon: Ticket,
+    defaultTitle: "No Barclay tickets yet",
+    defaultDescription: "Create your first Barclay ticket to get started.",
+    searchTitle: "No Barclay tickets found",
+    searchDescription: "Try adjusting your search or filter criteria.",
+    gradient: "from-emerald-500/10 to-lime-500/10",
+    iconColor: "text-emerald-500"
   },
   templates: {
     icon: FileText,

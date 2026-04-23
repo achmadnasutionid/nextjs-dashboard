@@ -59,9 +59,11 @@ export async function POST(
         latestTicket,
         latestQuotation,
         latestParagonQuotation,
+        latestBarclayQuotation,
         latestErhaQuotation,
         latestInvoice,
         latestParagonInvoice,
+        latestBarclayInvoice,
         latestErhaInvoice
       ] = await Promise.all([
         tx.erhaTicket.findFirst({
@@ -75,6 +77,11 @@ export async function POST(
           select: { quotationId: true }
         }),
         tx.paragonTicket.findFirst({
+          where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
+          orderBy: { quotationId: "desc" },
+          select: { quotationId: true }
+        }),
+        tx.barclayTicket.findFirst({
           where: { quotationId: { startsWith: `QTN-${year}-`, not: "" } },
           orderBy: { quotationId: "desc" },
           select: { quotationId: true }
@@ -94,6 +101,11 @@ export async function POST(
           orderBy: { invoiceId: "desc" },
           select: { invoiceId: true }
         }),
+        tx.barclayTicket.findFirst({
+          where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
+          orderBy: { invoiceId: "desc" },
+          select: { invoiceId: true }
+        }),
         tx.erhaTicket.findFirst({
           where: { invoiceId: { startsWith: `INV-${year}-`, not: "" } },
           orderBy: { invoiceId: "desc" },
@@ -105,11 +117,13 @@ export async function POST(
       const nextQuotationNum = Math.max(
         extractIdNumber(latestQuotation?.quotationId),
         extractIdNumber(latestParagonQuotation?.quotationId),
+        extractIdNumber(latestBarclayQuotation?.quotationId),
         extractIdNumber(latestErhaQuotation?.quotationId)
       ) + 1
       const nextInvoiceNum = Math.max(
         extractIdNumber(latestInvoice?.invoiceId),
         extractIdNumber(latestParagonInvoice?.invoiceId),
+        extractIdNumber(latestBarclayInvoice?.invoiceId),
         extractIdNumber(latestErhaInvoice?.invoiceId)
       ) + 1
 

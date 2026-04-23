@@ -8,6 +8,7 @@ export type EntityType =
   | 'invoice' 
   | 'paragon' 
   | 'erha' 
+  | 'barclay'
   | 'productionTracker'
 
 /**
@@ -18,6 +19,7 @@ type FieldNameMap = {
   invoice: 'billTo'
   paragon: 'billTo'
   erha: 'billTo'
+  barclay: 'billTo'
   productionTracker: 'projectName'
 }
 
@@ -53,6 +55,7 @@ export async function generateUniqueName(
     invoice: 'invoice',
     paragon: 'paragonTicket',
     erha: 'erhaTicket',
+    barclay: 'barclayTicket',
     productionTracker: 'productionTracker'
   }
 
@@ -62,6 +65,7 @@ export async function generateUniqueName(
     invoice: 'billTo',
     paragon: 'billTo',
     erha: 'billTo',
+    barclay: 'billTo',
     productionTracker: 'projectName'
   }
 
@@ -128,6 +132,7 @@ export async function checkNameConflicts(
     invoice: 'invoice',
     paragon: 'paragonTicket',
     erha: 'erhaTicket',
+    barclay: 'barclayTicket',
     productionTracker: 'productionTracker'
   }
 
@@ -136,6 +141,7 @@ export async function checkNameConflicts(
     invoice: 'billTo',
     paragon: 'billTo',
     erha: 'billTo',
+    barclay: 'billTo',
     productionTracker: 'projectName'
   }
 

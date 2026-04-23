@@ -39,6 +39,7 @@ function getIdField(modelName: string): string {
     'invoice': 'invoiceId',
     'paragonTicket': 'ticketId',
     'erhaTicket': 'ticketId',
+    'barclayTicket': 'ticketId',
     'productionTracker': 'trackerId'
   }
   return fieldMap[modelName] || `${modelName}Id`
@@ -54,7 +55,7 @@ function parseIdNumber(id: string | null | undefined): number {
 }
 
 /**
- * For QTN/INV, the same visible ID is used by Quotation/Invoice AND Paragon/Erha.
+ * For QTN/INV, the same visible ID is used by Quotation/Invoice AND Paragon/Erha/Barclay.
  * Return the max number in use across all those tables so the sequence never reuses an ID.
  */
 async function getMaxNumberForSharedId(
@@ -63,7 +64,7 @@ async function getMaxNumberForSharedId(
 ): Promise<number> {
   const searchPrefix = `${prefix}-${year}-`
   if (prefix === 'QTN') {
-    const [quotations, paragon, erha] = await Promise.all([
+    const [quotations, paragon, erha, barclay] = await Promise.all([
       prisma.quotation.findMany({
         where: { quotationId: { startsWith: searchPrefix } },
         select: { quotationId: true }
@@ -75,17 +76,22 @@ async function getMaxNumberForSharedId(
       prisma.erhaTicket.findMany({
         where: { quotationId: { startsWith: searchPrefix, not: '' } },
         select: { quotationId: true }
+      }),
+      prisma.barclayTicket.findMany({
+        where: { quotationId: { startsWith: searchPrefix, not: '' } },
+        select: { quotationId: true }
       })
     ])
     const numbers = [
       ...quotations.map((r) => parseIdNumber(r.quotationId)),
       ...paragon.map((r) => parseIdNumber(r.quotationId)),
-      ...erha.map((r) => parseIdNumber(r.quotationId))
+      ...erha.map((r) => parseIdNumber(r.quotationId)),
+      ...barclay.map((r) => parseIdNumber(r.quotationId))
     ]
     return numbers.length ? Math.max(...numbers) : 0
   }
   // INV
-  const [invoices, paragon, erha] = await Promise.all([
+  const [invoices, paragon, erha, barclay] = await Promise.all([
     prisma.invoice.findMany({
       where: { invoiceId: { startsWith: searchPrefix } },
       select: { invoiceId: true }
@@ -97,12 +103,17 @@ async function getMaxNumberForSharedId(
     prisma.erhaTicket.findMany({
       where: { invoiceId: { startsWith: searchPrefix, not: '' } },
       select: { invoiceId: true }
+    }),
+    prisma.barclayTicket.findMany({
+      where: { invoiceId: { startsWith: searchPrefix, not: '' } },
+      select: { invoiceId: true }
     })
   ])
   const numbers = [
     ...invoices.map((r) => parseIdNumber(r.invoiceId)),
     ...paragon.map((r) => parseIdNumber(r.invoiceId)),
-    ...erha.map((r) => parseIdNumber(r.invoiceId))
+    ...erha.map((r) => parseIdNumber(r.invoiceId)),
+    ...barclay.map((r) => parseIdNumber(r.invoiceId))
   ]
   return numbers.length ? Math.max(...numbers) : 0
 }
@@ -110,7 +121,7 @@ async function getMaxNumberForSharedId(
 /**
  * Ensure sequence exists for this prefix-year.
  * For QTN/INV, initializes (and syncs existing sequences) from max across
- * quotation+invoice+paragon+erha so visible IDs never collide.
+ * quotation+invoice+paragon+erha+barclay so visible IDs never collide.
  */
 async function ensureSequence(prefix: string, year: number, modelName: string): Promise<void> {
   const sequenceName = getSequenceName(prefix, year)
@@ -134,7 +145,7 @@ async function ensureSequence(prefix: string, year: number, modelName: string): 
         // Sequence might have been created by another process - that's OK
       }
     } else {
-      // Sync existing sequence so it never returns a number already used by paragon/erha
+      // Sync existing sequence so it never returns a number already used by special-case tickets
       const curr = await prisma.$queryRawUnsafe<Array<{ last_value: bigint }>>(
         `SELECT last_value FROM "${sequenceName}"`
       )
@@ -185,8 +196,8 @@ async function ensureSequence(prefix: string, year: number, modelName: string): 
  * Uses PostgreSQL sequences for true atomicity
  */
 export async function generateId(
-  prefix: 'QTN' | 'INV' | 'PRG' | 'ERH' | 'PT',
-  modelName: 'quotation' | 'invoice' | 'paragonTicket' | 'erhaTicket' | 'productionTracker'
+  prefix: 'QTN' | 'INV' | 'PRG' | 'ERH' | 'BRC' | 'PT',
+  modelName: 'quotation' | 'invoice' | 'paragonTicket' | 'erhaTicket' | 'barclayTicket' | 'productionTracker'
 ): Promise<string> {
   const year = new Date().getFullYear()
   const sequenceName = getSequenceName(prefix, year)

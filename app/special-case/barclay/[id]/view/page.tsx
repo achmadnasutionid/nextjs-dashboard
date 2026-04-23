@@ -11,7 +11,7 @@ import { LazyPDFViewer } from "@/components/pdf/lazy-pdf-viewer"
 import { Download, MessageCircle, FileText, Receipt, ClipboardCheck, CheckCircle, Upload, Copy, Edit } from "lucide-react"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
-import { ParagonBASTPDF } from "@/components/pdf/paragon-bast-pdf"
+import { BarclayBASTPDF } from "@/components/pdf/barclay-bast-pdf"
 import { toast } from "sonner"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import {
@@ -29,7 +29,7 @@ import {
   type CopyDocumentChoice,
 } from "@/components/copy-document-dialog"
 
-interface ParagonTicket {
+interface BarclayTicket {
   id: string
   ticketId: string
   quotationId: string
@@ -77,7 +77,7 @@ interface ParagonTicket {
 
 type ViewType = 'quotation' | 'invoice' | 'bast'
 
-export default function ViewParagonTicketPage() {
+export default function ViewBarclayTicketPage() {
   const params = useParams()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -88,8 +88,8 @@ export default function ViewParagonTicketPage() {
   const [showCopyDialog, setShowCopyDialog] = useState(false)
 
   // Use SWR for cached data fetching
-  const { data: ticket, isLoading: loading, mutate } = useFetch<ParagonTicket>(
-    params.id ? `/api/paragon/${params.id}` : null
+  const { data: ticket, isLoading: loading, mutate } = useFetch<BarclayTicket>(
+    params.id ? `/api/barclay/${params.id}` : null
   )
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function ViewParagonTicketPage() {
       } else if (viewType === 'invoice') {
         pdfComponent = <ParagonInvoicePDF data={ticket} />
       } else if (viewType === 'bast') {
-        pdfComponent = <ParagonBASTPDF data={ticket} />
+        pdfComponent = <BarclayBASTPDF data={ticket} />
       } else {
         toast.error("Invalid view type")
         return
@@ -125,7 +125,7 @@ export default function ViewParagonTicketPage() {
       URL.revokeObjectURL(url)
 
       // Open WhatsApp Web with pre-filled message
-      const message = `Hi! Here's the Paragon Ticket ${viewType} details:\n\n*${ticket.ticketId}*\nProject: ${ticket.projectName}\nContact: ${ticket.contactPerson} (${ticket.contactPosition})\nTotal Amount: ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(ticket.totalAmount)}\n\nI've attached the PDF document for your review.`
+      const message = `Hi! Here's the Barclay Ticket ${viewType} details:\n\n*${ticket.ticketId}*\nProject: ${ticket.projectName}\nContact: ${ticket.contactPerson} (${ticket.contactPosition})\nTotal Amount: ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(ticket.totalAmount)}\n\nI've attached the PDF document for your review.`
 
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
       
@@ -145,7 +145,7 @@ export default function ViewParagonTicketPage() {
     }
   }
 
-  // Handle copy paragon ticket
+  // Handle copy barclay ticket
   const [copying, setCopying] = useState(false)
   const handleCopyConfirm = async (choice: CopyDocumentChoice) => {
     if (!ticket || copying) return
@@ -159,7 +159,7 @@ export default function ViewParagonTicketPage() {
               downPaymentPercentage: choice.percentage,
             }
           : { mode: "general" as const }
-      const response = await fetch(`/api/paragon/${ticket.id}/copy`, {
+      const response = await fetch(`/api/barclay/${ticket.id}/copy`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -168,19 +168,19 @@ export default function ViewParagonTicketPage() {
       if (response.ok) {
         const copiedTicket = await response.json()
         setShowCopyDialog(false)
-        toast.success("Paragon ticket copied successfully", {
+        toast.success("Barclay ticket copied successfully", {
           description: "Redirecting to the copied ticket...",
         })
-        router.push(`/special-case/paragon/${copiedTicket.id}/edit`)
+        router.push(`/special-case/barclay/${copiedTicket.id}/edit`)
       } else {
         const errorData = await response.json()
-        toast.error("Failed to copy paragon ticket", {
+        toast.error("Failed to copy barclay ticket", {
           description: errorData.error || "An error occurred",
         })
       }
     } catch (error) {
-      console.error("Error copying paragon ticket:", error)
-      toast.error("Failed to copy paragon ticket")
+      console.error("Error copying barclay ticket:", error)
+      toast.error("Failed to copy barclay ticket")
     } finally {
       setCopying(false)
     }
@@ -191,7 +191,7 @@ export default function ViewParagonTicketPage() {
     
     setFinalizing(true)
     try {
-      const response = await fetch(`/api/paragon/${ticket.id}/finalize`, {
+      const response = await fetch(`/api/barclay/${ticket.id}/finalize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       })
@@ -201,7 +201,7 @@ export default function ViewParagonTicketPage() {
           description: "Ticket status has been set to final."
         })
         // Redirect to list page
-        router.push("/special-case/paragon")
+        router.push("/special-case/barclay")
       } else {
         const errorData = await response.json()
         toast.error("Failed to finalize ticket", {
@@ -228,7 +228,7 @@ export default function ViewParagonTicketPage() {
       reader.onloadend = async () => {
         const imageData = reader.result as string
 
-        const response = await fetch(`/api/paragon/${ticket.id}`, {
+        const response = await fetch(`/api/barclay/${ticket.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ finalWorkImageData: imageData }),
@@ -258,7 +258,7 @@ export default function ViewParagonTicketPage() {
   if (loading || !mounted) {
     return (
       <div className="flex min-h-screen flex-col">
-        <PageHeader title="View Paragon Ticket" showBackButton={true} backTo="/special-case/paragon" />
+        <PageHeader title="View Barclay Ticket" showBackButton={true} backTo="/special-case/barclay" />
         <main className="flex flex-1 flex-col bg-gradient-to-br from-background via-background to-muted px-4 py-12">
           <div className="container mx-auto max-w-7xl space-y-6">
             <div className="space-y-4">
@@ -280,7 +280,7 @@ export default function ViewParagonTicketPage() {
   if (!ticket) {
     return (
       <div className="flex min-h-screen flex-col">
-        <PageHeader title="View Paragon Ticket" showBackButton={true} backTo="/special-case/paragon" />
+        <PageHeader title="View Barclay Ticket" showBackButton={true} backTo="/special-case/barclay" />
         <main className="flex flex-1 items-center justify-center">
           <p>Ticket not found</p>
         </main>
@@ -291,11 +291,11 @@ export default function ViewParagonTicketPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <PageHeader title="View Paragon Ticket" showBackButton={true} backTo="/special-case/paragon" />
+      <PageHeader title="View Barclay Ticket" showBackButton={true} backTo="/special-case/barclay" />
       <main className="flex flex-1 flex-col bg-gradient-to-br from-background via-background to-muted px-4 py-12">
         <div className="container mx-auto max-w-7xl space-y-6">
           <Breadcrumb items={[
-            { label: "Paragon Tickets", href: "/special-case/paragon" },
+            { label: "Barclay Tickets", href: "/special-case/barclay" },
             { label: ticket?.ticketId || (params.id as string) }
           ]} />
           {/* Header with ID and company name */}
@@ -381,7 +381,7 @@ export default function ViewParagonTicketPage() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => router.push(`/special-case/paragon/${params.id}/edit`)}
+                onClick={() => router.push(`/special-case/barclay/${params.id}/edit`)}
                 title="Edit"
               >
                 <Edit className="h-4 w-4" />
@@ -442,7 +442,7 @@ export default function ViewParagonTicketPage() {
               
               {viewType === 'bast' && (
                 <PDFDownloadLink
-                  document={<ParagonBASTPDF data={ticket} />}
+                  document={<BarclayBASTPDF data={ticket} />}
                   fileName={`${ticket.ticketId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
                 >
                   {({ loading: pdfLoading }) => (
@@ -500,7 +500,7 @@ export default function ViewParagonTicketPage() {
                 }}
                 showToolbar={true}
               >
-                <ParagonBASTPDF data={ticket} />
+                <BarclayBASTPDF data={ticket} />
               </LazyPDFViewer>
             </div>
           )}
@@ -537,9 +537,10 @@ export default function ViewParagonTicketPage() {
         open={showCopyDialog}
         onOpenChange={setShowCopyDialog}
         copying={copying}
-        title="Copy Paragon ticket"
+        title="Copy Barclay ticket"
         onConfirm={handleCopyConfirm}
       />
     </div>
   )
 }
+
