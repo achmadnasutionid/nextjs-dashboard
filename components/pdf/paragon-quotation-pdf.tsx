@@ -352,6 +352,7 @@ const parseHTMLToTextBlocks = (html: string) => {
     // PPh is 0 for Paragon because it's already included in the price
     return 0
   }
+  const showPph = calculatePph() > 0
 
   return (
     <Document pdfVersion="1.3">
@@ -434,10 +435,12 @@ const parseHTMLToTextBlocks = (html: string) => {
               <Text style={styles.summaryLabel}>SUB TOTAL</Text>
               <Text style={styles.summaryValue}>{formatCurrency(calculateSubtotal())}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>PPh</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(calculatePph())}</Text>
-            </View>
+            {showPph ? (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>PPh</Text>
+                <Text style={styles.summaryValue}>{formatCurrency(calculatePph())}</Text>
+              </View>
+            ) : null}
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>TOTAL</Text>
               <Text style={styles.summaryValue}>{formatCurrency(data.totalAmount)}</Text>
