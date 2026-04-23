@@ -28,9 +28,11 @@ import { InvoiceBackupPDF } from "@/components/pdf/invoice-backup-pdf"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
 import { ParagonBASTPDF } from "@/components/pdf/paragon-bast-pdf"
+import { BarclayBASTPDF } from "@/components/pdf/barclay-bast-pdf"
 import { ErhaQuotationPDF } from "@/components/pdf/erha-quotation-pdf"
 import { ErhaInvoicePDF } from "@/components/pdf/erha-invoice-pdf"
 import { ErhaBASTPDF } from "@/components/pdf/erha-bast-pdf"
+import { isBarclayTicket } from "@/lib/barclay"
 
 const ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID!
 
@@ -523,7 +525,10 @@ export async function runPdfDriveSync(): Promise<{
       const projectFolderId = await getOrCreateFolder(paragonFolderId, folderName)
       if (!projectFolderId) continue
       const data = toParagonPdfData(t)
-      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(ParagonBASTPDF, { data, forSync: true })]]
+      const bastComponent = isBarclayTicket(t.billTo, t.projectName)
+        ? React.createElement(BarclayBASTPDF, { data, forSync: true })
+        : React.createElement(ParagonBASTPDF, { data, forSync: true })
+      const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", bastComponent]]
       if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data, forSync: true })])
       if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data, forSync: true })])
       for (const [fileName, el] of files) {

@@ -12,6 +12,7 @@ import { Download, MessageCircle, FileText, Receipt, ClipboardCheck, CheckCircle
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
 import { ParagonBASTPDF } from "@/components/pdf/paragon-bast-pdf"
+import { BarclayBASTPDF } from "@/components/pdf/barclay-bast-pdf"
 import { toast } from "sonner"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import {
@@ -28,6 +29,7 @@ import {
   CopyDocumentDialog,
   type CopyDocumentChoice,
 } from "@/components/copy-document-dialog"
+import { isBarclayTicket } from "@/lib/barclay"
 
 interface ParagonTicket {
   id: string
@@ -91,6 +93,7 @@ export default function ViewParagonTicketPage() {
   const { data: ticket, isLoading: loading, mutate } = useFetch<ParagonTicket>(
     params.id ? `/api/paragon/${params.id}` : null
   )
+  const isBarclayCase = !!ticket && isBarclayTicket(ticket.billTo, ticket.projectName)
 
   useEffect(() => {
     setMounted(true)
@@ -107,7 +110,9 @@ export default function ViewParagonTicketPage() {
       } else if (viewType === 'invoice') {
         pdfComponent = <ParagonInvoicePDF data={ticket} />
       } else if (viewType === 'bast') {
-        pdfComponent = <ParagonBASTPDF data={ticket} />
+        pdfComponent = isBarclayTicket(ticket.billTo, ticket.projectName)
+          ? <BarclayBASTPDF data={ticket} />
+          : <ParagonBASTPDF data={ticket} />
       } else {
         toast.error("Invalid view type")
         return
@@ -442,7 +447,7 @@ export default function ViewParagonTicketPage() {
               
               {viewType === 'bast' && (
                 <PDFDownloadLink
-                  document={<ParagonBASTPDF data={ticket} />}
+                  document={isBarclayCase ? <BarclayBASTPDF data={ticket} /> : <ParagonBASTPDF data={ticket} />}
                   fileName={`${ticket.ticketId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
                 >
                   {({ loading: pdfLoading }) => (
@@ -500,7 +505,7 @@ export default function ViewParagonTicketPage() {
                 }}
                 showToolbar={true}
               >
-                <ParagonBASTPDF data={ticket} />
+                {isBarclayCase ? <BarclayBASTPDF data={ticket} /> : <ParagonBASTPDF data={ticket} />}
               </LazyPDFViewer>
             </div>
           )}
