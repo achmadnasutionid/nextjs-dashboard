@@ -1,0 +1,35 @@
+app/invoice/create/page.tsx
+  2201b41a2d78cd0a 155
+app/quotation/create/page.tsx
+  2201b41a2d78cd0a 159
+app/invoice/[id]/edit/page.tsx
+  2201b41a2d78cd0a 274
+app/quotation/[id]/edit/page.tsx
+  2201b41a2d78cd0a 272
+app/special-case/paragon/create/page.tsx
+  2201b41a2d78cd0a 131
+app/special-case/barclay/create/page.tsx
+  2201b41a2d78cd0a 131
+app/special-case/erha/create/page.tsx
+  2201b41a2d78cd0a 147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "31c4f8e4a0825d6c970950647cbc0d76646b7dcf",
+  "prompts": {
+    "2201b41a2d78cd0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "00e141ca-3ae0-4242-bae2-d67caea4fec6",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 9321,
+      "total_deletions": 9321,
+      "accepted_lines": 9321,
+      "overriden_lines": 0
+    }
+  }
+}
