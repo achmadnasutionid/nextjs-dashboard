@@ -269,7 +269,7 @@ export default function RemarkTemplatesPage() {
     }
   }
 
-  const ItemForm = () => (
+  const formBody = (
     <div className="space-y-4 py-2">
       <div className="space-y-2">
         <Label htmlFor="template-name">Name <span className="text-destructive">*</span></Label>
@@ -410,7 +410,7 @@ export default function RemarkTemplatesPage() {
           <DialogHeader>
             <DialogTitle>Create Remark Template</DialogTitle>
           </DialogHeader>
-          <ItemForm />
+          {formBody}
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetForm(); setIsCreateOpen(false) }} disabled={isSubmitting}>Cancel</Button>
             <Button onClick={handleCreate} disabled={isSubmitting}>
@@ -426,7 +426,7 @@ export default function RemarkTemplatesPage() {
           <DialogHeader>
             <DialogTitle>Edit Remark Template</DialogTitle>
           </DialogHeader>
-          <ItemForm />
+          {formBody}
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetForm(); setIsEditOpen(false) }} disabled={isSubmitting}>Cancel</Button>
             <Button onClick={handleUpdate} disabled={isSubmitting}>
