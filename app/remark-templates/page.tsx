@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { FileText, Edit, Trash2, Plus, Loader2, GripVertical, RefreshCw } from "lucide-react"
 import { CardSkeleton } from "@/components/ui/skeleton"
@@ -65,7 +66,7 @@ function SortableItem({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className="flex items-center gap-2 mb-2"
+      className="flex items-start gap-2 mb-2"
     >
       <button
         className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
@@ -74,11 +75,12 @@ function SortableItem({
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </button>
-      <Input
+      <Textarea
         value={item.text}
         onChange={(e) => onUpdate(e.target.value)}
-        className="flex-1"
+        className="flex-1 min-h-[60px] resize-none"
         placeholder="Remark text"
+        rows={2}
       />
       <Button
         type="button"
@@ -291,7 +293,7 @@ export default function RemarkTemplatesPage() {
             Add Item
           </Button>
         </div>
-        <div className="max-h-[320px] overflow-y-auto pr-1">
+        <div className="max-h-[480px] overflow-y-auto pr-1">
           {formItems.length === 0 ? (
             <p className="text-sm text-muted-foreground py-2">No items yet. Add some remark items above.</p>
           ) : (
@@ -404,7 +406,7 @@ export default function RemarkTemplatesPage() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsCreateOpen(open) }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create Remark Template</DialogTitle>
           </DialogHeader>
@@ -420,7 +422,7 @@ export default function RemarkTemplatesPage() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsEditOpen(open) }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Remark Template</DialogTitle>
           </DialogHeader>
