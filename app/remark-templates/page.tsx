@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { PageHeader } from "@/components/layout/page-header"
 import { Footer } from "@/components/layout/footer"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -116,9 +116,17 @@ export default function RemarkTemplatesPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
+  const itemsScrollRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     fetchTemplates()
   }, [])
+
+  useEffect(() => {
+    if (formItems.length > 0 && itemsScrollRef.current) {
+      itemsScrollRef.current.scrollTop = itemsScrollRef.current.scrollHeight
+    }
+  }, [formItems.length])
 
   const fetchTemplates = async () => {
     try {
@@ -293,7 +301,7 @@ export default function RemarkTemplatesPage() {
             Add Item
           </Button>
         </div>
-        <div className="max-h-[480px] overflow-y-auto pr-1">
+        <div ref={itemsScrollRef} className="max-h-[55vh] overflow-y-auto pr-1">
           {formItems.length === 0 ? (
             <p className="text-sm text-muted-foreground py-2">No items yet. Add some remark items above.</p>
           ) : (
@@ -406,7 +414,7 @@ export default function RemarkTemplatesPage() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsCreateOpen(open) }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Create Remark Template</DialogTitle>
           </DialogHeader>
@@ -422,7 +430,7 @@ export default function RemarkTemplatesPage() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsEditOpen(open) }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit Remark Template</DialogTitle>
           </DialogHeader>
