@@ -31,6 +31,7 @@ import { scrollToFirstError } from "@/lib/form-utils"
 import { ReorderableSummary } from "@/components/ui/reorderable-summary"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import { ReorderableRemarks } from "@/components/ui/reorderable-remarks"
+import { RemarkTemplateSelector } from "@/components/ui/remark-template-selector"
 
 interface Company {
   id: string
@@ -109,18 +110,9 @@ export default function CreateInvoicePage() {
   const [paidDate, setPaidDate] = useState<Date>()
   const [billTo, setBillTo] = useState("")
   const [notes, setNotes] = useState("")
-  const [remarks, setRemarks] = useState<Remark[]>([
-    { id: "1", text: "Terms & Conditions :", isCompleted: false },
-    { id: "2", text: "* Overtime Production Shooting Day 10 % dari Fee invoice", isCompleted: false },
-    { id: "3", text: "* Quotation is valid for 7 days from the issue date.", isCompleted: false },
-    { id: "4", text: "* 50% down payment must be paid at least 1 day before the first project meeting. The remaining 50% is paid after the project is finished.", isCompleted: false },
-    { id: "5", text: "* More than 3 revisions per frame will be charged extra.", isCompleted: false },
-    { id: "6", text: "Penalty will be applied if client use our Photo & Videshoot without our consent for printed media placement outside the initial agreement :", isCompleted: false },
-    { id: "7", text: "* Small Ussage ( Flyer, Katalog, Brosur, Kupon, Kotak Gift, Booklet PR Package, Kartu Ucapan ) 15% dari invoice awal", isCompleted: false },
-    { id: "8", text: "* Medium Ussage (POP, TV Store, TV Led Instore, both, bazaar, Backwall, Wobler, add 20%", isCompleted: false },
-    { id: "9", text: "* Big Print (Billboard, OOH Outdoor, LED Screen Outdoor, Megatron, Umbull, dll) 50% + tnc berlanjut", isCompleted: false },
-    { id: "10", text: "* Additional overseas media placement (digital and printed) will be charged .(bisa di edit) % of total", isCompleted: false },
-  ])
+  const [remarks, setRemarks] = useState<Remark[]>([])
+  const [remarkTemplates, setRemarkTemplates] = useState<any[]>([])
+  const [loadedTemplateTexts, setLoadedTemplateTexts] = useState<string[]>([])
   const [termsAndConditions, setTermsAndConditions] = useState("")
   const [showTerms, setShowTerms] = useState(false)
   const [selectedBillingId, setSelectedBillingId] = useState("")
@@ -160,12 +152,20 @@ export default function CreateInvoicePage() {
       fetch("/api/billings").then(res => res.json()),
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
-    ]).then(([companiesData, billingsData, signaturesData, productsData]) => {
+      fetch("/api/remark-templates").then(res => res.json()),
+    ]).then(([companiesData, billingsData, signaturesData, productsData, templatesData]) => {
       setCompanies(companiesData)
       setBillings(billingsData)
       setSignatures(signaturesData)
       setProducts(productsData.map((p: any) => p.name))
-      setProductDetails(productsData) // Store full product objects with details
+      setProductDetails(productsData)
+      setRemarkTemplates(templatesData)
+      const defaultTemplate = templatesData.find((t: any) => t.name === "Default")
+      if (defaultTemplate) {
+        const sorted = [...defaultTemplate.items].sort((a: any, b: any) => a.order - b.order)
+        setRemarks(sorted.map((item: any) => ({ id: crypto.randomUUID(), text: item.text, isCompleted: false })))
+        setLoadedTemplateTexts(sorted.map((item: any) => item.text))
+      }
     }).catch(console.error)
   }, [])
 
@@ -201,20 +201,10 @@ export default function CreateInvoicePage() {
     }])
   }
 
-  const resetToDefaultRemarks = () => {
+  const handleLoadTemplate = (items: Remark[], _templateId: string, texts: string[]) => {
     markInteracted()
-    setRemarks([
-      { id: "1", text: "Terms & Conditions :", isCompleted: false },
-      { id: "2", text: "* Overtime Production Shooting Day 10 % dari Fee invoice", isCompleted: false },
-      { id: "3", text: "* Invoice is valid for 7 days from the issue date.", isCompleted: false },
-      { id: "4", text: "* 50% down payment must be paid at least 1 day before the first project meeting. The remaining 50% is paid after the project is finished.", isCompleted: false },
-      { id: "5", text: "* More than 3 revisions per frame will be charged extra.", isCompleted: false },
-      { id: "6", text: "Penalty will be applied if client use our Photo & Videshoot without our consent for printed media placement outside the initial agreement :", isCompleted: false },
-      { id: "7", text: "* Small Ussage ( Flyer, Katalog, Brosur, Kupon, Kotak Gift, Booklet PR Package, Kartu Ucapan ) 15% dari invoice awal", isCompleted: false },
-      { id: "8", text: "* Medium Ussage (POP, TV Store, TV Led Instore, both, bazaar, Backwall, Wobler, add 20%", isCompleted: false },
-      { id: "9", text: "* Big Print (Billboard, OOH Outdoor, LED Screen Outdoor, Megatron, Umbull, dll) 50% + tnc berlanjut", isCompleted: false },
-      { id: "10", text: "* Additional overseas media placement (digital and printed) will be charged .(bisa di edit) % of total", isCompleted: false },
-    ])
+    setRemarks(items)
+    setLoadedTemplateTexts(texts)
   }
 
   const removeRemark = (id: string) => {
@@ -781,21 +771,12 @@ export default function CreateInvoicePage() {
                   <div className="flex items-center justify-between">
                     <Label>Remarks</Label>
                     <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={resetToDefaultRemarks}
-                        className="h-8 w-8"
-                        title="Reset to Default Remarks"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                          <path d="M21 3v5h-5"/>
-                          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                          <path d="M8 16H3v5"/>
-                        </svg>
-                      </Button>
+                      <RemarkTemplateSelector
+                        templates={remarkTemplates}
+                        remarks={remarks}
+                        baselineTexts={loadedTemplateTexts}
+                        onLoad={handleLoadTemplate}
+                      />
                       <Button
                         type="button"
                         variant="outline"

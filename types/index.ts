@@ -141,6 +141,28 @@ export interface QuotationSignature {
 }
 
 // ============================================================================
+// Remark Template Types
+// ============================================================================
+
+export interface RemarkTemplateItem {
+  id: string
+  templateId: string
+  text: string
+  order: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface RemarkTemplate {
+  id: string
+  name: string
+  deletedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+  items: RemarkTemplateItem[]
+}
+
+// ============================================================================
 // Dashboard Statistics Types
 // ============================================================================
 

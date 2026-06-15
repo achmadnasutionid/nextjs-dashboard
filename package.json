@@ -11,10 +11,6 @@
     "typecheck": "tsc --noEmit",
     "typecheck:full": "prisma generate && prisma generate --schema=prisma-backup/schema.prisma && tsc --noEmit",
     "lint": "eslint",
-    "test": "dotenv -e .env -- vitest run",
-    "test:watch": "dotenv -e .env -- vitest",
-    "test:ui": "dotenv -e .env -- vitest --ui",
-    "test:setup": "dotenv -e .env -- npx prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:deploy:both": "node scripts/deploy-migrations-both-dbs.mjs",
@@ -72,21 +68,16 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-signature-canvas": "^1.0.7",
-    "@vitest/ui": "^4.0.18",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
-    "jsdom": "^28.0.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5",
-    "vitest": "^4.0.18"
+    "typescript": "^5"
   },
   "engines": {
     "node": ">=20.9.0"

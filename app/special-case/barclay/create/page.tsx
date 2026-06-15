@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog"
 import { ReorderableRemarks } from "@/components/ui/reorderable-remarks"
+import { RemarkTemplateSelector } from "@/components/ui/remark-template-selector"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes"
 import {
@@ -85,23 +86,9 @@ export default function CreateBarclayTicketPage() {
   const [contactPosition, setContactPosition] = useState("")
   const [bastContactPerson, setBastContactPerson] = useState("")
   const [bastContactPosition, setBastContactPosition] = useState("")
-  const [remarks, setRemarks] = useState<Remark[]>([
-    {
-      id: "default-1",
-      text: "CV CATA KARYA ABADI",
-      isCompleted: false
-    },
-    {
-      id: "default-2",
-      text: "Bank BCA 3190254711 an CV CATA KARYA ABADI",
-      isCompleted: false
-    },
-    {
-      id: "default-3",
-      text: "NO NPWP CV : 99.971.897.6-451.000",
-      isCompleted: false
-    }
-  ])
+  const [remarks, setRemarks] = useState<Remark[]>([])
+  const [remarkTemplates, setRemarkTemplates] = useState<any[]>([])
+  const [loadedTemplateTexts, setLoadedTemplateTexts] = useState<string[]>([])
   const [termsAndConditions, setTermsAndConditions] = useState("")
   const [showTerms, setShowTerms] = useState(false)
   const [selectedSignatureId, setSelectedSignatureId] = useState("")
@@ -141,11 +128,19 @@ export default function CreateBarclayTicketPage() {
       fetch("/api/companies").then(res => res.json()),
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
-    ]).then(([companiesData, signaturesData, productsData]) => {
+      fetch("/api/remark-templates").then(res => res.json()),
+    ]).then(([companiesData, signaturesData, productsData, templatesData]) => {
       setCompanies(companiesData)
       setSignatures(signaturesData)
       setProducts(productsData.map((p: any) => p.name))
-      setProductDetails(productsData) // Store full product objects with details
+      setProductDetails(productsData)
+      setRemarkTemplates(templatesData)
+      const template = templatesData.find((t: any) => t.name === "Paragon & Barclay")
+      if (template) {
+        const sorted = [...template.items].sort((a: any, b: any) => a.order - b.order)
+        setRemarks(sorted.map((item: any) => ({ id: crypto.randomUUID(), text: item.text, isCompleted: false })))
+        setLoadedTemplateTexts(sorted.map((item: any) => item.text))
+      }
     }).catch(console.error)
   }, [])
 
@@ -192,6 +187,12 @@ export default function CreateBarclayTicketPage() {
   }
 
   // Remark management
+  const handleLoadTemplate = (items: Remark[], _templateId: string, texts: string[]) => {
+    markInteracted()
+    setRemarks(items)
+    setLoadedTemplateTexts(texts)
+  }
+
   const addRemark = () => {
     markInteracted()
     setRemarks([...remarks, {
@@ -834,15 +835,23 @@ export default function CreateBarclayTicketPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Remarks</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addRemark}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Remark
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <RemarkTemplateSelector
+                        templates={remarkTemplates}
+                        remarks={remarks}
+                        baselineTexts={loadedTemplateTexts}
+                        onLoad={handleLoadTemplate}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addRemark}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Remark
+                      </Button>
+                    </div>
                   </div>
                   {remarks.length > 0 && (
                     <ReorderableRemarks

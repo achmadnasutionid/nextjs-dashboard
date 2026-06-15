@@ -40,6 +40,7 @@ const ALL_CARDS: DashboardCard[] = [
   { id: "signatures", section: "Management", title: "Signatures", keywords: "signatures signature sign master", route: "/signatures", icon: "file-signature" },
   { id: "products", section: "Management", title: "Products", keywords: "products product master", route: "/products", icon: "package" },
   { id: "templates", section: "Management", title: "Templates", keywords: "templates template quotation master", route: "/templates", icon: "package-open" },
+  { id: "remark-templates", section: "Management", title: "Remarks", keywords: "remarks remark template master default", route: "/remark-templates", icon: "file-text" },
   { id: "backup", section: "Management", title: "Backup", keywords: "backup export import restore", route: "/backup", icon: "database" },
 ]
 

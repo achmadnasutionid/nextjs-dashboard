@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog"
 import { ReorderableRemarks } from "@/components/ui/reorderable-remarks"
+import { RemarkTemplateSelector } from "@/components/ui/remark-template-selector"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes"
 import {
@@ -96,18 +97,9 @@ export default function CreateErhaTicketPage() {
   const [contactPosition, setContactPosition] = useState("")
   const [bastContactPerson, setBastContactPerson] = useState("")
   const [bastContactPosition, setBastContactPosition] = useState("")
-  const [remarks, setRemarks] = useState<Remark[]>([
-    { id: "1", text: "Terms & Conditions :", isCompleted: false },
-    { id: "2", text: "* Overtime Production Shooting Day 10 % dari Fee invoice", isCompleted: false },
-    { id: "3", text: "* Quotation is valid for 7 days from the issue date.", isCompleted: false },
-    { id: "4", text: "* 50% down payment must be paid at least 1 day before the first project meeting. The remaining 50% is paid after the project is finished.", isCompleted: false },
-    { id: "5", text: "* More than 3 revisions per frame will be charged extra.", isCompleted: false },
-    { id: "6", text: "Penalty will be applied if client use our Photo & Videshoot without our consent for printed media placement outside the initial agreement :", isCompleted: false },
-    { id: "7", text: "* Small Ussage ( Flyer, Katalog, Brosur, Kupon, Kotak Gift, Booklet PR Package, Kartu Ucapan ) 15% dari invoice awal", isCompleted: false },
-    { id: "8", text: "* Medium Ussage (POP, TV Store, TV Led Instore, both, bazaar, Backwall, Wobler, add 20%", isCompleted: false },
-    { id: "9", text: "* Big Print (Billboard, OOH Outdoor, LED Screen Outdoor, Megatron, Umbull, dll) 50% + tnc berlanjut", isCompleted: false },
-    { id: "10", text: "* Additional overseas media placement (digital and printed) will be charged .(bisa di edit) % of total", isCompleted: false },
-  ])
+  const [remarks, setRemarks] = useState<Remark[]>([])
+  const [remarkTemplates, setRemarkTemplates] = useState<any[]>([])
+  const [loadedTemplateTexts, setLoadedTemplateTexts] = useState<string[]>([])
   const [termsAndConditions, setTermsAndConditions] = useState("")
   const [showTerms, setShowTerms] = useState(false)
   const [selectedBillingId, setSelectedBillingId] = useState("")
@@ -152,12 +144,20 @@ export default function CreateErhaTicketPage() {
       fetch("/api/billings").then(res => res.json()),
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
-    ]).then(([companiesData, billingsData, signaturesData, productsData]) => {
+      fetch("/api/remark-templates").then(res => res.json()),
+    ]).then(([companiesData, billingsData, signaturesData, productsData, templatesData]) => {
       setCompanies(companiesData)
       setBillings(billingsData)
       setSignatures(signaturesData)
       setProducts(productsData.map((p: any) => p.name))
-      setProductDetails(productsData) // Store full product objects with details
+      setProductDetails(productsData)
+      setRemarkTemplates(templatesData)
+      const defaultTemplate = templatesData.find((t: any) => t.name === "Default")
+      if (defaultTemplate) {
+        const sorted = [...defaultTemplate.items].sort((a: any, b: any) => a.order - b.order)
+        setRemarks(sorted.map((item: any) => ({ id: crypto.randomUUID(), text: item.text, isCompleted: false })))
+        setLoadedTemplateTexts(sorted.map((item: any) => item.text))
+      }
     }).catch(console.error)
   }, [])
 
@@ -204,6 +204,12 @@ export default function CreateErhaTicketPage() {
   }
 
   // Remark management
+  const handleLoadTemplate = (items: Remark[], _templateId: string, texts: string[]) => {
+    markInteracted()
+    setRemarks(items)
+    setLoadedTemplateTexts(texts)
+  }
+
   const addRemark = () => {
     markInteracted()
     setRemarks([...remarks, {
@@ -890,15 +896,23 @@ export default function CreateErhaTicketPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Remarks</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addRemark}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Remark
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <RemarkTemplateSelector
+                        templates={remarkTemplates}
+                        remarks={remarks}
+                        baselineTexts={loadedTemplateTexts}
+                        onLoad={handleLoadTemplate}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addRemark}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Remark
+                      </Button>
+                    </div>
                   </div>
                   {remarks.length > 0 && (
                     <ReorderableRemarks

@@ -1,0 +1,135 @@
+HARDCODED REMARKS ANALYSIS
+==========================
+Generated: 2026-06-15
+
+OVERVIEW
+--------
+Remarks are hardcoded as string arrays in 7 places across the codebase.
+No database model for remark templates exists yet.
+
+
+LOCATIONS
+---------
+
+1. app/quotation/create/page.tsx
+   - Lines 116-127  : initial state (useState default)
+   - Lines 242-253  : resetToDefaultRemarks() function
+
+2. app/quotation/[id]/edit/page.tsx
+   - Lines 116-127  : DEFAULT_REMARKS constant
+
+3. app/invoice/create/page.tsx
+   - Lines 112-123  : initial state (useState default)
+   - Lines 206-217  : resetToDefaultRemarks() function
+
+4. app/invoice/[id]/edit/page.tsx
+   - Lines 116-127  : DEFAULT_REMARKS constant
+
+5. app/special-case/paragon/create/page.tsx
+   - Lines 88-104   : initial state
+
+6. app/special-case/barclay/create/page.tsx
+   - Lines 88-104   : initial state
+
+7. app/special-case/erha/create/page.tsx
+   - Lines 95-110   : initial state
+
+
+STANDARD 10-ITEM SET (used in quotation, invoice, erha)
+--------------------------------------------------------
+1.  "Terms & Conditions :"
+2.  "* Overtime Production Shooting Day 10 % dari Fee invoice"
+3.  "* Quotation is valid for 7 days from the issue date."
+    (invoice version: "Invoice is valid for 7 days from the issue date.")
+4.  "* 50% down payment must be paid at least 1 day before the first project meeting. The remaining 50% is paid after the project is finished."
+5.  "* More than 3 revisions per frame will be charged extra."
+6.  "Penalty will be applied if client use our Photo & Videshoot without our consent for printed media placement outside the initial agreement :"
+7.  "* Small Ussage ( Flyer, Katalog, Brosur, Kupon, Kotak Gift, Booklet PR Package, Kartu Ucapan ) 15% dari invoice awal"
+8.  "* Medium Ussage (POP, TV Store, TV Led Instore, both, bazaar, Backwall, Wobler, add 20%"
+9.  "* Big Print (Billboard, OOH Outdoor, LED Screen Outdoor, Megatron, Umbull, dll) 50% + tnc berlanjut"
+10. "* Additional overseas media placement (digital and printed) will be charged .(bisa di edit) % of total"
+
+
+PARAGON / BARCLAY 3-ITEM SET
+------------------------------
+1. "CV CATA KARYA ABADI"
+2. "Bank BCA 3190254711 an CV CATA KARYA ABADI"
+3. "NO NPWP CV : 99.971.897.6-451.000"
+
+
+CONFIRMED FEATURE DESIGN: REMARKS MASTER DATA
+==============================================
+
+STORAGE APPROACH
+----------------
+- Remarks are still saved on quotation/invoice as a plain string array (JSON) — same as today
+- NO foreign key from documents to templates
+- Templates are copy-on-load only: selecting a template copies its strings into the form
+- Editing master data NEVER affects existing documents
+- Editing document remarks NEVER affects master data
+
+NEW DB MODEL
+------------
+  RemarkTemplate {
+    id        String   @id  (cuid)
+    name      String        (e.g. "Default", "Paragon & Barclay")
+    items     String[]      (array of remark strings)
+    createdAt DateTime
+    updatedAt DateTime
+  }
+
+Seed data (2 templates to create on first migration):
+  "Default"          → the standard 10-item set above
+  "Paragon & Barclay" → the 3-item company info set above
+
+
+AUTO-LOAD ON CREATE PAGES
+--------------------------
+  quotation/create        → auto-load "Default" template on mount
+  invoice/create          → auto-load "Default" template on mount
+  special-case/erha/create       → auto-load "Default" template on mount
+  special-case/paragon/create    → auto-load "Paragon & Barclay" template on mount
+  special-case/barclay/create    → auto-load "Paragon & Barclay" template on mount
+
+
+TEMPLATE SWITCHER (replaces resetToDefaultRemarks button)
+----------------------------------------------------------
+  - Dropdown showing all available templates
+  - Selecting a template replaces current remarks with template items
+  - Confirmation popup shown ONLY if current remarks differ from what
+    was originally loaded (i.e. user has made edits)
+  - Popup message: "Your remarks have been modified. Loading a new
+    template will replace all current remarks. Continue?"
+  - If remarks are unchanged → swap immediately, no popup
+
+
+EDIT PAGES BEHAVIOR
+-------------------
+  - Load existing remarks from the saved document (no auto-load from template)
+  - If document has no remarks saved → show empty list, no auto-load
+  - Template switcher is still available so user can pick a template to start from
+
+
+NEW MASTER DATA PAGE
+--------------------
+  Route: /master-data/remarks  (or similar, consistent with existing master data routes)
+  Features:
+    - List all remark templates (name, item count)
+    - Create new template (name + list of remark items, reorderable)
+    - Edit template name and items
+    - Delete template
+  Editing a template does NOT retroactively change any quotation/invoice
+
+
+PLACES TO UPDATE AFTER DB MODEL IS READY
+-----------------------------------------
+  1. prisma/schema.prisma           → add RemarkTemplate model
+  2. app/api/remark-templates/      → CRUD API routes
+  3. app/master-data/remarks/       → master data UI page
+  4. quotation/create               → remove hardcoded array, fetch + auto-load Default
+  5. quotation/[id]/edit            → remove DEFAULT_REMARKS, add template switcher
+  6. invoice/create                 → remove hardcoded array, fetch + auto-load Default
+  7. invoice/[id]/edit              → remove DEFAULT_REMARKS, add template switcher
+  8. special-case/paragon/create    → remove hardcoded array, auto-load Paragon & Barclay
+  9. special-case/barclay/create    → remove hardcoded array, auto-load Paragon & Barclay
+  10. special-case/erha/create      → remove hardcoded array, auto-load Default

@@ -654,6 +654,30 @@ model QuotationTemplateItemDetail {
   @@index([itemId])
 }
 
+model RemarkTemplate {
+  id        String               @id @default(cuid())
+  name      String               @unique
+  deletedAt DateTime?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  items     RemarkTemplateItem[]
+
+  @@index([deletedAt])
+}
+
+model RemarkTemplateItem {
+  id         String         @id @default(cuid())
+  templateId String
+  text       String
+  order      Int            @default(0)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  template   RemarkTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@index([templateId, order])
+}
+
 model ProductionTracker {
   id             String    @id @default(cuid())
   trackerId      String    @unique
