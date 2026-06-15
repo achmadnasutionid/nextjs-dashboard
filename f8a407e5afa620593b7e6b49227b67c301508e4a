@@ -1,0 +1,55 @@
+app/page.tsx
+  2201b41a2d78cd0a 43
+prisma/schema.prisma
+  2201b41a2d78cd0a 657-680
+prisma/migrations/20260615000000_add_remark_templates/migration.sql
+  2201b41a2d78cd0a 1-57
+components/ui/remark-template-selector.tsx
+  2201b41a2d78cd0a 1-134
+app/special-case/barclay/create/page.tsx
+  2201b41a2d78cd0a 21,89-91,131-132,136-143,190-195,838-854
+app/invoice/[id]/edit/page.tsx
+  2201b41a2d78cd0a 43,148-150,274-275,365-367,527,529-530,1136-1141
+app/invoice/create/page.tsx
+  2201b41a2d78cd0a 34,113-115,155-156,161-168,204,206-207,774-779
+app/quotation/[id]/edit/page.tsx
+  2201b41a2d78cd0a 44,147-149,272-273,355-357,515,517-518,1121-1126
+app/remark-templates/page.tsx
+  2201b41a2d78cd0a 1-460
+hardcoded-remarks-analysis.txt
+  2201b41a2d78cd0a 1-135
+app/quotation/create/page.tsx
+  2201b41a2d78cd0a 35,117-119,159-160,165-172,240,242-243,794-799
+app/special-case/erha/create/page.tsx
+  2201b41a2d78cd0a 21,100-102,147-148,153-160,207-212,899-915
+types/index.ts
+  2201b41a2d78cd0a 143-164
+app/api/remark-templates/[id]/route.ts
+  2201b41a2d78cd0a 1-98
+app/api/remark-templates/route.ts
+  2201b41a2d78cd0a 1-65
+app/special-case/paragon/create/page.tsx
+  2201b41a2d78cd0a 21,89-91,131-132,136-143,190-195,838-854
+package.json
+  2201b41a2d78cd0a 80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "f8a407e5afa620593b7e6b49227b67c301508e4a",
+  "prompts": {
+    "2201b41a2d78cd0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "00e141ca-3ae0-4242-bae2-d67caea4fec6",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 12004,
+      "total_deletions": 11059,
+      "accepted_lines": 11654,
+      "overriden_lines": 0
+    }
+  }
+}
