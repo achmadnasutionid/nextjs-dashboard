@@ -156,7 +156,7 @@ export default function CreateQuotationPage() {
       fetch("/api/billings").then(res => res.json()),
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
-      fetch("/api/remark-templates").then(res => res.json()),
+      fetch("/api/remark-templates").then(res => res.ok ? res.json() : []),
     ]).then(([companiesData, billingsData, signaturesData, productsData, templatesData]) => {
       setCompanies(companiesData)
       setBillings(billingsData)

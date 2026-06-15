@@ -271,7 +271,7 @@ export default function EditInvoicePage() {
       fetch("/api/billings").then(res => res.json()),
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
-      fetch("/api/remark-templates").then(res => res.json()),
+      fetch("/api/remark-templates").then(res => res.ok ? res.json() : []),
     ]).then(([InvoiceData, companiesData, billingsData, signaturesData, productsData, templatesData]) => {
       setInvoiceNumber(InvoiceData.invoiceId)
       setInvoiceStatus(InvoiceData.status)

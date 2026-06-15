@@ -128,7 +128,7 @@ export default function CreateParagonTicketPage() {
       fetch("/api/companies").then(res => res.json()),
       fetch("/api/signatures").then(res => res.json()),
       fetch("/api/products").then(res => res.json()),
-      fetch("/api/remark-templates").then(res => res.json()),
+      fetch("/api/remark-templates").then(res => res.ok ? res.json() : []),
     ]).then(([companiesData, signaturesData, productsData, templatesData]) => {
       setCompanies(companiesData)
       setSignatures(signaturesData)
