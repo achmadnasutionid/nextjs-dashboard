@@ -1,0 +1,23 @@
+app/remark-templates/page.tsx
+  2201b41a2d78cd0a 3,119-120,125-129,304,417,433
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.23",
+  "base_commit_sha": "b05b1220b76cc78a37eb9a59a24145ede36b63db",
+  "prompts": {
+    "2201b41a2d78cd0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "00e141ca-3ae0-4242-bae2-d67caea4fec6",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 4,
+      "accepted_lines": 12,
+      "overriden_lines": 0
+    }
+  }
+}
