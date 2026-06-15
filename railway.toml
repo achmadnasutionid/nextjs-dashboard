@@ -1,4 +1,4 @@
 [deploy]
-startCommand = "prisma generate && npm start"
+startCommand = "npm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
