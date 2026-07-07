@@ -109,6 +109,7 @@ export async function POST(
         signatureRole: originalQuotation.signatureRole,
         signatureImageData: originalQuotation.signatureImageData,
         pph: originalQuotation.pph,
+        pphDeduction: originalQuotation.pphDeduction,
         totalAmount: useDownPayment
           ? sumScaledItemsTotal(scaledItems!)
           : originalQuotation.totalAmount,
@@ -173,7 +174,8 @@ export async function POST(
             data: {
               totalAmount: grandTotalFromSubtotalAndPph(
                 newSub,
-                originalQuotation.pph
+                originalQuotation.pph,
+                originalQuotation.pphDeduction
               ),
             },
           })

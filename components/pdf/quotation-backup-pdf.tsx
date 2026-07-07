@@ -7,6 +7,7 @@
 import React from "react"
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
+import { calculatePphAmount, calculateGrandTotal } from "@/lib/pph-calc"
 
 const styles = StyleSheet.create({
   page: {
@@ -194,6 +195,7 @@ export type QuotationBackupPDFData = {
   downPaymentPercentage?: number | null
   signatures?: Array<{ name: string; position: string; imageData?: string }>
   pph: string
+  pphDeduction?: boolean
   totalAmount: number
   status: string
   remarks?: Array<{ text: string; isCompleted: boolean }>
@@ -214,16 +216,17 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
   }))
   const netAmount = safeItems.reduce((sum, item) => sum + (item.total || 0), 0)
   const pphRate = parseFloat(data.pph || "0")
-  const grossAmount = pphRate > 0 ? netAmount * (100 / (100 - pphRate)) : netAmount
-  const pphAmount = grossAmount - netAmount
+  const pphDeduction = data.pphDeduction ?? false
+  const pphAmount = calculatePphAmount(netAmount, data.pph || "0", pphDeduction)
+  const grandTotalAmount = calculateGrandTotal(netAmount, pphAmount, pphDeduction)
   const pphOption = PPH_OPTIONS.find((o) => o.value === data.pph)
   const pphLabel = pphOption ? pphOption.label : `PPh (${data.pph}%)`
   const pphParts = pphLabel.split(" - After reporting")
   const pphMainLabel = pphParts[0]
   const pphNote = pphParts[1] ? "After reporting" + pphParts[1] : null
   const downPaymentRate = typeof data.downPaymentPercentage === "number" ? data.downPaymentPercentage : 0
-  const downPaymentAmount = downPaymentRate > 0 ? grossAmount * (downPaymentRate / 100) : 0
-  const principalAmount = grossAmount - downPaymentAmount
+  const downPaymentAmount = downPaymentRate > 0 ? grandTotalAmount * (downPaymentRate / 100) : 0
+  const principalAmount = grandTotalAmount - downPaymentAmount
   const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(",") : ["subtotal", "pph", "total"]
   const showPph = pphRate > 0
   const summaryItems = summaryOrderRaw.reduce<Array<{
@@ -243,7 +246,7 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
       return acc
     }
     if (id === "total") {
-      acc.push({ id: "total", label: "Total Amount", value: grossAmount, isTotal: true })
+      acc.push({ id: "total", label: "Total Amount", value: grandTotalAmount, isTotal: true })
     }
     return acc
   }, [])
@@ -355,7 +358,7 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
                   <Text>{item.label}:</Text>
                   {item.note ? <Text style={styles.termsLine}>{item.note}</Text> : null}
                 </View>
-                <Text>{item.id === "pph" ? "+ " : ""}{formatCurrency(item.value)}</Text>
+                <Text style={item.id === "pph" ? { color: pphDeduction ? "red" : "green" } : undefined}>{item.id === "pph" ? (pphDeduction ? "- " : "+ ") : ""}{formatCurrency(item.value)}</Text>
               </View>
             </View>
           ))}

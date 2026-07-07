@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(export NODE_OPTIONS='--max-old-space-size=4096')",
+      "Bash(npx next *)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(disown)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3457/ --max-time 3)",
+      "Read(//tmp/**)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:3457/quotation/create --max-time 5)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:3457/ --max-time 3)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3457 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -Confirm:$false } catch {} })"
+    ]
+  }
+}

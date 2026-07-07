@@ -48,6 +48,7 @@ export async function POST(request: Request) {
         signatureRole: body.signatureRole ?? null,
         signatureImageData: body.signatureImageData ?? "",
         pph: body.pph ?? "0",
+        pphDeduction: body.pphDeduction ?? false,
         totalAmount: body.totalAmount != null ? Number(body.totalAmount) : 0,
         summaryOrder: body.summaryOrder ?? "subtotal,pph,total",
         termsAndConditions: body.termsAndConditions ?? null,

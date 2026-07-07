@@ -145,6 +145,7 @@ export async function PUT(
           signatureRole: body.signatureRole || null,
           signatureImageData: body.signatureImageData,
           pph: body.pph,
+          pphDeduction: body.pphDeduction ?? false,
           totalAmount: safeParseFloat(body.totalAmount),
           summaryOrder: body.summaryOrder || "subtotal,pph,downPayment,total",
           adjustmentPercentage: body.adjustmentPercentage != null ? parseFloat(body.adjustmentPercentage) : null,

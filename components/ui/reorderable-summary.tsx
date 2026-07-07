@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Edit2, Check, GripVertical, Landmark } from "lucide-react"
+import { Edit2, Check, GripVertical, Landmark, Plus, Minus } from "lucide-react"
 import { DownPaymentModal } from "@/components/ui/down-payment-modal"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable"
@@ -22,6 +22,10 @@ interface ReorderableSummaryProps {
   onSetDownPayment?: (percentage: number) => void
   /** Saved down payment percentage to prefill modal and render summary label. */
   downPaymentPercentage?: number | null
+  /** Whether PPh is deducted from the total (true) or grossed-up on top of it (false, default). */
+  pphDeduction?: boolean
+  /** Flips pphDeduction. When provided, shows a toggle button next to the down payment / reorder buttons. */
+  onTogglePphDeduction?: () => void
 }
 
 function isZeroMoneyValue(value: string) {
@@ -78,6 +82,8 @@ export function ReorderableSummary({
   onReorder,
   onSetDownPayment,
   downPaymentPercentage,
+  pphDeduction = false,
+  onTogglePphDeduction,
 }: ReorderableSummaryProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [showDownPaymentModal, setShowDownPaymentModal] = useState(false)
@@ -154,6 +160,21 @@ export function ReorderableSummary({
               <Landmark className="h-4 w-4" />
             </Button>
           )}
+          {onTogglePphDeduction != null && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onTogglePphDeduction}
+              title={pphDeduction ? "PPh mode: Deduction (-)" : "PPh mode: Gross-up (+)"}
+            >
+              {pphDeduction ? (
+                <Minus className="h-4 w-4 text-red-600" />
+              ) : (
+                <Plus className="h-4 w-4 text-green-600" />
+              )}
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -203,8 +224,8 @@ export function ReorderableSummary({
                     </div>
                   )}
                 </div>
-                <span className={`font-medium ${item.id === "total" ? 'text-primary' : item.id === 'pph' ? 'text-green-600' : ''}`}>
-                  {item.id === 'pph' && '+ '}{item.value}
+                <span className={`font-medium ${item.id === "total" ? 'text-primary' : item.id === 'pph' ? (pphDeduction ? 'text-red-600' : 'text-green-600') : ''}`}>
+                  {item.id === 'pph' && (pphDeduction ? '- ' : '+ ')}{item.value}
                 </span>
               </div>
             </div>

@@ -110,6 +110,7 @@ export async function POST(
         signatureRole: originalInvoice.signatureRole,
         signatureImageData: originalInvoice.signatureImageData,
         pph: originalInvoice.pph,
+        pphDeduction: originalInvoice.pphDeduction,
         totalAmount: useDownPayment
           ? sumScaledItemsTotal(scaledItems!)
           : originalInvoice.totalAmount,
@@ -174,7 +175,8 @@ export async function POST(
             data: {
               totalAmount: grandTotalFromSubtotalAndPph(
                 newSub,
-                originalInvoice.pph
+                originalInvoice.pph,
+                originalInvoice.pphDeduction
               ),
             },
           })

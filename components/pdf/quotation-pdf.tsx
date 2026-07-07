@@ -1,6 +1,7 @@
 import React from "react"
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
+import { calculatePphAmount, calculateGrandTotal } from "@/lib/pph-calc"
 
 const styles = StyleSheet.create({
   page: {
@@ -176,6 +177,7 @@ interface QuotationPDFProps {
       imageData: string
     }>
     pph: string
+    pphDeduction?: boolean
     totalAmount: number
     status: string
     remarks?: Array<{
@@ -332,17 +334,14 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
     details: (item.details || [])
   }))
   
-  // Items total is the NET amount (after tax deduction)
+  // Items total is the NET amount (before PPh is applied)
   const netAmount = safeItems.reduce((sum, item) => sum + (item.total || 0), 0)
-  
-  // Calculate GROSS amount (before tax deduction)
-  // Formula: Gross = Net × (100 / (100 - pph%))
+
   const pphRate = parseFloat(data.pph || "0")
-  const grossAmount = pphRate > 0 ? netAmount * (100 / (100 - pphRate)) : netAmount
-  
-  // PPh amount is the difference
-  const pphAmount = grossAmount - netAmount
-  
+  const pphDeduction = data.pphDeduction ?? false
+  const pphAmount = calculatePphAmount(netAmount, data.pph || "0", pphDeduction)
+  const grandTotalAmount = calculateGrandTotal(netAmount, pphAmount, pphDeduction)
+
   // Get PPh label from constants
   const pphOption = PPH_OPTIONS.find(option => option.value === data.pph)
   const pphLabel = pphOption ? pphOption.label : `PPh (${data.pph}%)`
@@ -384,8 +383,8 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
   ]
 
   const downPaymentRate = typeof data.downPaymentPercentage === "number" ? data.downPaymentPercentage : 0
-  const downPaymentAmount = downPaymentRate > 0 ? grossAmount * (downPaymentRate / 100) : 0
-  const principalAmount = grossAmount - downPaymentAmount
+  const downPaymentAmount = downPaymentRate > 0 ? grandTotalAmount * (downPaymentRate / 100) : 0
+  const principalAmount = grandTotalAmount - downPaymentAmount
 
   // Get summary order or use default
   const summaryOrderRaw = data.summaryOrder ? data.summaryOrder.split(',') : ['subtotal', 'pph', 'total']
@@ -409,7 +408,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
       return acc
     }
     if (id === "total") {
-      acc.push({ id: "total", label: "Total Amount", value: grossAmount, isTotal: true })
+      acc.push({ id: "total", label: "Total Amount", value: grandTotalAmount, isTotal: true })
     }
     return acc
   }, [])
@@ -790,8 +789,8 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
                     </Text>
                   ) : null}
                 </View>
-                <Text style={item.id === 'pph' ? { color: "green" } : { color: "#000" }}>
-                  {item.id === 'pph' ? "+ " : ""}{formatCurrency(item.value)}
+                <Text style={item.id === 'pph' ? { color: pphDeduction ? "red" : "green" } : { color: "#000" }}>
+                  {item.id === 'pph' ? (pphDeduction ? "- " : "+ ") : ""}{formatCurrency(item.value)}
                 </Text>
               </View>
             </View>

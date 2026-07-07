@@ -82,6 +82,7 @@ export async function POST(
         signatureRole: quotation.signatureRole,
         signatureImageData: quotation.signatureImageData,
         pph: quotation.pph,
+        pphDeduction: quotation.pphDeduction,
         totalAmount: quotation.totalAmount,
         status: "pending",
         items: {

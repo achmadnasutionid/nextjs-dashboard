@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PPH_OPTIONS } from "@/lib/constants"
+import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal } from "@/lib/pph-calc"
 import { formatProductName } from "@/lib/utils"
 import { scrollToFirstError } from "@/lib/form-utils"
 import { ReorderableSummary } from "@/components/ui/reorderable-summary"
@@ -122,6 +123,7 @@ export default function CreateQuotationPage() {
   const [selectedBillingId, setSelectedBillingId] = useState("")
   const [selectedSignatureId, setSelectedSignatureId] = useState("")
   const [pph, setPph] = useState("2") // Auto-select PPH 23 2%
+  const [pphDeduction, setPphDeduction] = useState(false)
   const [items, setItems] = useState<Item[]>([])
   const [customSignatures, setCustomSignatures] = useState<CustomSignature[]>([])
   const [showSignatures, setShowSignatures] = useState(false)
@@ -467,17 +469,11 @@ export default function CreateQuotationPage() {
   }
 
   const calculatePphAmount = () => {
-    const netAmount = calculateSubtotal()
-    const pphRate = parseFloat(pph)
-    if (pphRate === 0) return 0
-    // Formula: Gross = Net × (100 / (100 - pph%))
-    // PPh Amount = Gross - Net
-    const grossAmount = netAmount * (100 / (100 - pphRate))
-    return grossAmount - netAmount
+    return calculatePphAmountFromRate(calculateSubtotal(), pph, pphDeduction)
   }
 
   const calculateTotalAmount = () => {
-    return calculateSubtotal() + calculatePphAmount()
+    return calculateGrandTotal(calculateSubtotal(), calculatePphAmount(), pphDeduction)
   }
 
   const calculateDownPaymentAmount = () => {
@@ -625,6 +621,7 @@ export default function CreateQuotationPage() {
         signatureRole: signature?.role || null,
         signatureImageData: signature?.imageData || "",
         pph,
+        pphDeduction,
         totalAmount: calculateTotalAmount(),
         summaryOrder: summaryOrder.join(","),
         adjustmentPercentage: adjustmentPercentage ?? undefined,
@@ -1161,6 +1158,11 @@ export default function CreateQuotationPage() {
                     toast.success(`Down payment set to ${percentage}%`)
                   }}
                   downPaymentPercentage={downPaymentPercentage}
+                  pphDeduction={pphDeduction}
+                  onTogglePphDeduction={() => {
+                    markInteracted()
+                    setPphDeduction((v) => !v)
+                  }}
                 />
               )}
 

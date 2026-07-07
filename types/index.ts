@@ -80,6 +80,7 @@ export interface Invoice {
   signatureRole: string | null
   signatureImageData: string
   pph: string
+  pphDeduction: boolean
   totalAmount: number
   status: DocumentStatus
   deletedAt: Date | null
@@ -121,6 +122,7 @@ export interface Quotation {
   signatureRole: string | null
   signatureImageData: string
   pph: string
+  pphDeduction: boolean
   totalAmount: number
   status: DocumentStatus
   generatedInvoiceId: string | null

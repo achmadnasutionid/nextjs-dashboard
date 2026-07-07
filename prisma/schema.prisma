@@ -101,6 +101,7 @@ model Quotation {
   signatureRole          String?
   signatureImageData     String
   pph                    String
+  pphDeduction           Boolean              @default(false)
   totalAmount            Float
   summaryOrder           String?              @default("subtotal,pph,downPayment,total")
   adjustmentPercentage   Float?
@@ -214,6 +215,7 @@ model Invoice {
   signatureRole          String?
   signatureImageData     String
   pph                    String
+  pphDeduction           Boolean            @default(false)
   totalAmount            Float
   summaryOrder           String?            @default("subtotal,pph,downPayment,total")
   adjustmentPercentage   Float?

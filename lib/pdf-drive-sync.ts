@@ -55,6 +55,7 @@ export function toQuotationPdfData(q: {
   signatureRole: string | null
   signatureImageData: string
   pph: string
+  pphDeduction: boolean
   totalAmount: number
   status: string
   createdAt: Date
@@ -89,6 +90,7 @@ export function toQuotationPdfData(q: {
     signatureRole: q.signatureRole ?? undefined,
     signatureImageData: q.signatureImageData,
     pph: q.pph,
+    pphDeduction: q.pphDeduction,
     totalAmount: q.totalAmount,
     status: q.status,
     summaryOrder: q.summaryOrder ?? undefined,
@@ -130,6 +132,7 @@ export function toInvoicePdfData(inv: {
   signatureRole: string | null
   signatureImageData: string
   pph: string
+  pphDeduction: boolean
   totalAmount: number
   status: string
   createdAt: Date
@@ -164,6 +167,7 @@ export function toInvoicePdfData(inv: {
     signatureRole: inv.signatureRole ?? undefined,
     signatureImageData: inv.signatureImageData,
     pph: inv.pph,
+    pphDeduction: inv.pphDeduction,
     totalAmount: inv.totalAmount,
     status: inv.status,
     summaryOrder: inv.summaryOrder ?? undefined,

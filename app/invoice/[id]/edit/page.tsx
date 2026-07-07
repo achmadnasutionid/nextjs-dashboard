@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PPH_OPTIONS } from "@/lib/constants"
+import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal } from "@/lib/pph-calc"
 import { formatProductName } from "@/lib/utils"
 import { scrollToFirstError } from "@/lib/form-utils"
 import { ReorderableSummary } from "@/components/ui/reorderable-summary"
@@ -131,6 +132,7 @@ export default function EditInvoicePage() {
   const [selectedBillingId, setSelectedBillingId] = useState("")
   const [selectedSignatureId, setSelectedSignatureId] = useState("")
   const [pph, setPph] = useState("2") // Auto-select PPH 23 2%
+  const [pphDeduction, setPphDeduction] = useState(false)
   const [items, setItems] = useState<Item[]>([])
   const [customSignatures, setCustomSignatures] = useState<CustomSignature[]>([])
   const [showSignatures, setShowSignatures] = useState(false)
@@ -211,8 +213,11 @@ export default function EditInvoicePage() {
         signatureRole: signature.role,
         signatureImageData: signature.imageData,
         pph,
-        totalAmount: items.reduce((sum, item) => sum + item.total, 0) + 
-                     (items.reduce((sum, item) => sum + item.total, 0) * (100 / (100 - parseFloat(pph))) - items.reduce((sum, item) => sum + item.total, 0)),
+        pphDeduction,
+        totalAmount: (() => {
+          const netAmount = items.reduce((sum, item) => sum + item.total, 0)
+          return calculateGrandTotal(netAmount, calculatePphAmountFromRate(netAmount, pph, pphDeduction), pphDeduction)
+        })(),
         summaryOrder: summaryOrder.join(","),
         adjustmentPercentage: adjustmentPercentage ?? undefined,
         adjustmentNotes: adjustmentNotes.trim() || undefined,
@@ -302,6 +307,7 @@ export default function EditInvoicePage() {
       if (signature) setSelectedSignatureId(signature.id)
       
       setPph(InvoiceData.pph)
+      setPphDeduction(InvoiceData.pphDeduction ?? false)
       setSummaryOrder(normalizeSummaryOrder(InvoiceData.summaryOrder ? InvoiceData.summaryOrder.split(',') : undefined))
       setAdjustmentPercentage(InvoiceData.adjustmentPercentage ?? null)
       setAdjustmentNotes(InvoiceData.adjustmentNotes ?? "")
@@ -377,6 +383,7 @@ export default function EditInvoicePage() {
         selectedBillingId: billing?.id,
         selectedSignatureId: signature?.id,
         pph: InvoiceData.pph,
+        pphDeduction: InvoiceData.pphDeduction ?? false,
         summaryOrder: normalizeSummaryOrder(InvoiceData.summaryOrder ? InvoiceData.summaryOrder.split(',') : undefined),
         adjustmentPercentage: InvoiceData.adjustmentPercentage ?? null,
         adjustmentNotes: InvoiceData.adjustmentNotes ?? "",
@@ -406,6 +413,7 @@ export default function EditInvoicePage() {
       selectedBillingId,
       selectedSignatureId,
       pph,
+      pphDeduction,
       summaryOrder,
       adjustmentPercentage,
       adjustmentNotes,
@@ -413,9 +421,9 @@ export default function EditInvoicePage() {
       remarks,
       items
     })
-    
+
     setHasUnsavedChanges(currentData !== initialDataRef.current)
-  }, [selectedCompanyId, productionDate, paidDate, billTo, notes, selectedBillingId, selectedSignatureId, pph, summaryOrder, adjustmentPercentage, adjustmentNotes, downPaymentPercentage, remarks, items, loading])
+  }, [selectedCompanyId, productionDate, paidDate, billTo, notes, selectedBillingId, selectedSignatureId, pph, pphDeduction, summaryOrder, adjustmentPercentage, adjustmentNotes, downPaymentPercentage, remarks, items, loading])
 
   // Trigger auto-save when data changes (only if mandatory fields filled)
   useEffect(() => {
@@ -425,7 +433,7 @@ export default function EditInvoicePage() {
     if (selectedCompanyId && productionDate && billTo.trim() && selectedBillingId && selectedSignatureId) {
       triggerAutoSave()
     }
-  }, [selectedCompanyId, productionDate, paidDate, billTo, selectedBillingId, selectedSignatureId, items, notes, pph, remarks, termsAndConditions, customSignatures, summaryOrder, downPaymentPercentage, loading, InvoiceId, triggerAutoSave])
+  }, [selectedCompanyId, productionDate, paidDate, billTo, selectedBillingId, selectedSignatureId, items, notes, pph, pphDeduction, remarks, termsAndConditions, customSignatures, summaryOrder, downPaymentPercentage, loading, InvoiceId, triggerAutoSave])
 
   // Check for stale data when user returns to tab
   useEffect(() => {
@@ -696,15 +704,12 @@ export default function EditInvoicePage() {
   }, [items])
 
   const pphAmount = useMemo(() => {
-    const pphRate = parseFloat(pph)
-    if (pphRate === 0) return 0
-    const grossAmount = subtotal * (100 / (100 - pphRate))
-    return grossAmount - subtotal
-  }, [subtotal, pph])
+    return calculatePphAmountFromRate(subtotal, pph, pphDeduction)
+  }, [subtotal, pph, pphDeduction])
 
   const totalAmount = useMemo(() => {
-    return subtotal + pphAmount
-  }, [subtotal, pphAmount])
+    return calculateGrandTotal(subtotal, pphAmount, pphDeduction)
+  }, [subtotal, pphAmount, pphDeduction])
 
   const downPaymentAmount = useMemo(() => {
     const pct = downPaymentPercentage ?? 0
@@ -862,6 +867,7 @@ export default function EditInvoicePage() {
         signatureRole: signature.role,
         signatureImageData: signature.imageData,
         pph,
+        pphDeduction,
         totalAmount: totalAmount,
         summaryOrder: summaryOrder.join(","),
         adjustmentPercentage: adjustmentPercentage ?? undefined,
@@ -1465,6 +1471,11 @@ export default function EditInvoicePage() {
                     toast.success(`Down payment set to ${percentage}%`)
                   }}
                   downPaymentPercentage={downPaymentPercentage}
+                  pphDeduction={pphDeduction}
+                  onTogglePphDeduction={() => {
+                    setHasUnsavedChanges(true)
+                    setPphDeduction((v) => !v)
+                  }}
                 />
               )}
 

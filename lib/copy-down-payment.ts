@@ -3,6 +3,8 @@
  * every line item and detail amount is scaled by (percentage / 100).
  */
 
+import { calculatePphAmount, calculateGrandTotal } from "@/lib/pph-calc"
+
 export type ParsedCopyOptions =
   | { mode: "general" }
   | { mode: "downPayment"; percentage: number }
@@ -79,11 +81,8 @@ function formatPercentageLabel(pct: number): string {
 }
 
 /** Grand total from net subtotal + PPh — matches quotation/invoice/Paragon/Erha edit screens. */
-export function grandTotalFromSubtotalAndPph(subtotal: number, pph: string): number {
-  const pphRate = parseFloat(pph)
-  if (Number.isNaN(pphRate) || pphRate <= 0) return subtotal
-  if (pphRate >= 100) return subtotal
-  return subtotal * (100 / (100 - pphRate))
+export function grandTotalFromSubtotalAndPph(subtotal: number, pph: string, pphDeduction = false): number {
+  return calculateGrandTotal(subtotal, calculatePphAmount(subtotal, pph, pphDeduction), pphDeduction)
 }
 
 /**
