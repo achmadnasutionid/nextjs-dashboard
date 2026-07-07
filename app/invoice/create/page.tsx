@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PPH_OPTIONS } from "@/lib/constants"
-import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal } from "@/lib/pph-calc"
+import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
 import { formatProductName } from "@/lib/utils"
 import { scrollToFirstError } from "@/lib/form-utils"
 import { ReorderableSummary } from "@/components/ui/reorderable-summary"
@@ -127,7 +127,20 @@ export default function CreateInvoicePage() {
   const [adjustmentPercentage, setAdjustmentPercentage] = useState<number | null>(null)
   const [adjustmentNotes, setAdjustmentNotes] = useState<string>("")
   const [downPaymentPercentage, setDownPaymentPercentage] = useState<number | null>(null)
-  
+
+  // Live-update item amounts when the PPh rate or deduction mode changes
+  useEffect(() => {
+    setItems(prevItems => prevItems.map(item => {
+      const details = item.details.map(detail => {
+        const unitPrice = parseFloat(detail.unitPrice) || 0
+        const qty = parseFloat(detail.qty) || 0
+        return { ...detail, amount: applyPphToAmount(unitPrice * qty, pph, pphDeduction) }
+      })
+      const total = details.reduce((sum, d) => sum + d.amount, 0)
+      return { ...item, details, total }
+    }))
+  }, [pph, pphDeduction])
+
   // Master data
   const [companies, setCompanies] = useState<Company[]>([])
   const [billings, setBillings] = useState<Billing[]>([])
@@ -313,7 +326,7 @@ export default function CreateInvoicePage() {
           detail: detail.detail,
           unitPrice: detail.unitPrice.toString(),
           qty: detail.qty.toString(),
-          amount: detail.unitPrice * detail.qty
+          amount: applyPphToAmount(detail.unitPrice * detail.qty, pph, pphDeduction)
         }))
         
         const total = autoFilledDetails.reduce((sum: number, d: any) => sum + d.amount, 0)
@@ -383,11 +396,11 @@ export default function CreateInvoicePage() {
         if (detail.id !== detailId) return detail
 
         const updated = { ...detail, [field]: value }
-        
+
         // Calculate amount
         const unitPrice = parseFloat(updated.unitPrice) || 0
         const qty = parseFloat(updated.qty) || 0
-        updated.amount = unitPrice * qty
+        updated.amount = applyPphToAmount(unitPrice * qty, pph, pphDeduction)
 
         return updated
       })
@@ -412,7 +425,7 @@ export default function CreateInvoicePage() {
           const unitPrice = parseFloat(detail.unitPrice) || 0
           const qty = parseFloat(detail.qty) || 0
           const newUnitPrice = unitPrice * multiplier
-          const newAmount = Math.round(newUnitPrice * qty)
+          const newAmount = Math.round(applyPphToAmount(newUnitPrice * qty, pph, pphDeduction))
           return {
             ...detail,
             unitPrice: String(Math.round(newUnitPrice)),

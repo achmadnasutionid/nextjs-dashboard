@@ -14,3 +14,18 @@ export function calculatePphAmount(netAmount: number, pph: string, pphDeduction:
 export function calculateGrandTotal(netAmount: number, pphAmount: number, pphDeduction: boolean): number {
   return pphDeduction ? netAmount - pphAmount : netAmount + pphAmount
 }
+
+function grossUpFactor(pph: string): number {
+  const rate = parseFloat(pph)
+  if (!rate || rate <= 0 || rate >= 100) return 1
+  return 100 / (100 - rate)
+}
+
+/**
+ * In deduction mode, each item detail's amount is grossed up so the summary's
+ * Subtotal already carries the tax, and subtracting PPh recovers the entered net figure.
+ * Unit price stays as typed; only the computed amount is scaled.
+ */
+export function applyPphToAmount(rawAmount: number, pph: string, pphDeduction: boolean): number {
+  return pphDeduction ? rawAmount * grossUpFactor(pph) : rawAmount
+}

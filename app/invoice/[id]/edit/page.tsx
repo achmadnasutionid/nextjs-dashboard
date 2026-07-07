@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PPH_OPTIONS } from "@/lib/constants"
-import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal } from "@/lib/pph-calc"
+import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
 import { formatProductName } from "@/lib/utils"
 import { scrollToFirstError } from "@/lib/form-utils"
 import { ReorderableSummary } from "@/components/ui/reorderable-summary"
@@ -140,6 +140,19 @@ export default function EditInvoicePage() {
   const [adjustmentPercentage, setAdjustmentPercentage] = useState<number | null>(null)
   const [adjustmentNotes, setAdjustmentNotes] = useState<string>("")
   const [downPaymentPercentage, setDownPaymentPercentage] = useState<number | null>(null)
+
+  // Live-update item amounts when the PPh rate or deduction mode changes
+  useEffect(() => {
+    setItems(prevItems => prevItems.map(item => {
+      const details = item.details.map(detail => {
+        const unitPrice = parseFloat(detail.unitPrice) || 0
+        const qty = parseFloat(detail.qty) || 0
+        return { ...detail, amount: applyPphToAmount(unitPrice * qty, pph, pphDeduction) }
+      })
+      const total = details.reduce((sum, d) => sum + d.amount, 0)
+      return { ...item, details, total }
+    }))
+  }, [pph, pphDeduction])
   
   // Master data
   const [companies, setCompanies] = useState<Company[]>([])
@@ -588,12 +601,12 @@ export default function EditInvoicePage() {
             detail: detail.detail,
             unitPrice: detail.unitPrice.toString(),
             qty: detail.qty.toString(),
-            amount: detail.unitPrice * detail.qty
+            amount: applyPphToAmount(detail.unitPrice * detail.qty, pph, pphDeduction)
           }))
-          
+
           const total = autoFilledDetails.reduce((sum: number, d: any) => sum + d.amount, 0)
           toast.success(`Auto-filled ${autoFilledDetails.length} detail(s) from master data`)
-          
+
           return {
             ...item,
             productName: finalName,
@@ -601,11 +614,11 @@ export default function EditInvoicePage() {
             total
           }
         }
-        
+
         return { ...item, productName: finalName }
       })
     })
-  }, [products, productDetails])
+  }, [products, productDetails, pph, pphDeduction])
 
   const addDetail = useCallback((itemId: string) => {
     setItems(prevItems => prevItems.map(item =>
@@ -656,10 +669,10 @@ export default function EditInvoicePage() {
         if (detail.id !== detailId) return detail
 
         const updated = { ...detail, [field]: value }
-        
+
         const unitPrice = parseFloat(updated.unitPrice) || 0
         const qty = parseFloat(updated.qty) || 0
-        updated.amount = unitPrice * qty
+        updated.amount = applyPphToAmount(unitPrice * qty, pph, pphDeduction)
 
         return updated
       })
@@ -668,7 +681,7 @@ export default function EditInvoicePage() {
 
       return { ...item, details: updatedDetails, total }
     }))
-  }, [])
+  }, [pph, pphDeduction])
 
   const handleAdjustByPercentage = useCallback((percentage: number, notes?: string) => {
     // One adjustment only: apply new % to logical base (undo previous % then apply new %). 0% = cancel adjustment.
@@ -683,7 +696,7 @@ export default function EditInvoicePage() {
           const unitPrice = parseFloat(detail.unitPrice) || 0
           const qty = parseFloat(detail.qty) || 0
           const newUnitPrice = unitPrice * multiplier
-          const newAmount = Math.round(newUnitPrice * qty)
+          const newAmount = Math.round(applyPphToAmount(newUnitPrice * qty, pph, pphDeduction))
           return {
             ...detail,
             unitPrice: String(Math.round(newUnitPrice)),
@@ -696,7 +709,7 @@ export default function EditInvoicePage() {
     )
     setHasUnsavedChanges(true)
     toast.success(`All amounts adjusted by ${percentage > 0 ? "+" : ""}${percentage}%`)
-  }, [adjustmentPercentage])
+  }, [adjustmentPercentage, pph, pphDeduction])
 
   // Memoized calculations - only recalculate when dependencies change
   const subtotal = useMemo(() => {
