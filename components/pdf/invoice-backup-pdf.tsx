@@ -7,7 +7,7 @@
 import React from "react"
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
-import { calculatePphAmount, calculateGrandTotal } from "@/lib/pph-calc"
+import { calculatePphAmount, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
 
 const styles = StyleSheet.create({
   page: {
@@ -340,7 +340,7 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
                 {(item.details || []).map((detail, detailIndex) => (
                   <View key={`d-${itemIndex}-${detailIndex}`} style={styles.tableRow}>
                     <Text style={styles.col1}>  • {detail.detail || ""}</Text>
-                    <Text style={styles.col2}>{formatCurrency(detail.unitPrice || 0)}</Text>
+                    <Text style={styles.col2}>{formatCurrency(applyPphToAmount(detail.unitPrice || 0, data.pph || "0", pphDeduction))}</Text>
                     <Text style={styles.col3}>{detail.qty || 0}</Text>
                     <Text style={styles.col4}>{formatCurrency(detail.amount || 0)}</Text>
                   </View>
