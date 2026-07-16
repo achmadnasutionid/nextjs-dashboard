@@ -11,6 +11,7 @@ import {
   PackageOpen,
   Table,
   Database,
+  Trash2,
 } from "lucide-react"
 import type { DashboardCard } from "@/types"
 
@@ -42,6 +43,8 @@ function getIcon(iconName: string) {
       return <Table className="h-6 w-6 text-primary" />
     case "database":
       return <Database className="h-6 w-6 text-primary" />
+    case "trash":
+      return <Trash2 className="h-6 w-6 text-primary" />
     default:
       return <Package className="h-6 w-6 text-primary" />
   }

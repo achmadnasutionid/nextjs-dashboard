@@ -2,10 +2,13 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 // GET all quotation templates
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get("includeDeleted") === "true"
+
     const templates = await prisma.quotationTemplate.findMany({
-      where: {
+      where: includeDeleted ? {} : {
         deletedAt: null
       },
       include: {

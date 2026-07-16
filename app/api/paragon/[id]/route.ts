@@ -397,16 +397,35 @@ export async function PUT(
   }
 }
 
-// DELETE paragon ticket
+// DELETE paragon ticket (soft delete, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    await prisma.paragonTicket.delete({
-      where: { id }
-    })
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.paragonTicket.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Paragon ticket not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Paragon ticket must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.paragonTicket.delete({ where: { id } })
+    } else {
+      // Soft delete
+      await prisma.paragonTicket.update({
+        where: { id },
+        data: { deletedAt: new Date() }
+      })
+    }
 
     // Invalidate caches after deleting paragon ticket
     await invalidateParagonCaches(id)
@@ -416,6 +435,39 @@ export async function DELETE(
     console.error("Error deleting paragon ticket:", error)
     return NextResponse.json(
       { error: "Failed to delete paragon ticket" },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH restore paragon ticket
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    if (body.action === "restore") {
+      await prisma.paragonTicket.update({
+        where: { id },
+        data: { deletedAt: null }
+      })
+
+      await invalidateParagonCaches(id)
+
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action" },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error("Error restoring paragon ticket:", error)
+    return NextResponse.json(
+      { error: "Failed to restore paragon ticket" },
       { status: 500 }
     )
   }

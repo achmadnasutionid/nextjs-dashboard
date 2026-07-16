@@ -397,16 +397,35 @@ export async function PUT(
   }
 }
 
-// DELETE barclay ticket
+// DELETE barclay ticket (soft delete, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    await prisma.barclayTicket.delete({
-      where: { id }
-    })
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.barclayTicket.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Barclay ticket not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Barclay ticket must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.barclayTicket.delete({ where: { id } })
+    } else {
+      // Soft delete
+      await prisma.barclayTicket.update({
+        where: { id },
+        data: { deletedAt: new Date() }
+      })
+    }
 
     // Invalidate caches after deleting barclay ticket
     await invalidateBarclayCaches(id)
@@ -416,6 +435,39 @@ export async function DELETE(
     console.error("Error deleting barclay ticket:", error)
     return NextResponse.json(
       { error: "Failed to delete barclay ticket" },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH restore barclay ticket
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    if (body.action === "restore") {
+      await prisma.barclayTicket.update({
+        where: { id },
+        data: { deletedAt: null }
+      })
+
+      await invalidateBarclayCaches(id)
+
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action" },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error("Error restoring barclay ticket:", error)
+    return NextResponse.json(
+      { error: "Failed to restore barclay ticket" },
       { status: 500 }
     )
   }

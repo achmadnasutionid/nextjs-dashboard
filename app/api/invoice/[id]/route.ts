@@ -473,18 +473,35 @@ export async function PUT(
   }
 }
 
-// DELETE invoice
+// DELETE invoice (soft delete, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    
-    // Delete the invoice
-    await prisma.invoice.delete({
-      where: { id }
-    })
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.invoice.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Invoice not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Invoice must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.invoice.delete({ where: { id } })
+    } else {
+      // Soft delete
+      await prisma.invoice.update({
+        where: { id },
+        data: { deletedAt: new Date() }
+      })
+    }
 
     // Invalidate caches after deleting invoice
     await invalidateInvoiceCaches(id)
@@ -494,6 +511,39 @@ export async function DELETE(
     console.error("Error deleting invoice:", error)
     return NextResponse.json(
       { error: "Failed to delete invoice" },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH restore invoice
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    if (body.action === "restore") {
+      await prisma.invoice.update({
+        where: { id },
+        data: { deletedAt: null }
+      })
+
+      await invalidateInvoiceCaches(id)
+
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action" },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error("Error restoring invoice:", error)
+    return NextResponse.json(
+      { error: "Failed to restore invoice" },
       { status: 500 }
     )
   }

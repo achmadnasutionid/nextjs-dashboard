@@ -86,11 +86,33 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT id, "deletedAt" FROM "RemarkTemplate" WHERE id = $1`,
+        id
+      )
+      if (existing.length === 0) {
+        return NextResponse.json({ error: "Template not found" }, { status: 404 })
+      }
+      if (!existing[0].deletedAt) {
+        return NextResponse.json(
+          { error: "Template must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.$executeRawUnsafe(`DELETE FROM "RemarkTemplateItem" WHERE "templateId" = $1`, id)
+      await prisma.$executeRawUnsafe(`DELETE FROM "RemarkTemplate" WHERE id = $1`, id)
+      return NextResponse.json({ success: true })
+    }
+
     await prisma.$executeRawUnsafe(
       `UPDATE "RemarkTemplate" SET "deletedAt" = NOW(), "updatedAt" = NOW() WHERE id = $1`,
       id
@@ -99,5 +121,29 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting remark template:", error)
     return NextResponse.json({ error: "Failed to delete remark template" }, { status: 500 })
+  }
+}
+
+// PATCH restore remark template
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    if (body.action === "restore") {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "RemarkTemplate" SET "deletedAt" = NULL, "updatedAt" = NOW() WHERE id = $1`,
+        id
+      )
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 })
+  } catch (error) {
+    console.error("Error restoring remark template:", error)
+    return NextResponse.json({ error: "Failed to restore remark template" }, { status: 500 })
   }
 }

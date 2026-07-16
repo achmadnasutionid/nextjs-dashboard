@@ -86,13 +86,31 @@ export async function PUT(
   }
 }
 
-// DELETE company (soft delete)
+// DELETE company (soft delete, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.company.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Company not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Company must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.company.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
     await prisma.company.update({
       where: { id },
       data: { deletedAt: new Date() }

@@ -107,16 +107,36 @@ export async function PUT(
   }
 }
 
-// DELETE product (soft delete with details)
+// DELETE product (soft delete with details, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.product.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Product must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.$transaction([
+        prisma.productDetail.deleteMany({ where: { productId: id } }),
+        prisma.product.delete({ where: { id } })
+      ])
+      return NextResponse.json({ success: true })
+    }
+
     const now = new Date()
-    
+
     // Soft-delete both product and its details in transaction
     await prisma.$transaction([
       prisma.product.update({

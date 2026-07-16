@@ -10,14 +10,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search") || ""
     const sortBy = searchParams.get("sortBy") || "newest"
-    
-    const where: any = {
+    const includeDeleted = searchParams.get("includeDeleted") === "true"
+
+    const where: any = includeDeleted ? {} : {
       deletedAt: null
     }
-    
+
     if (search) {
       where.AND = [
-        { deletedAt: null },
+        ...(includeDeleted ? [] : [{ deletedAt: null }]),
         {
           OR: [
             { trackerId: { contains: search, mode: 'insensitive' } },

@@ -474,18 +474,35 @@ export async function PUT(
   }
 }
 
-// DELETE quotation
+// DELETE quotation (soft delete, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    
-    // Delete the quotation
-    await prisma.quotation.delete({
-      where: { id }
-    })
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.quotation.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Quotation not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Quotation must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.quotation.delete({ where: { id } })
+    } else {
+      // Soft delete
+      await prisma.quotation.update({
+        where: { id },
+        data: { deletedAt: new Date() }
+      })
+    }
 
     // Invalidate caches after deleting quotation
     await invalidateQuotationCaches(id)
@@ -495,6 +512,39 @@ export async function DELETE(
     console.error("Error deleting quotation:", error)
     return NextResponse.json(
       { error: "Failed to delete quotation" },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH restore quotation
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    if (body.action === "restore") {
+      await prisma.quotation.update({
+        where: { id },
+        data: { deletedAt: null }
+      })
+
+      await invalidateQuotationCaches(id)
+
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action" },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error("Error restoring quotation:", error)
+    return NextResponse.json(
+      { error: "Failed to restore quotation" },
       { status: 500 }
     )
   }

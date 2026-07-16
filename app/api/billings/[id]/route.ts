@@ -85,14 +85,31 @@ export async function PUT(
   }
 }
 
-// DELETE billing (soft delete)
+// DELETE billing (soft delete, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.billing.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Billing not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Billing must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.billing.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
     await prisma.billing.update({
       where: { id },
       data: { deletedAt: new Date() }

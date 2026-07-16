@@ -61,6 +61,7 @@ export async function GET(request: Request) {
       productionDate: true,
       totalAmount: true,
       status: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
       items: {

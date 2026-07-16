@@ -80,21 +80,37 @@ export async function PUT(
   }
 }
 
-// DELETE production tracker
+// DELETE production tracker (soft delete, or permanent delete via ?permanent=true)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    
-    // Soft delete
-    await prisma.productionTracker.update({
-      where: { id },
-      data: {
-        deletedAt: new Date()
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.productionTracker.findUnique({ where: { id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Production tracker not found" }, { status: 404 })
       }
-    })
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Production tracker must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.productionTracker.delete({ where: { id } })
+    } else {
+      // Soft delete
+      await prisma.productionTracker.update({
+        where: { id },
+        data: {
+          deletedAt: new Date()
+        }
+      })
+    }
 
     // Invalidate caches after deleting tracker
     await Promise.all([
@@ -108,6 +124,43 @@ export async function DELETE(
     console.error("Error deleting production tracker:", error)
     return NextResponse.json(
       { error: "Failed to delete production tracker" },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH restore production tracker
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    if (body.action === "restore") {
+      await prisma.productionTracker.update({
+        where: { id },
+        data: { deletedAt: null }
+      })
+
+      await Promise.all([
+        cache.delete(cacheKeys.dashboardStats()),
+        cache.delete('tracker:list:*'),
+        cache.delete(cacheKeys.tracker(id)),
+      ])
+
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action" },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error("Error restoring production tracker:", error)
+    return NextResponse.json(
+      { error: "Failed to restore production tracker" },
       { status: 500 }
     )
   }

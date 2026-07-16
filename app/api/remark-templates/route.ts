@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get("includeDeleted") === "true"
+    const whereClause = includeDeleted ? "" : `WHERE rt."deletedAt" IS NULL`
+
     const templates = await prisma.$queryRawUnsafe<any[]>(`
       SELECT rt.id, rt.name, rt."deletedAt", rt."createdAt", rt."updatedAt",
         COALESCE(
@@ -20,7 +24,7 @@ export async function GET() {
         ) AS items
       FROM "RemarkTemplate" rt
       LEFT JOIN "RemarkTemplateItem" rti ON rti."templateId" = rt.id
-      WHERE rt."deletedAt" IS NULL
+      ${whereClause}
       GROUP BY rt.id
       ORDER BY rt."createdAt" ASC
     `)

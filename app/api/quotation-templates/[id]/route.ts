@@ -127,13 +127,31 @@ export async function PUT(
   }
 }
 
-// DELETE soft delete template
+// DELETE soft delete template, or permanent delete via ?permanent=true
 export async function DELETE(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const params = await context.params
+    const { searchParams } = new URL(request.url)
+    const permanent = searchParams.get("permanent") === "true"
+
+    if (permanent) {
+      const existing = await prisma.quotationTemplate.findUnique({ where: { id: params.id } })
+      if (!existing) {
+        return NextResponse.json({ error: "Template not found" }, { status: 404 })
+      }
+      if (!existing.deletedAt) {
+        return NextResponse.json(
+          { error: "Template must be in trash before it can be permanently deleted" },
+          { status: 400 }
+        )
+      }
+      await prisma.quotationTemplate.delete({ where: { id: params.id } })
+      return NextResponse.json({ success: true })
+    }
+
     await prisma.quotationTemplate.update({
       where: { id: params.id },
       data: {
@@ -146,6 +164,36 @@ export async function DELETE(
     console.error("Error deleting template:", error)
     return NextResponse.json(
       { error: "Failed to delete template" },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH restore template
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const params = await context.params
+    const body = await request.json()
+
+    if (body.action === "restore") {
+      await prisma.quotationTemplate.update({
+        where: { id: params.id },
+        data: { deletedAt: null }
+      })
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json(
+      { error: "Invalid action" },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error("Error restoring template:", error)
+    return NextResponse.json(
+      { error: "Failed to restore template" },
       { status: 500 }
     )
   }

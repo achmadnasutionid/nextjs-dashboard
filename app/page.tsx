@@ -42,6 +42,7 @@ const ALL_CARDS: DashboardCard[] = [
   { id: "templates", section: "Management", title: "Templates", keywords: "templates template quotation master", route: "/templates", icon: "package-open" },
   { id: "remark-templates", section: "Management", title: "Remarks", keywords: "remarks remark template master default", route: "/remark-templates", icon: "file-text" },
   { id: "backup", section: "Management", title: "Backup", keywords: "backup export import restore", route: "/backup", icon: "database" },
+  { id: "trash", section: "Management", title: "Trash", keywords: "trash deleted recycle bin restore", route: "/trash", icon: "trash" },
 ]
 
 export default function Home() {

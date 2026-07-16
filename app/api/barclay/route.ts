@@ -11,7 +11,8 @@ export async function GET(request: Request) {
     const status = searchParams.get("status")
     const sortBy = searchParams.get("sortBy")
     const search = searchParams.get("search") || ""
-    
+    const includeDeleted = searchParams.get("includeDeleted") === "true"
+
     // Pagination parameters
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "50")
@@ -19,7 +20,10 @@ export async function GET(request: Request) {
 
     // Build where clause
     const where: any = status ? { status } : {}
-    
+    if (!includeDeleted) {
+      where.deletedAt = null
+    }
+
     // Add search filter (if provided)
     if (search) {
       where.OR = [
@@ -44,6 +48,7 @@ export async function GET(request: Request) {
       productionDate: true,
       totalAmount: true,
       status: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
       items: {
