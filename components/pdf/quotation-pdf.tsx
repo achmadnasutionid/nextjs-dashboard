@@ -742,7 +742,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
         </View>
 
         {/* Items */}
-        <View style={styles.section} break={false}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Items</Text>
           <View style={styles.table}>
             <View style={styles.tableHeader}>
@@ -753,7 +753,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
             </View>
 
             {safeItems.map((item, itemIndex) => (
-              <View key={`item-${itemIndex}`} wrap={false}>
+              <View key={`item-${itemIndex}`}>
                 {/* Product Header Row - No Amount */}
                 <View style={[styles.tableRow, { backgroundColor: "#f9f9f9", fontWeight: "bold" }]}>
                   <Text style={styles.col1}>{item.productName ? item.productName : "\u00A0"}</Text>

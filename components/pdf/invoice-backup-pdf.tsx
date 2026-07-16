@@ -320,7 +320,7 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
           </View>
         </View>
 
-        <View style={styles.section} break={false}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Items</Text>
           <View style={styles.table}>
             <View style={styles.tableHeader}>
@@ -330,7 +330,7 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
               <Text style={styles.col4}>Amount</Text>
             </View>
             {safeItems.map((item, itemIndex) => (
-              <View key={`item-${itemIndex}`} wrap={false}>
+              <View key={`item-${itemIndex}`}>
                 <View style={styles.tableRow}>
                   <Text style={styles.col1}>{item.productName || "\u00A0"}</Text>
                   <Text style={styles.col2}>{"\u00A0"}</Text>

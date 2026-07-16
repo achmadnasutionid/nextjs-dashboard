@@ -740,7 +740,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
         </View>
 
         {/* Items */}
-        <View style={styles.section} break={false}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Items</Text>
           <View style={styles.table}>
             <View style={styles.tableHeader}>
@@ -751,7 +751,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
             </View>
 
             {safeItems.map((item, itemIndex) => (
-              <View key={`item-${itemIndex}`} wrap={false}>
+              <View key={`item-${itemIndex}`}>
                 {/* Product Header Row - No Amount */}
                 <View style={[styles.tableRow, { backgroundColor: "#f9f9f9", fontWeight: "bold" }]}>
                   <Text style={styles.col1}>{item.productName || ''}</Text>
