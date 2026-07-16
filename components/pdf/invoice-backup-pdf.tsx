@@ -8,7 +8,7 @@ import React from "react"
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
-import { fitRemarksTermsBilling } from "@/lib/pdf-remarks-fit"
+import { fitsBillingRemarksTerms } from "@/lib/pdf-remarks-fit"
 
 const styles = StyleSheet.create({
   page: {
@@ -257,11 +257,65 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
     : []
   const allSignatures = [...(data.signatureName ? [mainSig] : []), ...extraSigs]
   const termsLines = data.termsAndConditions ? stripHtmlToLines(data.termsAndConditions) : []
-  const { fontSize: remarksFontSize, atomic: keepBillingRemarksTogether } = fitRemarksTermsBilling({
+  const fitsTogether = fitsBillingRemarksTerms({
     remarksCount: (data.remarks || []).length,
     termsTexts: termsLines,
     signatureCount: allSignatures.length,
   })
+
+  const billingSignatureBlock = (
+    <View style={styles.grid}>
+      <View style={styles.gridCol}>
+        <Text style={styles.sectionTitle}>Billing Information</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Account:</Text>
+          <Text style={styles.value}>{data.billingName}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Bank:</Text>
+          <Text style={styles.value}>{data.billingBankName}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Number:</Text>
+          <Text style={styles.value}>{data.billingBankAccount}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Name:</Text>
+          <Text style={styles.value}>{data.billingBankAccountName}</Text>
+        </View>
+      </View>
+      <View style={styles.gridCol}>
+        <Text style={styles.sectionTitle}>Signature(s)</Text>
+        {allSignatures.map((sig, idx) => (
+          <View key={idx}>
+            <Text style={styles.signatureLine}>{sig.name}</Text>
+            {sig.position ? <Text style={styles.signatureLine}>{sig.position}</Text> : null}
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+
+  const remarksBlock = data.remarks && data.remarks.length > 0 ? (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Remarks</Text>
+      {(data.remarks || []).map((remark, index) => (
+        <View key={`r-${index}`} style={styles.remarkRow}>
+          <Text style={styles.remarkCheck}>{remark.isCompleted ? "☑" : "☐"}</Text>
+          <Text style={styles.remarkText}>{remark.text || ""}</Text>
+        </View>
+      ))}
+    </View>
+  ) : null
+
+  const termsBlock = termsLines.length > 0 ? (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+      {termsLines.map((line, index) => (
+        <Text key={`t-${index}`} style={styles.termsLine}>{line}</Text>
+      ))}
+    </View>
+  ) : null
 
   return (
     <Document pdfVersion="1.3">
@@ -382,64 +436,31 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
           ) : null}
         </View>
 
-        {/* Billing, Signature, Remarks & Terms & Conditions: kept together (wrap={false}) whenever
+        {/* Billing/Signature + Remarks + Terms & Conditions: kept together (wrap={false}) whenever
             the estimated combined height fits one page, so Billing never lands on a different
             page from the Remarks/Terms that belong with it. If it doesn't fit even a full fresh
-            page, keepBillingRemarksTogether is false and this is allowed to flow/paginate normally
-            instead of clipping. */}
-        <View wrap={!keepBillingRemarksTogether}>
-          <View style={styles.grid}>
-            <View style={styles.gridCol}>
-              <Text style={styles.sectionTitle}>Billing Information</Text>
-              <View style={styles.row}>
-                <Text style={styles.label}>Account:</Text>
-                <Text style={styles.value}>{data.billingName}</Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.label}>Bank:</Text>
-                <Text style={styles.value}>{data.billingBankName}</Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.label}>Number:</Text>
-                <Text style={styles.value}>{data.billingBankAccount}</Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.label}>Name:</Text>
-                <Text style={styles.value}>{data.billingBankAccountName}</Text>
-              </View>
-            </View>
-            <View style={styles.gridCol}>
-              <Text style={styles.sectionTitle}>Signature(s)</Text>
-              {allSignatures.map((sig, idx) => (
-                <View key={idx}>
-                  <Text style={styles.signatureLine}>{sig.name}</Text>
-                  {sig.position ? <Text style={styles.signatureLine}>{sig.position}</Text> : null}
-                </View>
-              ))}
-            </View>
+            page, Billing renders here with a note instead, and Remarks/Terms move to their own
+            page below, free to paginate across as many pages as needed instead of clipping. */}
+        {fitsTogether ? (
+          <View wrap={false}>
+            {billingSignatureBlock}
+            {remarksBlock}
+            {termsBlock}
           </View>
-
-          {data.remarks && data.remarks.length > 0 ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Remarks</Text>
-              {(data.remarks || []).map((remark, index) => (
-                <View key={`r-${index}`} style={styles.remarkRow}>
-                  <Text style={{ ...styles.remarkCheck, fontSize: remarksFontSize }}>{remark.isCompleted ? "☑" : "☐"}</Text>
-                  <Text style={{ ...styles.remarkText, fontSize: remarksFontSize }}>{remark.text || ""}</Text>
-                </View>
-              ))}
+        ) : (
+          <>
+            <View wrap={false}>
+              {billingSignatureBlock}
+              <Text style={{ fontSize: 8, marginTop: 8, fontStyle: "italic" }}>
+                Signature on this document constitutes agreement to all Remarks and Terms & Conditions on the following page(s).
+              </Text>
             </View>
-          ) : null}
-
-          {termsLines.length > 0 ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Detailed S&K:</Text>
-              {termsLines.map((line, index) => (
-                <Text key={`t-${index}`} style={{ ...styles.termsLine, fontSize: remarksFontSize }}>{line}</Text>
-              ))}
+            <View break>
+              {remarksBlock}
+              {termsBlock}
             </View>
-          ) : null}
-        </View>
+          </>
+        )}
 
         <Text style={styles.footer} fixed>
           Generated on {new Date().toLocaleDateString("id-ID")} | {data.invoiceId}

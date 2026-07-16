@@ -2,7 +2,7 @@ import React from "react"
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
-import { fitRemarksTermsBilling } from "@/lib/pdf-remarks-fit"
+import { fitsBillingRemarksTerms } from "@/lib/pdf-remarks-fit"
 
 const styles = StyleSheet.create({
   page: {
@@ -668,11 +668,86 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
   }
 
   const parsedTermsBlocks = data.termsAndConditions ? parseHTMLToTextBlocks(data.termsAndConditions) : []
-  const { fontSize: remarksFontSize, atomic: keepBillingRemarksTogether } = fitRemarksTermsBilling({
+  const fitsTogether = fitsBillingRemarksTerms({
     remarksCount: (data.remarks || []).length,
     termsTexts: parsedTermsBlocks.map(block => block.text),
     signatureCount: allSignatures.length,
   })
+
+  const billingSignatureBlock = (
+    <>
+      <View style={allSignatures.length === 1 ? styles.grid : { width: "100%" }}>
+        <View style={allSignatures.length === 1 ? styles.gridCol : { width: "100%" }}>
+          <Text style={styles.sectionTitle}>Billing Information</Text>
+          <View style={styles.row}>
+            <Text style={styles.label}>Account:</Text>
+            <Text style={styles.value}>{data.billingName}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Bank:</Text>
+            <Text style={styles.value}>{data.billingBankName}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Number:</Text>
+            <Text style={styles.value}>{data.billingBankAccount}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Name:</Text>
+            <Text style={styles.value}>{data.billingBankAccountName}</Text>
+          </View>
+        </View>
+
+        {/* Render single signature on right if count is 1 */}
+        {allSignatures.length === 1 && renderSignatures()}
+      </View>
+
+      {/* Render multiple signatures below if count is 2+ */}
+      {allSignatures.length > 1 && renderMultipleSignatures()}
+    </>
+  )
+
+  const remarksBlock = data.remarks && data.remarks.length > 0 && (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Remarks</Text>
+      {(data.remarks || []).map((remark, index) => (
+        <View key={`remark-${index}`} style={{ flexDirection: "row", marginBottom: 3 }}>
+          <Text style={{ fontSize: 8, marginRight: 5 }}>
+            {remark.isCompleted ? "☑" : "☐"}
+          </Text>
+          <Text style={{
+            fontSize: 8,
+            textDecoration: remark.isCompleted ? "line-through" : "none",
+            color: remark.isCompleted ? "#999" : "#000"
+          }}>
+            {remark.text || ''}
+          </Text>
+        </View>
+      ))}
+    </View>
+  )
+
+  {/* Detailed Terms & Conditions (S&K) - view and sync separate: view = original format, sync = plain literal (no spread) to avoid react-pdf 'S' bug */}
+  const termsBlock = data.termsAndConditions && (
+    forSync ? (
+      <View style={{ marginBottom: 15 }}>
+        <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+        <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+          {parsedTermsBlocks.map((block, index) => (
+            <Text key={index} style={{ marginBottom: 4, fontSize: 8, lineHeight: 1.5 }}>{block.text}</Text>
+          ))}
+        </View>
+      </View>
+    ) : (
+      <View style={{ marginBottom: 15 }}>
+        <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+        <View style={{ fontSize: 8, lineHeight: 1.5 }}>
+          {parsedTermsBlocks.map((block, index) => (
+            <Text key={index} style={{ marginBottom: 4, fontSize: 8, ...block.style }}>{block.text}</Text>
+          ))}
+        </View>
+      </View>
+    )
+  )
 
   return (
     <Document pdfVersion="1.3">
@@ -810,85 +885,31 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
           ) : null}
         </View>
 
-        {/* Billing, Signature, Remarks & Terms & Conditions: kept together (wrap={false}) whenever
+        {/* Billing/Signature + Remarks + Terms & Conditions: kept together (wrap={false}) whenever
             the estimated combined height fits one page, so Billing never lands on a different
             page from the Remarks/Terms that belong with it. If it doesn't fit even a full fresh
-            page, keepBillingRemarksTogether is false and this is allowed to flow/paginate normally
-            instead of clipping. */}
-        <View wrap={!keepBillingRemarksTogether}>
-          {/* Billing & Signature */}
-          <View style={allSignatures.length === 1 ? styles.grid : { width: "100%" }}>
-            <View style={allSignatures.length === 1 ? styles.gridCol : { width: "100%" }}>
-              <Text style={styles.sectionTitle}>Billing Information</Text>
-              <View style={styles.row}>
-                <Text style={styles.label}>Account:</Text>
-                <Text style={styles.value}>{data.billingName}</Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.label}>Bank:</Text>
-                <Text style={styles.value}>{data.billingBankName}</Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.label}>Number:</Text>
-                <Text style={styles.value}>{data.billingBankAccount}</Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.label}>Name:</Text>
-                <Text style={styles.value}>{data.billingBankAccountName}</Text>
-              </View>
-            </View>
-
-            {/* Render single signature on right if count is 1 */}
-            {allSignatures.length === 1 && renderSignatures()}
+            page, Billing renders here with a note instead, and Remarks/Terms move to their own
+            page below, free to paginate across as many pages as needed instead of clipping. */}
+        {fitsTogether ? (
+          <View wrap={false}>
+            {billingSignatureBlock}
+            {remarksBlock}
+            {termsBlock}
           </View>
-
-          {/* Render multiple signatures below if count is 2+ */}
-          {allSignatures.length > 1 && renderMultipleSignatures()}
-
-          {/* Remarks */}
-          {data.remarks && data.remarks.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Remarks</Text>
-              {(data.remarks || []).map((remark, index) => (
-                <View key={`remark-${index}`} style={{ flexDirection: "row", marginBottom: 3 }}>
-                  <Text style={{ fontSize: remarksFontSize, marginRight: 5 }}>
-                    {remark.isCompleted ? "☑" : "☐"}
-                  </Text>
-                  <Text style={{
-                    fontSize: remarksFontSize,
-                    textDecoration: remark.isCompleted ? "line-through" : "none",
-                    color: remark.isCompleted ? "#999" : "#000"
-                  }}>
-                    {remark.text || ''}
-                  </Text>
-                </View>
-              ))}
+        ) : (
+          <>
+            <View wrap={false}>
+              {billingSignatureBlock}
+              <Text style={{ fontSize: 8, marginTop: 8, fontStyle: "italic" }}>
+                Signature on this document constitutes agreement to all Remarks and Terms & Conditions on the following page(s).
+              </Text>
             </View>
-          )}
-
-          {/* Detailed Terms & Conditions (S&K) - view and sync separate: view = original format, sync = plain literal (no spread) to avoid react-pdf 'S' bug */}
-          {data.termsAndConditions && (
-            forSync ? (
-              <View style={{ marginBottom: 15 }}>
-                <Text style={styles.sectionTitle}>Detailed S&K:</Text>
-                <View style={{ fontSize: remarksFontSize, lineHeight: 1.5 }}>
-                  {parsedTermsBlocks.map((block, index) => (
-                    <Text key={index} style={{ marginBottom: 4, fontSize: remarksFontSize, lineHeight: 1.5 }}>{block.text}</Text>
-                  ))}
-                </View>
-              </View>
-            ) : (
-              <View style={{ marginBottom: 15 }}>
-                <Text style={styles.sectionTitle}>Detailed S&K:</Text>
-                <View style={{ fontSize: remarksFontSize, lineHeight: 1.5 }}>
-                  {parsedTermsBlocks.map((block, index) => (
-                    <Text key={index} style={{ marginBottom: 4, fontSize: remarksFontSize, ...block.style }}>{block.text}</Text>
-                  ))}
-                </View>
-              </View>
-            )
-          )}
-        </View>
+            <View break>
+              {remarksBlock}
+              {termsBlock}
+            </View>
+          </>
+        )}
 
         {/* Footer */}
         <Text style={styles.footer} fixed>
