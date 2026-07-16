@@ -8,6 +8,7 @@ import React from "react"
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
+import { fitRemarksTermsBilling } from "@/lib/pdf-remarks-fit"
 
 const styles = StyleSheet.create({
   page: {
@@ -256,6 +257,11 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
     : []
   const allSignatures = [...(data.signatureName ? [mainSig] : []), ...extraSigs]
   const termsLines = data.termsAndConditions ? stripHtmlToLines(data.termsAndConditions) : []
+  const { fontSize: remarksFontSize, atomic: keepBillingRemarksTogether } = fitRemarksTermsBilling({
+    remarksCount: (data.remarks || []).length,
+    termsTexts: termsLines,
+    signatureCount: allSignatures.length,
+  })
 
   return (
     <Document pdfVersion="1.3">
@@ -376,56 +382,63 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
           ) : null}
         </View>
 
-        {data.remarks && data.remarks.length > 0 ? (
-          <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Remarks</Text>
-            {(data.remarks || []).map((remark, index) => (
-              <View key={`r-${index}`} style={styles.remarkRow}>
-                <Text style={styles.remarkCheck}>{remark.isCompleted ? "☑" : "☐"}</Text>
-                <Text style={styles.remarkText}>{remark.text || ""}</Text>
+        {/* Billing, Signature, Remarks & Terms & Conditions: kept together (wrap={false}) whenever
+            the estimated combined height fits one page, so Billing never lands on a different
+            page from the Remarks/Terms that belong with it. If it doesn't fit even a full fresh
+            page, keepBillingRemarksTogether is false and this is allowed to flow/paginate normally
+            instead of clipping. */}
+        <View wrap={!keepBillingRemarksTogether}>
+          <View style={styles.grid}>
+            <View style={styles.gridCol}>
+              <Text style={styles.sectionTitle}>Billing Information</Text>
+              <View style={styles.row}>
+                <Text style={styles.label}>Account:</Text>
+                <Text style={styles.value}>{data.billingName}</Text>
               </View>
-            ))}
-          </View>
-        ) : null}
-
-        {termsLines.length > 0 ? (
-          <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Detailed S&K:</Text>
-            {termsLines.map((line, index) => (
-              <Text key={`t-${index}`} style={styles.termsLine}>{line}</Text>
-            ))}
-          </View>
-        ) : null}
-
-        <View style={styles.grid} wrap={false}>
-          <View style={styles.gridCol}>
-            <Text style={styles.sectionTitle}>Billing Information</Text>
-            <View style={styles.row}>
-              <Text style={styles.label}>Account:</Text>
-              <Text style={styles.value}>{data.billingName}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Bank:</Text>
-              <Text style={styles.value}>{data.billingBankName}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Number:</Text>
-              <Text style={styles.value}>{data.billingBankAccount}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Name:</Text>
-              <Text style={styles.value}>{data.billingBankAccountName}</Text>
-            </View>
-          </View>
-          <View style={styles.gridCol}>
-            <Text style={styles.sectionTitle}>Signature(s)</Text>
-            {allSignatures.map((sig, idx) => (
-              <View key={idx}>
-                <Text style={styles.signatureLine}>{sig.name}</Text>
-                {sig.position ? <Text style={styles.signatureLine}>{sig.position}</Text> : null}
+              <View style={styles.row}>
+                <Text style={styles.label}>Bank:</Text>
+                <Text style={styles.value}>{data.billingBankName}</Text>
               </View>
-            ))}
+              <View style={styles.row}>
+                <Text style={styles.label}>Number:</Text>
+                <Text style={styles.value}>{data.billingBankAccount}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Name:</Text>
+                <Text style={styles.value}>{data.billingBankAccountName}</Text>
+              </View>
+            </View>
+            <View style={styles.gridCol}>
+              <Text style={styles.sectionTitle}>Signature(s)</Text>
+              {allSignatures.map((sig, idx) => (
+                <View key={idx}>
+                  <Text style={styles.signatureLine}>{sig.name}</Text>
+                  {sig.position ? <Text style={styles.signatureLine}>{sig.position}</Text> : null}
+                </View>
+              ))}
+            </View>
           </View>
+
+          {data.remarks && data.remarks.length > 0 ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Remarks</Text>
+              {(data.remarks || []).map((remark, index) => (
+                <View key={`r-${index}`} style={styles.remarkRow}>
+                  <Text style={{ ...styles.remarkCheck, fontSize: remarksFontSize }}>{remark.isCompleted ? "☑" : "☐"}</Text>
+                  <Text style={{ ...styles.remarkText, fontSize: remarksFontSize }}>{remark.text || ""}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {termsLines.length > 0 ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Detailed S&K:</Text>
+              {termsLines.map((line, index) => (
+                <Text key={`t-${index}`} style={{ ...styles.termsLine, fontSize: remarksFontSize }}>{line}</Text>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         <Text style={styles.footer} fixed>
