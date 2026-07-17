@@ -19,8 +19,13 @@ const DEFAULT_CONTENT_WIDTH_PT = 535
 function estimateParagraphHeight(text: string, fontSize: number, widthPt: number, lineHeight: number): number {
   if (!text) return 0
   const charsPerLine = Math.max(1, Math.floor(widthPt / (fontSize * AVG_CHAR_WIDTH_FACTOR)))
-  const lines = Math.max(1, Math.ceil(text.length / charsPerLine))
-  return lines * fontSize * lineHeight
+  // Terms/S&K blocks can carry explicit line breaks (parsed from <br> tags), and remarks
+  // can contain manually-typed newlines -- each one forces its own visual line in react-pdf's
+  // <Text>, on top of whatever character-count wrapping applies within each line.
+  const lines = text
+    .split('\n')
+    .reduce((total, segment) => total + Math.max(1, Math.ceil(segment.length / charsPerLine)), 0)
+  return Math.max(1, lines) * fontSize * lineHeight
 }
 
 export interface FitInput {
