@@ -14,7 +14,9 @@ const fetcher = async (url: string) => {
 const defaultConfig: SWRConfiguration = {
   revalidateOnFocus: false, // Don't refetch when window regains focus
   revalidateOnReconnect: true, // Refetch when network reconnects
-  dedupingInterval: 5000, // Dedupe requests within 5 seconds
+  dedupingInterval: 0, // Always fetch fresh data on mount -- an edit page save is often
+  // followed by an immediate navigation to the view page, and a nonzero window here would
+  // skip that fetch and show pre-edit data.
   errorRetryCount: 3, // Retry failed requests 3 times
 }
 
