@@ -291,7 +291,9 @@ export async function PUT(
         })
       )
       
-      // Create new remarks
+      // Create new remarks using createManyAndReturn so we get the real DB ids directly
+      // (order values aren't unique across saves, so looking new rows up by order risks
+      // matching stale rows from a previous save and leaving them undeleted below)
       let newlyCreatedRemarkIds: string[] = []
       if (remarksToCreate.length > 0) {
         const remarkData = remarksToCreate.map((remark: any) => ({
@@ -300,20 +302,12 @@ export async function PUT(
           isCompleted: remark.isCompleted || false,
           order: (body.remarks || []).findIndex((r: any) => r === remark)
         }))
-        
-        await tx.paragonTicketRemark.createMany({
-          data: remarkData
-        })
-        
-        // Fetch newly created remarks
-        const newRemarks = await tx.paragonTicketRemark.findMany({
-          where: {
-            ticketId: id,
-            order: { in: remarkData.map((r: any) => r.order) }
-          },
+
+        const createdRemarks = await tx.paragonTicketRemark.createManyAndReturn({
+          data: remarkData,
           select: { id: true }
         })
-        newlyCreatedRemarkIds = newRemarks.map(r => r.id)
+        newlyCreatedRemarkIds = createdRemarks.map((r: any) => r.id)
       }
       
       // Execute remark updates

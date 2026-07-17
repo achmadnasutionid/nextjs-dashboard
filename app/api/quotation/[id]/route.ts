@@ -271,9 +271,12 @@ export async function PUT(
       const existingRemarkIds = new Set(existingRemarks.map(remark => remark.id))
 
       // UPSERT remarks (OPTIMIZED - batch operations)
-      const remarksToUpdate = (body.remarks || []).filter((remark: any) => remark.id && existingRemarkIds.has(remark.id))
-      const remarksToCreate = (body.remarks || []).filter((remark: any) => !remark.id || !existingRemarkIds.has(remark.id))
-      
+      // Order is assigned by position in the incoming array before filtering, so every
+      // remark (including multiple brand-new ones with no id yet) gets its own distinct order.
+      const remarksWithOrder = (body.remarks || []).map((remark: any, index: number) => ({ ...remark, order: index }))
+      const remarksToUpdate = remarksWithOrder.filter((remark: any) => remark.id && existingRemarkIds.has(remark.id))
+      const remarksToCreate = remarksWithOrder.filter((remark: any) => !remark.id || !existingRemarkIds.has(remark.id))
+
       // Update all existing remarks in parallel (with order)
       const updateRemarkPromises = remarksToUpdate.map((remark: any) =>
         tx.quotationRemark.update({
@@ -281,42 +284,30 @@ export async function PUT(
           data: {
             text: remark.text,
             isCompleted: remark.isCompleted || false,
-            order: (body.remarks || []).findIndex((r: any) => r.id === remark.id)
+            order: remark.order
           }
         })
       )
-      
-      // Create new remarks using createMany for better performance (with order)
-      let createRemarkResult
+
+      // Create new remarks using createManyAndReturn so we get the real DB ids directly
+      // (order values aren't unique across saves, so looking new rows up by order risks
+      // matching stale rows from a previous save and leaving them undeleted below)
       const newlyCreatedRemarkIds: string[] = []
-      
+
       if (remarksToCreate.length > 0) {
         try {
-          const remarkData = remarksToCreate.map((remark: any, index: number) => {
-            const order = (body.remarks || []).findIndex((r: any) => r.id === remark.id)
-            return {
-              quotationId: id,
-              text: remark.text,
-              isCompleted: remark.isCompleted || false,
-              order: order
-            }
-          })
-          
-          // Note: createMany doesn't return the created records, so we need to fetch them
-          // to get their actual IDs for the deletion exclusion logic
-          createRemarkResult = await tx.quotationRemark.createMany({
-            data: remarkData
-          })
-          
-          // Fetch the newly created remarks to get their actual database IDs
-          const newRemarks = await tx.quotationRemark.findMany({
-            where: {
-              quotationId: id,
-              order: { in: remarkData.map((r: any) => r.order) }
-            },
+          const remarkData = remarksToCreate.map((remark: any) => ({
+            quotationId: id,
+            text: remark.text,
+            isCompleted: remark.isCompleted || false,
+            order: remark.order
+          }))
+
+          const createResult = await tx.quotationRemark.createManyAndReturn({
+            data: remarkData,
             select: { id: true }
           })
-          newlyCreatedRemarkIds.push(...newRemarks.map(r => r.id))
+          newlyCreatedRemarkIds.push(...createResult.map((r: any) => r.id))
         } catch (error) {
           console.error("[QUOTATION UPDATE] Error creating remarks:", error)
           throw error

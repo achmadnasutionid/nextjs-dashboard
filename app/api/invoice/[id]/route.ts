@@ -277,12 +277,15 @@ export async function PUT(
       console.log("[INVOICE UPDATE] Incoming remarks:", body.remarks)
 
       // UPSERT remarks (OPTIMIZED - batch operations)
-      const remarksToUpdate = (body.remarks || []).filter((remark: any) => remark.id && existingRemarkIds.has(remark.id))
-      const remarksToCreate = (body.remarks || []).filter((remark: any) => !remark.id || !existingRemarkIds.has(remark.id))
-      
+      // Order is assigned by position in the incoming array before filtering, so every
+      // remark (including multiple brand-new ones with no id yet) gets its own distinct order.
+      const remarksWithOrder = (body.remarks || []).map((remark: any, index: number) => ({ ...remark, order: index }))
+      const remarksToUpdate = remarksWithOrder.filter((remark: any) => remark.id && existingRemarkIds.has(remark.id))
+      const remarksToCreate = remarksWithOrder.filter((remark: any) => !remark.id || !existingRemarkIds.has(remark.id))
+
       console.log("[INVOICE UPDATE] Remarks to update:", remarksToUpdate.length)
       console.log("[INVOICE UPDATE] Remarks to create:", remarksToCreate.length)
-      
+
       // Update all existing remarks in parallel (with order)
       const updateRemarkPromises = remarksToUpdate.map((remark: any) =>
         tx.invoiceRemark.update({
@@ -290,41 +293,29 @@ export async function PUT(
           data: {
             text: remark.text,
             isCompleted: remark.isCompleted || false,
-            order: (body.remarks || []).findIndex((r: any) => r.id === remark.id)
+            order: remark.order
           }
         })
       )
-      
-      // Create new remarks using createMany for better performance (with order)
+
+      // Create new remarks using createManyAndReturn so we get the real DB ids directly
+      // (order values aren't unique across saves, so looking new rows up by order risks
+      // matching stale rows from a previous save and leaving them undeleted below)
       const createRemarkPromise = remarksToCreate.length > 0
-        ? tx.invoiceRemark.createMany({
-            data: remarksToCreate.map((remark: any, index: number) => ({
+        ? tx.invoiceRemark.createManyAndReturn({
+            data: remarksToCreate.map((remark: any) => ({
               invoiceId: id,
               text: remark.text,
               isCompleted: remark.isCompleted || false,
-              order: (body.remarks || []).findIndex((r: any) => r.id === remark.id)
-            }))
+              order: remark.order
+            })),
+            select: { id: true }
           })
-        : Promise.resolve()
-      
-      // Execute all remark operations in parallel
-      await Promise.all([...updateRemarkPromises, createRemarkPromise])
+        : Promise.resolve([] as { id: string }[])
 
-      // After creating, fetch the newly created remark IDs
-      let newlyCreatedRemarkIds: string[] = []
-      if (remarksToCreate.length > 0) {
-        const remarkOrders = remarksToCreate.map((remark: any) => 
-          (body.remarks || []).findIndex((r: any) => r.id === remark.id)
-        )
-        const newRemarks = await tx.invoiceRemark.findMany({
-          where: {
-            invoiceId: id,
-            order: { in: remarkOrders }
-          },
-          select: { id: true }
-        })
-        newlyCreatedRemarkIds = newRemarks.map(r => r.id)
-      }
+      // Execute all remark operations in parallel
+      const [, createdRemarks] = await Promise.all([Promise.all(updateRemarkPromises), createRemarkPromise])
+      const newlyCreatedRemarkIds: string[] = createdRemarks.map((r: any) => r.id)
 
       // Delete removed remarks (but NOT the newly created ones)
       const idsToKeep = [
