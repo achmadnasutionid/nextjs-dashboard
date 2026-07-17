@@ -24,25 +24,66 @@ function estimateParagraphHeight(text: string, fontSize: number, widthPt: number
 }
 
 export interface FitInput {
-  remarksCount: number
+  remarksTexts: string[]
   termsTexts: string[]
   signatureCount: number
   contentWidthPt?: number
+  /**
+   * "boxed" (default): quotation-pdf.tsx / invoice-pdf.tsx renderMultipleSignatures() --
+   * each signature is a ~135pt box (date lines + 60pt image/blank + name + position),
+   * laid out 2-per-row (counts 2 and 4) or 3-per-row (counts 3 and 5+, taller marginBottom).
+   * "simple": quotation-backup-pdf.tsx / invoice-backup-pdf.tsx -- signatures render as
+   * short stacked name/position text lines next to Billing, not boxes.
+   */
+  signatureLayout?: "boxed" | "simple"
 }
 
-function estimateBillingSignatureHeight(signatureCount: number): number {
+function estimateBillingSignatureHeight(signatureCount: number, layout: "boxed" | "simple"): number {
   const billingRows = 100 // section title + 4 label/value rows
-  const signatureRows = signatureCount <= 1 ? 90 : Math.ceil(signatureCount / 2) * 90
-  return billingRows + signatureRows
+
+  if (layout === "simple") {
+    const signatureRows = signatureCount <= 0 ? 0 : signatureCount * 26
+    return Math.max(billingRows, signatureRows)
+  }
+
+  if (signatureCount <= 1) {
+    // Single signature renders side-by-side with Billing, not stacked below it --
+    // block height is the taller of the two columns, not their sum.
+    return Math.max(billingRows, 120)
+  }
+
+  const PER_ROW_HEIGHT = 135
+  const PER_ROW_HEIGHT_WRAP = 140 // 5+ branch uses a larger marginBottom (15 vs 10)
+
+  let rows: number
+  let perRow: number
+  if (signatureCount === 4) {
+    rows = 2
+    perRow = PER_ROW_HEIGHT
+  } else if (signatureCount === 2 || signatureCount === 3) {
+    rows = 1
+    perRow = PER_ROW_HEIGHT
+  } else {
+    rows = Math.ceil(signatureCount / 3)
+    perRow = PER_ROW_HEIGHT_WRAP
+  }
+
+  return billingRows + rows * perRow
 }
 
 function estimateRemarksTermsBillingHeight(input: FitInput): number {
   const contentWidthPt = input.contentWidthPt ?? DEFAULT_CONTENT_WIDTH_PT
-  let height = estimateBillingSignatureHeight(input.signatureCount)
+  let height = estimateBillingSignatureHeight(input.signatureCount, input.signatureLayout ?? "boxed")
 
-  if (input.remarksCount > 0) {
+  if (input.remarksTexts.length > 0) {
     height += 20 // "Remarks" section title
-    height += input.remarksCount * (FONT_SIZE_PT * 1.4 + 3)
+    // Each remark is a checkbox + text row -- the checkbox/margin eats a bit of the
+    // content width, and long remarks (full sentences, not just short checklist items)
+    // wrap to multiple lines, so this can't be a flat per-item height.
+    const remarkWidthPt = contentWidthPt - 13
+    for (const text of input.remarksTexts) {
+      height += estimateParagraphHeight(text, FONT_SIZE_PT, remarkWidthPt, 1.4) + 3
+    }
   }
 
   if (input.termsTexts.length > 0) {

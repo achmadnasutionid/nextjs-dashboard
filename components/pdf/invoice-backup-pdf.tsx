@@ -258,9 +258,10 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
   const allSignatures = [...(data.signatureName ? [mainSig] : []), ...extraSigs]
   const termsLines = data.termsAndConditions ? stripHtmlToLines(data.termsAndConditions) : []
   const fitsTogether = fitsBillingRemarksTerms({
-    remarksCount: (data.remarks || []).length,
+    remarksTexts: (data.remarks || []).map((remark) => remark.text || ""),
     termsTexts: termsLines,
     signatureCount: allSignatures.length,
+    signatureLayout: "simple",
   })
 
   const billingSignatureBlock = (

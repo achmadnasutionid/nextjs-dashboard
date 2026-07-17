@@ -670,7 +670,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
 
   const parsedTermsBlocks = data.termsAndConditions ? parseHTMLToTextBlocks(data.termsAndConditions) : []
   const fitsTogether = fitsBillingRemarksTerms({
-    remarksCount: (data.remarks || []).length,
+    remarksTexts: (data.remarks || []).map((remark) => remark.text || ""),
     termsTexts: parsedTermsBlocks.map(block => block.text),
     signatureCount: allSignatures.length,
   })

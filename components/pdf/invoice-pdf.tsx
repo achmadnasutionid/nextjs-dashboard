@@ -669,7 +669,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
 
   const parsedTermsBlocks = data.termsAndConditions ? parseHTMLToTextBlocks(data.termsAndConditions) : []
   const fitsTogether = fitsBillingRemarksTerms({
-    remarksCount: (data.remarks || []).length,
+    remarksTexts: (data.remarks || []).map((remark) => remark.text || ""),
     termsTexts: parsedTermsBlocks.map(block => block.text),
     signatureCount: allSignatures.length,
   })
