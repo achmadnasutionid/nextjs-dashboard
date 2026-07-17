@@ -8,7 +8,7 @@ import React from "react"
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
-import { fitsBillingRemarksTerms } from "@/lib/pdf-remarks-fit"
+import { fitsBillingRemarksTerms, PAGE_USABLE_HEIGHT_PT } from "@/lib/pdf-remarks-fit"
 
 const styles = StyleSheet.create({
   page: {
@@ -317,6 +317,45 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
     </View>
   ) : null
 
+  // Keep the last product with the Summary (wrap={false}) so Summary never lands alone on a
+  // fresh page, separated from the item it totals. Skipped if the last product has so many
+  // detail rows that forcing them together risks overflowing a full page.
+  const lastItem = safeItems.length > 0 ? safeItems[safeItems.length - 1] : null
+  const nonLastItems = safeItems.length > 0 ? safeItems.slice(0, -1) : []
+  const summaryRowCount = summaryItems.length + (downPaymentRate > 0 ? 2 : 0)
+  const estimatedLastItemSummaryHeight = lastItem
+    ? (1 + (lastItem.details || []).length) * 20 + summaryRowCount * 20 + 60
+    : 0
+  const keepLastItemWithSummary = !!lastItem && estimatedLastItemSummaryHeight <= PAGE_USABLE_HEIGHT_PT
+
+  const summaryContent = (
+    <>
+      {summaryItems.map((item) => (
+        <View key={item.id}>
+          <View style={item.isTotal ? styles.summaryTotal : styles.summaryRow}>
+            <View style={styles.summaryLabelCol}>
+              <Text>{item.label}:</Text>
+              {item.note ? <Text style={styles.termsLine}>{item.note}</Text> : null}
+            </View>
+            <Text style={item.id === "pph" ? { color: pphDeduction ? "red" : "green" } : undefined}>{item.id === "pph" ? (pphDeduction ? "- " : "+ ") : ""}{formatCurrency(item.value)}</Text>
+          </View>
+        </View>
+      ))}
+      {downPaymentRate > 0 ? (
+        <View style={styles.downPaymentBlock}>
+          <View style={styles.summaryRow}>
+            <Text>{`Down Payment (${downPaymentRate}%)`}</Text>
+            <Text>{formatCurrency(downPaymentAmount)}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text>Principal Amount</Text>
+            <Text>{formatCurrency(principalAmount)}</Text>
+          </View>
+        </View>
+      ) : null}
+    </>
+  )
+
   return (
     <Document pdfVersion="1.3">
       <Page size="A4" style={styles.page} wrap>
@@ -382,14 +421,14 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Items</Text>
-          <View style={styles.table}>
+          <View style={keepLastItemWithSummary ? [styles.table, { marginBottom: 0 }] : styles.table}>
             <View style={styles.tableHeader}>
               <Text style={styles.col1}>Product / Description</Text>
               <Text style={styles.col2}>Unit Price</Text>
               <Text style={styles.col3}>Qty</Text>
               <Text style={styles.col4}>Amount</Text>
             </View>
-            {safeItems.map((item, itemIndex) => (
+            {(keepLastItemWithSummary ? nonLastItems : safeItems).map((item, itemIndex) => (
               <View key={`item-${itemIndex}`}>
                 <View style={styles.tableRow}>
                   <Text style={styles.col1}>{item.productName || "\u00A0"}</Text>
@@ -410,31 +449,37 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
           </View>
         </View>
 
-        <View style={styles.summary} wrap={false}>
-          {summaryItems.map((item) => (
-            <View key={item.id}>
-              <View style={item.isTotal ? styles.summaryTotal : styles.summaryRow}>
-                <View style={styles.summaryLabelCol}>
-                  <Text>{item.label}:</Text>
-                  {item.note ? <Text style={styles.termsLine}>{item.note}</Text> : null}
+        {/* Last product + Summary: kept together (wrap={false}) so Summary never lands alone on
+            a fresh page separated from the item it totals. Skipped (see keepLastItemWithSummary)
+            if the last product has too many detail rows to safely force together. */}
+        {keepLastItemWithSummary && lastItem ? (
+          <View wrap={false}>
+            <View key={`item-${safeItems.length - 1}`} style={{ marginBottom: 12 }}>
+              <View style={styles.tableRow}>
+                <Text style={styles.col1}>{lastItem.productName || " "}</Text>
+                <Text style={styles.col2}>{" "}</Text>
+                <Text style={styles.col3}>{" "}</Text>
+                <Text style={styles.col4}>{" "}</Text>
+              </View>
+              {(lastItem.details || []).map((detail, detailIndex) => (
+                <View key={`d-${safeItems.length - 1}-${detailIndex}`} style={styles.tableRow}>
+                  <Text style={styles.col1}>  • {detail.detail || ""}</Text>
+                  <Text style={styles.col2}>{formatCurrency(applyPphToAmount(detail.unitPrice || 0, data.pph || "0", pphDeduction))}</Text>
+                  <Text style={styles.col3}>{detail.qty || 0}</Text>
+                  <Text style={styles.col4}>{formatCurrency(detail.amount || 0)}</Text>
                 </View>
-                <Text style={item.id === "pph" ? { color: pphDeduction ? "red" : "green" } : undefined}>{item.id === "pph" ? (pphDeduction ? "- " : "+ ") : ""}{formatCurrency(item.value)}</Text>
-              </View>
+              ))}
             </View>
-          ))}
-          {downPaymentRate > 0 ? (
-            <View style={styles.downPaymentBlock}>
-              <View style={styles.summaryRow}>
-                <Text>{`Down Payment (${downPaymentRate}%)`}</Text>
-                <Text>{formatCurrency(downPaymentAmount)}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text>Principal Amount</Text>
-                <Text>{formatCurrency(principalAmount)}</Text>
-              </View>
+
+            <View style={styles.summary}>
+              {summaryContent}
             </View>
-          ) : null}
-        </View>
+          </View>
+        ) : (
+          <View style={styles.summary} wrap={false}>
+            {summaryContent}
+          </View>
+        )}
 
         {/* Billing/Signature + Remarks + Terms & Conditions: kept together (wrap={false}) whenever
             the estimated combined height fits one page, so Billing never lands on a different
