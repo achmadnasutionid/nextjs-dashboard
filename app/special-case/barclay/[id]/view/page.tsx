@@ -6,8 +6,8 @@ import { PageHeader } from "@/components/layout/page-header"
 import { useFetch } from "@/hooks/use-fetch"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
-import { PDFDownloadLink, pdf } from "@react-pdf/renderer"
-import { LazyPDFViewer } from "@/components/pdf/lazy-pdf-viewer"
+import { StrippedPDFViewer } from "@/components/pdf/stripped-pdf-viewer"
+import { renderStrippedPdfBlob } from "@/lib/pdf-client-render"
 import { Download, MessageCircle, FileText, Receipt, ClipboardCheck, CheckCircle, Upload, Copy, Edit } from "lucide-react"
 import { ParagonQuotationPDF } from "@/components/pdf/paragon-quotation-pdf"
 import { ParagonInvoicePDF } from "@/components/pdf/paragon-invoice-pdf"
@@ -86,6 +86,7 @@ export default function ViewBarclayTicketPage() {
   const [uploading, setUploading] = useState(false)
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false)
   const [showCopyDialog, setShowCopyDialog] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: ticket, isLoading: loading, mutate } = useFetch<BarclayTicket>(
@@ -114,7 +115,7 @@ export default function ViewBarclayTicketPage() {
       }
 
       // Generate and download the PDF
-      const blob = await pdf(pdfComponent).toBlob()
+      const blob = await renderStrippedPdfBlob(pdfComponent)
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
@@ -142,6 +143,40 @@ export default function ViewBarclayTicketPage() {
       toast.error("Failed to prepare share", {
         description: "Could not download PDF or open WhatsApp.",
       })
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!ticket || downloadingPdf) return
+
+    setDownloadingPdf(true)
+    try {
+      let pdfComponent
+      if (viewType === 'quotation') {
+        pdfComponent = <ParagonQuotationPDF data={ticket} />
+      } else if (viewType === 'invoice') {
+        pdfComponent = <ParagonInvoicePDF data={ticket} />
+      } else if (viewType === 'bast') {
+        pdfComponent = <BarclayBASTPDF data={ticket} />
+      } else {
+        toast.error("Invalid view type")
+        return
+      }
+
+      const blob = await renderStrippedPdfBlob(pdfComponent)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      const docId = viewType === "quotation" ? ticket.quotationId : viewType === "invoice" ? ticket.invoiceId : ticket.ticketId
+      const fileLabel = ticket.projectName.replace(/\s+/g, "_")
+      link.download = `${docId}_${fileLabel}.pdf`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error downloading PDF:", error)
+      toast.error("Failed to download PDF")
+    } finally {
+      setDownloadingPdf(false)
     }
   }
 
@@ -406,104 +441,35 @@ export default function ViewBarclayTicketPage() {
                 <MessageCircle className="h-4 w-4" />
               </Button>
 
-              {viewType === 'quotation' && (
-                <PDFDownloadLink
-                  document={<ParagonQuotationPDF data={ticket} />}
-                  fileName={`${ticket.quotationId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
-                >
-                  {({ loading: pdfLoading }) => (
-                    <Button 
-                      size="icon" 
-                      disabled={pdfLoading}
-                      title={pdfLoading ? "Preparing..." : "Download PDF"}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              )}
-              
-              {viewType === 'invoice' && (
-                <PDFDownloadLink
-                  document={<ParagonInvoicePDF data={ticket} />}
-                  fileName={`${ticket.invoiceId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
-                >
-                  {({ loading: pdfLoading }) => (
-                    <Button 
-                      size="icon" 
-                      disabled={pdfLoading}
-                      title={pdfLoading ? "Preparing..." : "Download PDF"}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              )}
-              
-              {viewType === 'bast' && (
-                <PDFDownloadLink
-                  document={<BarclayBASTPDF data={ticket} />}
-                  fileName={`${ticket.ticketId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
-                >
-                  {({ loading: pdfLoading }) => (
-                    <Button 
-                      size="icon" 
-                      disabled={pdfLoading}
-                      title={pdfLoading ? "Preparing..." : "Download PDF"}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              )}
+              <Button
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
+                size="icon"
+                title={downloadingPdf ? "Preparing..." : "Download PDF"}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
           {/* PDF Viewer */}
-          {viewType === 'quotation' && (
-            <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-              <LazyPDFViewer
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                showToolbar={true}
-              >
+          <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
+            <StrippedPDFViewer
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+              }}
+            >
+              {viewType === 'quotation' ? (
                 <ParagonQuotationPDF data={ticket} />
-              </LazyPDFViewer>
-            </div>
-          )}
-
-          {viewType === 'invoice' && (
-            <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-              <LazyPDFViewer
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                showToolbar={true}
-              >
+              ) : viewType === 'invoice' ? (
                 <ParagonInvoicePDF data={ticket} />
-              </LazyPDFViewer>
-            </div>
-          )}
-
-          {viewType === 'bast' && (
-            <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-              <LazyPDFViewer
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                showToolbar={true}
-              >
+              ) : (
                 <BarclayBASTPDF data={ticket} />
-              </LazyPDFViewer>
-            </div>
-          )}
+              )}
+            </StrippedPDFViewer>
+          </div>
         </div>
       </main>
       <Footer />

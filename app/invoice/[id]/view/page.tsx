@@ -7,9 +7,9 @@ import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Download, MessageCircle, CheckCircle, Copy, Edit, Trash2 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
-import { PDFDownloadLink, pdf } from "@react-pdf/renderer"
 import { InvoicePDF } from "@/components/pdf/invoice-pdf"
-import { LazyPDFViewer } from "@/components/pdf/lazy-pdf-viewer"
+import { StrippedPDFViewer } from "@/components/pdf/stripped-pdf-viewer"
+import { renderStrippedPdfBlob } from "@/lib/pdf-client-render"
 import { toast } from "sonner"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import {
@@ -77,6 +77,7 @@ export default function ViewInvoicePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showCopyDialog, setShowCopyDialog] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: Invoice, isLoading: loading, mutate } = useFetch<Invoice>(
@@ -109,7 +110,7 @@ export default function ViewInvoicePage() {
 
     try {
       // Generate and download the PDF
-      const blob = await pdf(<InvoicePDF data={pdfData || Invoice} />).toBlob()
+      const blob = await renderStrippedPdfBlob(<InvoicePDF data={pdfData || Invoice} />)
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
@@ -135,6 +136,26 @@ export default function ViewInvoicePage() {
       toast.error("Failed to prepare share", {
         description: "Could not download PDF or open WhatsApp.",
       })
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!Invoice || downloadingPdf) return
+
+    setDownloadingPdf(true)
+    try {
+      const blob = await renderStrippedPdfBlob(<InvoicePDF data={pdfData || Invoice} />)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `${Invoice.invoiceId}_${Invoice.billTo.replace(/\s+/g, "_")}.pdf`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error downloading PDF:", error)
+      toast.error("Failed to download PDF")
+    } finally {
+      setDownloadingPdf(false)
     }
   }
 
@@ -326,23 +347,14 @@ export default function ViewInvoicePage() {
                   >
                     <MessageCircle className="h-4 w-4" />
                   </Button>
-                  <PDFDownloadLink
-                    document={<InvoicePDF data={pdfData || Invoice} />}
-                    fileName={`${Invoice.invoiceId}_${Invoice.billTo.replace(
-                      /\s+/g,
-                      "_"
-                    )}.pdf`}
+                  <Button
+                    onClick={handleDownloadPdf}
+                    disabled={downloadingPdf}
+                    size="icon"
+                    title={downloadingPdf ? "Preparing..." : "Download PDF"}
                   >
-                    {({ loading }) => (
-                      <Button 
-                        disabled={loading}
-                        size="icon"
-                        title={loading ? "Preparing..." : "Download PDF"}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </PDFDownloadLink>
+                    <Download className="h-4 w-4" />
+                  </Button>
                 </>
               )}
               
@@ -363,16 +375,15 @@ export default function ViewInvoicePage() {
 
           {/* PDF Viewer */}
           <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-            <LazyPDFViewer
+            <StrippedPDFViewer
               style={{
                 width: "100%",
                 height: "100%",
                 border: "none",
               }}
-              showToolbar={true}
             >
               <InvoicePDF data={pdfData || Invoice} />
-            </LazyPDFViewer>
+            </StrippedPDFViewer>
           </div>
         </div>
       </main>

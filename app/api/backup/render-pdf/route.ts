@@ -3,6 +3,7 @@ import React from "react"
 import { renderToBuffer } from "@react-pdf/renderer"
 import { QuotationBackupPDF } from "@/components/pdf/quotation-backup-pdf"
 import { InvoiceBackupPDF } from "@/components/pdf/invoice-backup-pdf"
+import { stripBlankTrailingPage } from "@/lib/pdf-strip-blank-page"
 
 type DocType = "quotation" | "invoice"
 
@@ -32,8 +33,9 @@ export async function POST(request: Request) {
     if (type === "quotation") {
       const el = React.createElement(QuotationBackupPDF, { data: normalized })
       const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
+      const stripped = await stripBlankTrailingPage(new Uint8Array(buffer))
       const filename = `${normalized.quotationId ?? "quotation"}.pdf`
-      return new NextResponse(new Uint8Array(buffer), {
+      return new NextResponse(new Uint8Array(stripped), {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
@@ -45,8 +47,9 @@ export async function POST(request: Request) {
     if (type === "invoice") {
       const el = React.createElement(InvoiceBackupPDF, { data: normalized })
       const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
+      const stripped = await stripBlankTrailingPage(new Uint8Array(buffer))
       const filename = `${normalized.invoiceId ?? "invoice"}.pdf`
-      return new NextResponse(new Uint8Array(buffer), {
+      return new NextResponse(new Uint8Array(stripped), {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",

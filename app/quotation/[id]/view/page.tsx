@@ -7,9 +7,9 @@ import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Download, MessageCircle, FileText, CheckCircle, Copy, Edit, Trash2 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
-import { PDFDownloadLink, pdf } from "@react-pdf/renderer"
 import { QuotationPDF } from "@/components/pdf/quotation-pdf"
-import { LazyPDFViewer } from "@/components/pdf/lazy-pdf-viewer"
+import { StrippedPDFViewer } from "@/components/pdf/stripped-pdf-viewer"
+import { renderStrippedPdfBlob } from "@/lib/pdf-client-render"
 import { toast } from "sonner"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import {
@@ -79,6 +79,7 @@ export default function ViewQuotationPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showCopyDialog, setShowCopyDialog] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: quotation, isLoading: loading, mutate } = useFetch<Quotation>(
@@ -111,7 +112,7 @@ export default function ViewQuotationPage() {
 
     try {
       // Generate and download the PDF
-      const blob = await pdf(<QuotationPDF data={pdfData || quotation} />).toBlob()
+      const blob = await renderStrippedPdfBlob(<QuotationPDF data={pdfData || quotation} />)
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
@@ -137,6 +138,26 @@ export default function ViewQuotationPage() {
       toast.error("Failed to prepare share", {
         description: "Could not download PDF or open WhatsApp.",
       })
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!quotation || downloadingPdf) return
+
+    setDownloadingPdf(true)
+    try {
+      const blob = await renderStrippedPdfBlob(<QuotationPDF data={pdfData || quotation} />)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `${quotation.quotationId}_${quotation.billTo.replace(/\s+/g, "_")}.pdf`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error downloading PDF:", error)
+      toast.error("Failed to download PDF")
+    } finally {
+      setDownloadingPdf(false)
     }
   }
 
@@ -439,23 +460,14 @@ export default function ViewQuotationPage() {
                   >
                     <MessageCircle className="h-4 w-4" />
                   </Button>
-                  <PDFDownloadLink
-                    document={<QuotationPDF data={pdfData || quotation} />}
-                    fileName={`${quotation.quotationId}_${quotation.billTo.replace(
-                      /\s+/g,
-                      "_"
-                    )}.pdf`}
+                  <Button
+                    onClick={handleDownloadPdf}
+                    disabled={downloadingPdf}
+                    size="icon"
+                    title={downloadingPdf ? "Preparing..." : "Download PDF"}
                   >
-                    {({ loading }) => (
-                      <Button 
-                        disabled={loading}
-                        size="icon"
-                        title={loading ? "Preparing..." : "Download PDF"}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </PDFDownloadLink>
+                    <Download className="h-4 w-4" />
+                  </Button>
                 </>
               )}
               
@@ -476,16 +488,15 @@ export default function ViewQuotationPage() {
 
           {/* PDF Viewer */}
           <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-            <LazyPDFViewer
+            <StrippedPDFViewer
               style={{
                 width: "100%",
                 height: "100%",
                 border: "none",
               }}
-              showToolbar={true}
             >
               <QuotationPDF data={pdfData || quotation} />
-            </LazyPDFViewer>
+            </StrippedPDFViewer>
           </div>
         </div>
       </main>

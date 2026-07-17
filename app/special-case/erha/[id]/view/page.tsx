@@ -6,8 +6,8 @@ import { PageHeader } from "@/components/layout/page-header"
 import { useFetch } from "@/hooks/use-fetch"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
-import { PDFDownloadLink } from "@react-pdf/renderer"
-import { LazyPDFViewer } from "@/components/pdf/lazy-pdf-viewer"
+import { StrippedPDFViewer } from "@/components/pdf/stripped-pdf-viewer"
+import { renderStrippedPdfBlob } from "@/lib/pdf-client-render"
 import { FileText, Receipt, ClipboardCheck, CheckCircle, Upload, Download, Copy, Edit } from "lucide-react"
 import { ErhaQuotationPDF } from "@/components/pdf/erha-quotation-pdf"
 import { ErhaInvoicePDF } from "@/components/pdf/erha-invoice-pdf"
@@ -93,6 +93,7 @@ export default function ViewErhaTicketPage() {
   const [uploading, setUploading] = useState(false)
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false)
   const [showCopyDialog, setShowCopyDialog] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   // Use SWR for cached data fetching
   const { data: ticket, isLoading: loading, mutate } = useFetch<ErhaTicket>(
@@ -130,6 +131,40 @@ export default function ViewErhaTicketPage() {
       toast.error("Failed to finalize ticket")
     } finally {
       setFinalizing(false)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!ticket || downloadingPdf) return
+
+    setDownloadingPdf(true)
+    try {
+      let pdfComponent
+      if (viewType === 'quotation') {
+        pdfComponent = <ErhaQuotationPDF data={ticket} />
+      } else if (viewType === 'invoice') {
+        pdfComponent = <ErhaInvoicePDF data={ticket} />
+      } else if (viewType === 'bast') {
+        pdfComponent = <ErhaBASTPDF data={ticket} />
+      } else {
+        toast.error("Invalid view type")
+        return
+      }
+
+      const blob = await renderStrippedPdfBlob(pdfComponent)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      const docId = viewType === "quotation" ? ticket.quotationId : viewType === "invoice" ? ticket.invoiceId : ticket.ticketId
+      const fileLabel = ticket.projectName.replace(/\s+/g, "_")
+      link.download = `${docId}_${fileLabel}.pdf`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error downloading PDF:", error)
+      toast.error("Failed to download PDF")
+    } finally {
+      setDownloadingPdf(false)
     }
   }
 
@@ -358,109 +393,34 @@ export default function ViewErhaTicketPage() {
                 <Copy className="h-4 w-4" />
               </Button>
               
-              {/* Download Button for Quotation */}
-              {viewType === 'quotation' && (
-                <PDFDownloadLink
-                  document={<ErhaQuotationPDF data={ticket} />}
-                  fileName={`${ticket.quotationId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
-                >
-                  {({ loading: pdfLoading }) => (
-                    <Button 
-                      size="icon" 
-                      disabled={pdfLoading}
-                      title={pdfLoading ? "Preparing..." : "Download PDF"}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              )}
-              
-              {/* Download Button for Invoice */}
-              {viewType === 'invoice' && (
-                <PDFDownloadLink
-                  document={<ErhaInvoicePDF data={ticket} />}
-                  fileName={`${ticket.invoiceId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
-                >
-                  {({ loading: pdfLoading }) => (
-                    <Button 
-                      size="icon" 
-                      disabled={pdfLoading}
-                      title={pdfLoading ? "Preparing..." : "Download PDF"}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              )}
-              
-              {/* Download Button for BAST */}
-              {viewType === 'bast' && (
-                <PDFDownloadLink
-                  document={<ErhaBASTPDF data={ticket} />}
-                  fileName={`${ticket.ticketId}_${ticket.projectName.replace(/\s+/g, "_")}.pdf`}
-                >
-                  {({ loading: pdfLoading }) => (
-                    <Button 
-                      size="icon" 
-                      disabled={pdfLoading}
-                      title={pdfLoading ? "Preparing..." : "Download PDF"}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              )}
+              <Button
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
+                size="icon"
+                title={downloadingPdf ? "Preparing..." : "Download PDF"}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
-          {/* PDF Viewer for Quotation */}
-          {viewType === 'quotation' && (
-            <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-              <LazyPDFViewer
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                showToolbar={true}
-              >
+          <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
+            <StrippedPDFViewer
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+              }}
+            >
+              {viewType === 'quotation' ? (
                 <ErhaQuotationPDF data={ticket} />
-              </LazyPDFViewer>
-            </div>
-          )}
-
-          {/* PDF Viewer for Invoice */}
-          {viewType === 'invoice' && (
-            <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-              <LazyPDFViewer
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                showToolbar={true}
-              >
+              ) : viewType === 'invoice' ? (
                 <ErhaInvoicePDF data={ticket} />
-              </LazyPDFViewer>
-            </div>
-          )}
-
-          {/* PDF Viewer for BAST */}
-          {viewType === 'bast' && (
-            <div className="h-[calc(100vh-250px)] w-full overflow-hidden rounded-lg border bg-white shadow-lg">
-              <LazyPDFViewer
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                showToolbar={true}
-              >
+              ) : (
                 <ErhaBASTPDF data={ticket} />
-              </LazyPDFViewer>
-            </div>
-          )}
+              )}
+            </StrippedPDFViewer>
+          </div>
         </div>
       </main>
       <Footer />

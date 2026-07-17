@@ -8,6 +8,7 @@
 
 import React from "react"
 import { renderToBuffer } from "@react-pdf/renderer"
+import { stripBlankTrailingPage } from "@/lib/pdf-strip-blank-page"
 import { prisma } from "@/lib/prisma"
 import {
   getOrCreateFolder,
@@ -503,11 +504,12 @@ export async function runPdfDriveSync(): Promise<{
         const buffer = await renderToBuffer(
           React.createElement(QuotationBackupPDF, { data }) as Parameters<typeof renderToBuffer>[0]
         )
+        const stripped = await stripBlankTrailingPage(new Uint8Array(buffer))
         const fileName = pdfFileName(q.quotationId, q.billTo)
         const uploadResult = await uploadOrUpdateFile(
           quotationsFolderId,
           fileName,
-          Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
+          Buffer.from(stripped)
         )
         if (uploadResult.ok) {
           uploaded += 1
@@ -542,11 +544,12 @@ export async function runPdfDriveSync(): Promise<{
         const buffer = await renderToBuffer(
           React.createElement(InvoiceBackupPDF, { data }) as Parameters<typeof renderToBuffer>[0]
         )
+        const stripped = await stripBlankTrailingPage(new Uint8Array(buffer))
         const fileName = pdfFileName(inv.invoiceId, inv.billTo)
         const uploadResult = await uploadOrUpdateFile(
           invoicesFolderId,
           fileName,
-          Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
+          Buffer.from(stripped)
         )
         if (uploadResult.ok) {
           uploaded += 1
@@ -586,7 +589,8 @@ export async function runPdfDriveSync(): Promise<{
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
-          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
+          const stripped = await stripBlankTrailingPage(new Uint8Array(buffer))
+          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(stripped))
           if (uploadResult.ok) {
             uploaded += 1
             updateBackupSyncProgress({ uploaded })
@@ -628,7 +632,8 @@ export async function runPdfDriveSync(): Promise<{
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
-          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
+          const stripped = await stripBlankTrailingPage(new Uint8Array(buffer))
+          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(stripped))
           if (uploadResult.ok) {
             uploaded += 1
             updateBackupSyncProgress({ uploaded })
@@ -670,7 +675,8 @@ export async function runPdfDriveSync(): Promise<{
       for (const [fileName, el] of files) {
         try {
           const buffer = await renderToBuffer(el as Parameters<typeof renderToBuffer>[0])
-          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(buffer))
+          const stripped = await stripBlankTrailingPage(new Uint8Array(buffer))
+          const uploadResult = await uploadOrUpdateFile(projectFolderId, fileName, Buffer.from(stripped))
           if (uploadResult.ok) {
             uploaded += 1
             updateBackupSyncProgress({ uploaded })
