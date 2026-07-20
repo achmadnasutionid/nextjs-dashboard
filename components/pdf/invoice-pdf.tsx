@@ -2,7 +2,7 @@ import React from "react"
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
-import { fitsBillingRemarksTerms, PAGE_USABLE_HEIGHT_PT } from "@/lib/pdf-remarks-fit"
+import { fitsBillingRemarksTerms, estimateItemHeight, estimateSummaryNoteHeight, PAGE_USABLE_HEIGHT_PT } from "@/lib/pdf-remarks-fit"
 
 const styles = StyleSheet.create({
   page: {
@@ -319,6 +319,21 @@ const parseHTMLToTextBlocks = (html: string) => {
   }
   
   return blocks
+}
+
+// react-pdf can't reliably split a single <Text> containing embedded newlines across a page
+// boundary -- when it doesn't fit remaining space, it can defer a disproportionate amount of
+// surrounding content to the next page instead of splitting cleanly. Rendering each line as
+// its own <Text> keeps the same visual output but lets react-pdf place lines independently.
+function renderDetailCell(text: string, bulletPrefix: string) {
+  const lines = (text || '').split('\n')
+  return (
+    <View style={styles.col1}>
+      {lines.map((line, i) => (
+        <Text key={i}>{i === 0 ? bulletPrefix : ''}{line || ' '}</Text>
+      ))}
+    </View>
+  )
 }
 
 export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false }) => {
@@ -755,8 +770,9 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
   const lastItem = safeItems.length > 0 ? safeItems[safeItems.length - 1] : null
   const nonLastItems = safeItems.length > 0 ? safeItems.slice(0, -1) : []
   const summaryRowCount = summaryItems.length + (downPaymentRate > 0 ? 2 : 0)
+  const summaryNotesHeight = summaryItems.reduce((sum, item) => sum + estimateSummaryNoteHeight(item.note), 0)
   const estimatedLastItemSummaryHeight = lastItem
-    ? (1 + (lastItem.details || []).length) * 20 + summaryRowCount * 20 + 60
+    ? estimateItemHeight((lastItem.details || []).map((detail) => detail.detail || "")) + summaryRowCount * 20 + summaryNotesHeight + 60
     : 0
   const keepLastItemWithSummary = !!lastItem && estimatedLastItemSummaryHeight <= PAGE_USABLE_HEIGHT_PT
 
@@ -886,7 +902,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
                 {/* Detail Rows */}
                 {(item.details || []).map((detail, detailIndex) => (
                   <View key={`detail-${itemIndex}-${detailIndex}`} style={styles.tableRow}>
-                    <Text style={styles.col1}>  • {detail.detail || ''}</Text>
+                    {renderDetailCell(detail.detail || '', '  • ')}
                     <Text style={styles.col2}>{formatCurrency(applyPphToAmount(detail.unitPrice || 0, data.pph || "0", pphDeduction))}</Text>
                     <Text style={styles.col3}>{detail.qty || 0}</Text>
                     <Text style={styles.col4}>{formatCurrency(detail.amount || 0)}</Text>
@@ -911,7 +927,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
               </View>
               {(lastItem.details || []).map((detail, detailIndex) => (
                 <View key={`detail-${safeItems.length - 1}-${detailIndex}`} style={styles.tableRow}>
-                  <Text style={styles.col1}>  • {detail.detail || ''}</Text>
+                  {renderDetailCell(detail.detail || '', '  • ')}
                   <Text style={styles.col2}>{formatCurrency(applyPphToAmount(detail.unitPrice || 0, data.pph || "0", pphDeduction))}</Text>
                   <Text style={styles.col3}>{detail.qty || 0}</Text>
                   <Text style={styles.col4}>{formatCurrency(detail.amount || 0)}</Text>

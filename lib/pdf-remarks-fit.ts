@@ -105,3 +105,32 @@ function estimateRemarksTermsBillingHeight(input: FitInput): number {
 export function fitsBillingRemarksTerms(input: FitInput): boolean {
   return estimateRemarksTermsBillingHeight(input) <= PAGE_USABLE_HEIGHT_PT
 }
+
+// Items table: col1 is 50% of the ~535pt content width, minus the "  • " bullet prefix.
+const ITEM_DETAIL_FONT_SIZE_PT = 9
+const ITEM_DETAIL_WIDTH_PT = 267.5 - 20
+const ITEM_ROW_PADDING_PT = 8 // tableRow padding: 4pt top + 4pt bottom
+
+/**
+ * Estimated height of one product's header row + all its detail rows in the Items table.
+ * Detail text can be long free-form descriptions with embedded blank-line breaks (not just
+ * short one-liners), so this can't be a flat per-row height -- same reasoning as Remarks/Terms.
+ */
+export function estimateItemHeight(detailTexts: string[]): number {
+  const headerRowHeight = ITEM_DETAIL_FONT_SIZE_PT * 1.3 + ITEM_ROW_PADDING_PT
+  const detailRowsHeight = detailTexts.reduce(
+    (sum, text) => sum + estimateParagraphHeight(text, ITEM_DETAIL_FONT_SIZE_PT, ITEM_DETAIL_WIDTH_PT, 1.3) + ITEM_ROW_PADDING_PT,
+    0
+  )
+  return headerRowHeight + detailRowsHeight
+}
+
+/**
+ * Extra height for a summary row's optional note line (e.g. the PPh withholding-tax-slip
+ * reminder) -- summary rows are otherwise a flat height, but a note can wrap to several
+ * lines of its own and isn't covered by a flat per-row assumption.
+ */
+export function estimateSummaryNoteHeight(note: string | null | undefined): number {
+  if (!note) return 0
+  return estimateParagraphHeight(note, FONT_SIZE_PT, DEFAULT_CONTENT_WIDTH_PT, 1.3) + 2
+}
