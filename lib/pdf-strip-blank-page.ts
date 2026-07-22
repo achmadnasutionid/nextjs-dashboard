@@ -5,11 +5,30 @@
  * beyond that boilerplate. Works in both the browser and Node since it only uses pdf-lib's
  * bundled (universal) stream decoding instead of Node's zlib.
  */
-import { PDFDocument, PDFArray, PDFRawStream, PDFRef, decodePDFRawStream } from "pdf-lib"
+import { PDFDocument, PDFArray, PDFDict, PDFName, PDFRawStream, PDFRef, PDFStream, decodePDFRawStream } from "pdf-lib"
 
 // Comfortably below the shortest real content section (e.g. Billing info alone is 150+ chars)
 // but above the fixed header ("QUOTATION" + id/date) + footer ("Generated on ... | id") combined.
 const MIN_MEANINGFUL_TEXT_LENGTH = 120
+
+/** True if the page embeds an actual image (e.g. a signature) — never strip a page carrying one. */
+function pageHasImage(pdfDoc: PDFDocument, page: ReturnType<PDFDocument["getPages"]>[number]): boolean {
+  const resources = page.node.Resources()
+  if (!(resources instanceof PDFDict)) return false
+
+  const xObjectsRef = resources.get(PDFName.XObject)
+  const xObjects = xObjectsRef instanceof PDFRef ? pdfDoc.context.lookup(xObjectsRef) : xObjectsRef
+  if (!(xObjects instanceof PDFDict)) return false
+
+  for (const key of xObjects.keys()) {
+    const entryRef = xObjects.get(key)
+    const entry = entryRef instanceof PDFRef ? pdfDoc.context.lookup(entryRef) : entryRef
+    if (entry instanceof PDFStream && entry.dict.get(PDFName.of("Subtype")) === PDFName.of("Image")) {
+      return true
+    }
+  }
+  return false
+}
 
 function extractTextFromStream(stream: PDFRawStream): string {
   const decoded = decodePDFRawStream(stream).decode()
@@ -49,6 +68,7 @@ export async function stripBlankTrailingPage(pdfBytes: Uint8Array): Promise<Uint
 
   const meaningfulLength = text.replace(/\s+/g, "").length
   if (meaningfulLength >= MIN_MEANINGFUL_TEXT_LENGTH) return pdfBytes
+  if (pageHasImage(pdfDoc, lastPage)) return pdfBytes
 
   pdfDoc.removePage(pageCount - 1)
   return pdfDoc.save()

@@ -18,7 +18,9 @@ interface StrippedPDFViewerProps {
 export function StrippedPDFViewer({ children, className, style }: StrippedPDFViewerProps) {
   const [mounted, setMounted] = useState(false)
   const [url, setUrl] = useState<string | null>(null)
-  const depKey = JSON.stringify((children as any)?.props)
+  const childType = children?.type as any
+  const typeKey = childType?.displayName || childType?.name || String(childType)
+  const depKey = `${typeKey}:${JSON.stringify((children as any)?.props)}`
 
   useEffect(() => {
     setMounted(true)
