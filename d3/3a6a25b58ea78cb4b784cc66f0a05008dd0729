@@ -1,0 +1,23 @@
+lib/pdf-strip-blank-page.ts
+  s_b645bf60ccbfef::t_e1d4dd0c4c634b 71
+  s_b645bf60ccbfef::t_f290eb62b1b489 8,14-31
+  s_b645bf60ccbfef::t_cd8af914aec4cf 32
+components/pdf/stripped-pdf-viewer.tsx
+  s_b645bf60ccbfef::t_143056eb608dcf 21-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "d33a6a25b58ea78cb4b784cc66f0a05008dd0729",
+  "prompts": {},
+  "sessions": {
+    "s_b645bf60ccbfef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f00e48d-eb03-401e-83d5-8e877927b12f",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
