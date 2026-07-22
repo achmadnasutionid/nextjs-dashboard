@@ -1,0 +1,21 @@
+components/pdf/paragon-invoice-pdf.tsx
+  s_b645bf60ccbfef::t_a6eeb0cb5ccd58 450
+components/pdf/paragon-quotation-pdf.tsx
+  s_b645bf60ccbfef::t_4758c97f0f6d7e 486
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "ac7f27d4363315c74756886c6846a0af7d06e484",
+  "prompts": {},
+  "sessions": {
+    "s_b645bf60ccbfef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f00e48d-eb03-401e-83d5-8e877927b12f",
+        "model": "unknown"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
