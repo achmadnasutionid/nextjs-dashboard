@@ -483,7 +483,7 @@ const parseHTMLToTextBlocks = (html: string) => {
 
         {/* Remarks */}
         {data.remarks && data.remarks.length > 0 && (
-          <View style={styles.remarksSection}>
+          <View style={styles.remarksSection} wrap={false}>
             <Text style={styles.remarksTitle}>Remarks :</Text>
             {data.remarks
               .filter((remark) => remark.text.trim())
