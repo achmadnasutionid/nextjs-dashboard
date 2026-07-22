@@ -45,15 +45,9 @@ function extractTextFromStream(stream: PDFRawStream): string {
   return text
 }
 
-/** Removes the last page from `pdfBytes` if it has no meaningful content, returns the bytes unchanged otherwise. */
-export async function stripBlankTrailingPage(pdfBytes: Uint8Array): Promise<Uint8Array> {
-  const pdfDoc = await PDFDocument.load(pdfBytes)
-  const pageCount = pdfDoc.getPageCount()
-  if (pageCount <= 1) return pdfBytes
-
-  const lastPage = pdfDoc.getPages()[pageCount - 1]
-  const contents = lastPage.node.Contents()
-  if (!contents) return pdfBytes
+function extractPageText(pdfDoc: PDFDocument, page: ReturnType<PDFDocument["getPages"]>[number]): string {
+  const contents = page.node.Contents()
+  if (!contents) return ""
 
   let text = ""
   if (contents instanceof PDFArray) {
@@ -65,10 +59,35 @@ export async function stripBlankTrailingPage(pdfBytes: Uint8Array): Promise<Uint
   } else if (contents instanceof PDFRawStream) {
     text += extractTextFromStream(contents)
   }
+  return text
+}
 
-  const meaningfulLength = text.replace(/\s+/g, "").length
-  if (meaningfulLength >= MIN_MEANINGFUL_TEXT_LENGTH) return pdfBytes
+/** Removes the last page from `pdfBytes` if it has no meaningful content, returns the bytes unchanged otherwise. */
+export async function stripBlankTrailingPage(pdfBytes: Uint8Array): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.load(pdfBytes)
+  const pageCount = pdfDoc.getPageCount()
+  if (pageCount <= 1) return pdfBytes
+
+  const pages = pdfDoc.getPages()
+  const lastPage = pages[pageCount - 1]
+  const meaningful = extractPageText(pdfDoc, lastPage).replace(/\s+/g, "")
+
+  if (meaningful.length === 0) {
+    if (pageHasImage(pdfDoc, lastPage)) return pdfBytes
+    pdfDoc.removePage(pageCount - 1)
+    return pdfDoc.save()
+  }
+
+  if (meaningful.length >= MIN_MEANINGFUL_TEXT_LENGTH) return pdfBytes
   if (pageHasImage(pdfDoc, lastPage)) return pdfBytes
+
+  // Under the threshold but not empty: only strip if this text is just the `fixed`
+  // header/footer boilerplate repeating (it'll appear verbatim on page 1 too, since
+  // `fixed` elements render identically on every page). Real content unique to this
+  // page — e.g. a short Remarks/Terms block that spilled onto its own page — never
+  // matches page 1 and must never be silently dropped.
+  const firstPageText = extractPageText(pdfDoc, pages[0]).replace(/\s+/g, "")
+  if (!firstPageText.includes(meaningful)) return pdfBytes
 
   pdfDoc.removePage(pageCount - 1)
   return pdfDoc.save()
