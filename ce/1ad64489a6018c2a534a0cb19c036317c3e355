@@ -1,0 +1,25 @@
+app/special-case/barclay/[id]/view/page.tsx
+  s_b645bf60ccbfef::t_c893066a2b0396 107,156,465
+components/pdf/paragon-invoice-pdf.tsx
+  s_b645bf60ccbfef::t_24d7ec77bdadbd 430-447
+components/pdf/paragon-quotation-pdf.tsx
+  s_b645bf60ccbfef::t_51a358c154b3e0 171-172,213,436-441,455-483
+lib/pdf-drive-sync.ts
+  s_b645bf60ccbfef::t_be6cda3be7c35f 630
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "ce1ad64489a6018c2a534a0cb19c036317c3e355",
+  "prompts": {},
+  "sessions": {
+    "s_b645bf60ccbfef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f00e48d-eb03-401e-83d5-8e877927b12f",
+        "model": "unknown"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
