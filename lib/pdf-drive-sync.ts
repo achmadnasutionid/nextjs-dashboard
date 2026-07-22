@@ -627,7 +627,7 @@ export async function runPdfDriveSync(): Promise<{
       if (!projectFolderId) continue
       const data = toBarclayPdfData(t)
       const files: [string, React.ReactElement][] = [[t.ticketId + "_BAST.pdf", React.createElement(BarclayBASTPDF, { data, forSync: true })]]
-      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data, forSync: true })])
+      if (t.quotationId?.trim()) files.push([t.quotationId + ".pdf", React.createElement(ParagonQuotationPDF, { data, forSync: true, hideSubtotal: true })])
       if (t.invoiceId?.trim()) files.push([t.invoiceId + ".pdf", React.createElement(ParagonInvoicePDF, { data, forSync: true })])
       for (const [fileName, el] of files) {
         try {

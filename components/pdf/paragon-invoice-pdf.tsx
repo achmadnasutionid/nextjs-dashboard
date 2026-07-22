@@ -427,6 +427,24 @@ const parseHTMLToTextBlocks = (html: string) => {
           </View>
         </View>
 
+        {/* Footer - Only Best Regards (no Menyetujui section) */}
+        <View style={styles.footer} wrap={false}>
+          <View style={styles.footerRight}>
+            <Text style={styles.footerLabel}>Best Regards,</Text>
+            {data.signatureImageData && !forSync ? (
+              <Image src={data.signatureImageData} style={styles.signatureImage} />
+            ) : data.signatureImageData && forSync ? (
+              <View style={styles.signatureImagePlaceholder} />
+            ) : (
+              <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />
+            )}
+            <Text style={styles.footerName}>{data.signatureName}</Text>
+            {data.signatureRole && (
+              <Text style={styles.footerRole}>{data.signatureRole}</Text>
+            )}
+          </View>
+        </View>
+
         {/* Remarks */}
         {data.remarks && data.remarks.length > 0 && (
           <View style={styles.remarksSection}>
@@ -467,24 +485,6 @@ const parseHTMLToTextBlocks = (html: string) => {
             </View>
           )
         )}
-
-        {/* Footer - Only Best Regards (no Menyetujui section) */}
-        <View style={styles.footer} wrap={false}>
-          <View style={styles.footerRight}>
-            <Text style={styles.footerLabel}>Best Regards,</Text>
-            {data.signatureImageData && !forSync ? (
-              <Image src={data.signatureImageData} style={styles.signatureImage} />
-            ) : data.signatureImageData && forSync ? (
-              <View style={styles.signatureImagePlaceholder} />
-            ) : (
-              <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />
-            )}
-            <Text style={styles.footerName}>{data.signatureName}</Text>
-            {data.signatureRole && (
-              <Text style={styles.footerRole}>{data.signatureRole}</Text>
-            )}
-          </View>
-        </View>
       </Page>
     </Document>
   )

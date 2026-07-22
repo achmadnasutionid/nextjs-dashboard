@@ -168,6 +168,8 @@ const styles = StyleSheet.create({
 interface ParagonQuotationPDFProps {
   /** When true, omit signature image for Drive sync to avoid react-pdf 'S' bug. */
   forSync?: boolean
+  /** When true, omit the SUB TOTAL row from the summary (Barclay doesn't need it). */
+  hideSubtotal?: boolean
   data: {
     ticketId: string
     quotationId: string // Real quotation ID from main database
@@ -208,7 +210,7 @@ interface ParagonQuotationPDFProps {
   }
 }
 
-export const ParagonQuotationPDF: React.FC<ParagonQuotationPDFProps> = ({ data, forSync = false }) => {
+export const ParagonQuotationPDF: React.FC<ParagonQuotationPDFProps> = ({ data, forSync = false, hideSubtotal = false }) => {
   // Sign section: use only bill to (company/client), not project name
   const signBillTo =
     data.projectName && data.billTo.endsWith(" - " + data.projectName)
@@ -431,10 +433,12 @@ const parseHTMLToTextBlocks = (html: string) => {
         {/* Summary */}
         <View style={styles.summarySection}>
           <View style={styles.summaryBox}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>SUB TOTAL</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(calculateSubtotal())}</Text>
-            </View>
+            {!hideSubtotal ? (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>SUB TOTAL</Text>
+                <Text style={styles.summaryValue}>{formatCurrency(calculateSubtotal())}</Text>
+              </View>
+            ) : null}
             {showPph ? (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>PPh</Text>
@@ -445,6 +449,35 @@ const parseHTMLToTextBlocks = (html: string) => {
               <Text style={styles.summaryLabel}>TOTAL</Text>
               <Text style={styles.summaryValue}>{formatCurrency(data.totalAmount)}</Text>
             </View>
+          </View>
+        </View>
+
+        {/* Footer with Signatures - bill to only in sign section */}
+        <View style={styles.footer} wrap={false}>
+          {/* Left: Client Approval */}
+          <View style={styles.footerLeft}>
+            <Text style={{ fontSize: 10, marginBottom: 5 }}>Menyetujui,</Text>
+            <Text style={{ fontSize: 10, marginBottom: 5 }}>{signBillTo}</Text>
+            <View style={{ height: 40 }} />
+            <Text style={styles.footerName}>{data.contactPerson}</Text>
+            <Text style={styles.footerRole}>{data.contactPosition}</Text>
+          </View>
+
+          {/* Right: Company Signature */}
+          <View style={styles.footerRight}>
+            <Text style={{ fontSize: 10, marginBottom: 5 }}>Best Regards,</Text>
+            <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{signBillTo}</Text>
+            {data.signatureImageData && !forSync ? (
+              <Image src={data.signatureImageData} style={styles.signatureImage} />
+            ) : data.signatureImageData && forSync ? (
+              <View style={styles.signatureImagePlaceholder} />
+            ) : (
+              <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />
+            )}
+            <Text style={styles.footerName}>{data.signatureName}</Text>
+            {data.signatureRole && (
+              <Text style={styles.footerRole}>{data.signatureRole}</Text>
+            )}
           </View>
         </View>
 
@@ -484,35 +517,6 @@ const parseHTMLToTextBlocks = (html: string) => {
             </View>
           )
         )}
-
-        {/* Footer with Signatures - bill to only in sign section */}
-        <View style={styles.footer} wrap={false}>
-          {/* Left: Client Approval */}
-          <View style={styles.footerLeft}>
-            <Text style={{ fontSize: 10, marginBottom: 5 }}>Menyetujui,</Text>
-            <Text style={{ fontSize: 10, marginBottom: 5 }}>{signBillTo}</Text>
-            <View style={{ height: 40 }} />
-            <Text style={styles.footerName}>{data.contactPerson}</Text>
-            <Text style={styles.footerRole}>{data.contactPosition}</Text>
-          </View>
-
-          {/* Right: Company Signature */}
-          <View style={styles.footerRight}>
-            <Text style={{ fontSize: 10, marginBottom: 5 }}>Best Regards,</Text>
-            <Text style={{ fontSize: 10, marginBottom: 5, color: "white" }}>{signBillTo}</Text>
-            {data.signatureImageData && !forSync ? (
-              <Image src={data.signatureImageData} style={styles.signatureImage} />
-            ) : data.signatureImageData && forSync ? (
-              <View style={styles.signatureImagePlaceholder} />
-            ) : (
-              <View style={{ height: 60, borderBottom: "1px solid #999", marginTop: 10, marginBottom: 5, width: 150 }} />
-            )}
-            <Text style={styles.footerName}>{data.signatureName}</Text>
-            {data.signatureRole && (
-              <Text style={styles.footerRole}>{data.signatureRole}</Text>
-            )}
-          </View>
-        </View>
       </Page>
     </Document>
   )

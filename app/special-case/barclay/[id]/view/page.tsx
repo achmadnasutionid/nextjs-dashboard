@@ -104,7 +104,7 @@ export default function ViewBarclayTicketPage() {
       // Generate the correct PDF based on view type
       let pdfComponent
       if (viewType === 'quotation') {
-        pdfComponent = <ParagonQuotationPDF data={ticket} />
+        pdfComponent = <ParagonQuotationPDF data={ticket} hideSubtotal />
       } else if (viewType === 'invoice') {
         pdfComponent = <ParagonInvoicePDF data={ticket} />
       } else if (viewType === 'bast') {
@@ -153,7 +153,7 @@ export default function ViewBarclayTicketPage() {
     try {
       let pdfComponent
       if (viewType === 'quotation') {
-        pdfComponent = <ParagonQuotationPDF data={ticket} />
+        pdfComponent = <ParagonQuotationPDF data={ticket} hideSubtotal />
       } else if (viewType === 'invoice') {
         pdfComponent = <ParagonInvoicePDF data={ticket} />
       } else if (viewType === 'bast') {
@@ -462,7 +462,7 @@ export default function ViewBarclayTicketPage() {
               }}
             >
               {viewType === 'quotation' ? (
-                <ParagonQuotationPDF data={ticket} />
+                <ParagonQuotationPDF data={ticket} hideSubtotal />
               ) : viewType === 'invoice' ? (
                 <ParagonInvoicePDF data={ticket} />
               ) : (
