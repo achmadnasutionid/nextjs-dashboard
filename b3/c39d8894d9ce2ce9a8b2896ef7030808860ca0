@@ -1,0 +1,31 @@
+components/pdf/quotation-pdf.tsx
+  s_29b7f7bb776f70::t_8a84f8e2489d23 778-785
+  s_29b7f7bb776f70::t_62ac11333db971 5
+components/pdf/invoice-pdf.tsx
+  s_29b7f7bb776f70::t_7172f2b4d9d00b 5
+  s_29b7f7bb776f70::t_f81fecc2fe20c3 777-784
+lib/pdf-remarks-fit.ts
+  s_29b7f7bb776f70::t_600f2e9a75e750 12-13,19-20
+  s_29b7f7bb776f70::t_e04feffc76fa85 137-144
+  s_29b7f7bb776f70::t_64e604d6aa571a 14-18
+components/pdf/invoice-backup-pdf.tsx
+  s_29b7f7bb776f70::t_3cbe05ad4ff13d 11,346-353
+components/pdf/quotation-backup-pdf.tsx
+  s_29b7f7bb776f70::t_4adbf6e23c0327 11,346-353
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "b3c39d8894d9ce2ce9a8b2896ef7030808860ca0",
+  "prompts": {},
+  "sessions": {
+    "s_29b7f7bb776f70": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5828c702-f3fb-48e1-9249-5f25cbb9c92e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
