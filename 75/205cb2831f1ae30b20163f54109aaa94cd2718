@@ -1,0 +1,28 @@
+prisma/migrations/20260729120000_add_invoice_quotation_link/migration.sql
+  s_29b7f7bb776f70::t_51aa21e3b3bcb0 1-11
+app/invoice/page.tsx
+  s_29b7f7bb776f70::t_b58f317c3b5624 9,46,58,84-85
+  s_29b7f7bb776f70::t_1ac628fa508b4f 234-313,509-526,652-685
+app/api/invoice/[id]/generate-quotation/route.ts
+  s_29b7f7bb776f70::t_6824d9aa1e72fd 1-131
+app/api/invoice/list-with-tickets/route.ts
+  s_29b7f7bb776f70::t_cfa061430ab79c 89-90,156,169-170
+prisma/schema.prisma
+  s_29b7f7bb776f70::t_bbb205684e2244 114-115,131,231-232,249
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "75205cb2831f1ae30b20163f54109aaa94cd2718",
+  "prompts": {},
+  "sessions": {
+    "s_29b7f7bb776f70": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5828c702-f3fb-48e1-9249-5f25cbb9c92e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
