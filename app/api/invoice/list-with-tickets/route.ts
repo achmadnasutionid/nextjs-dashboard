@@ -86,7 +86,8 @@ export async function GET(request: Request) {
           productionDate: true,
           totalAmount: true,
           status: true,
-          updatedAt: true
+          updatedAt: true,
+          generatedQuotationId: true
         },
         orderBy: { updatedAt: orderBy },
         take: takePerSource
@@ -152,6 +153,7 @@ export async function GET(request: Request) {
       status: string
       updatedAt: Date
       viewHref: string
+      generatedQuotationId?: string | null
     }
 
     const rows: Row[] = [
@@ -164,7 +166,8 @@ export async function GET(request: Request) {
         totalAmount: inv.totalAmount,
         status: inv.status,
         updatedAt: inv.updatedAt,
-        viewHref: `/invoice/${inv.id}/view`
+        viewHref: `/invoice/${inv.id}/view`,
+        generatedQuotationId: inv.generatedQuotationId
       })),
       ...paragonTickets.map((t) => {
         const docId = (t.invoiceId && t.invoiceId.trim()) ? t.invoiceId : "—"

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Pencil, Trash2, Eye, Search, CheckCircle, Loader2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Eye, Search, CheckCircle, FileText, Loader2 } from "lucide-react"
 import { ListCardSkeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Pagination } from "@/components/ui/pagination"
@@ -43,6 +43,7 @@ type InvoiceListItem =
       status: string
       updatedAt: string
       viewHref: string
+      generatedQuotationId?: string | null
     }
   | {
       source: "paragon" | "erha" | "barclay"
@@ -54,6 +55,7 @@ type InvoiceListItem =
       status: string
       updatedAt: string
       viewHref: string
+      generatedQuotationId?: string | null
     }
 
 function InvoicePageContent() {
@@ -79,6 +81,8 @@ function InvoicePageContent() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
   const [markingPaid, setMarkingPaid] = useState<string | null>(null)
   const [markPaidDialogId, setMarkPaidDialogId] = useState<string | null>(null)
+  const [generatingQuotation, setGeneratingQuotation] = useState<string | null>(null)
+  const [generateQuotationDialogId, setGenerateQuotationDialogId] = useState<string | null>(null)
   
   // Server-side pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -224,6 +228,86 @@ function InvoicePageContent() {
       })
     } finally {
       setMarkingPaid(null)
+    }
+  }
+
+  const handleGenerateQuotation = async (invoiceId: string) => {
+    if (generatingQuotation) return
+    setGeneratingQuotation(invoiceId)
+    try {
+      const response = await fetch(`/api/invoice/${invoiceId}/generate-quotation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId })
+      })
+
+      if (response.ok) {
+        const newQuotation = await response.json()
+        toast.success("Quotation generated!", {
+          description: "Redirecting to quotation edit page..."
+        })
+        router.push(`/quotation/${newQuotation.id}/edit`)
+      } else {
+        const data = await response.json()
+        toast.error("Failed to generate quotation", {
+          description: data.error || "An error occurred."
+        })
+      }
+    } catch (error) {
+      console.error("Error generating quotation:", error)
+      toast.error("Failed to generate quotation", {
+        description: "An unexpected error occurred."
+      })
+    } finally {
+      setGeneratingQuotation(null)
+    }
+  }
+
+  const handleViewQuotation = async (invoiceId: string, quotationId: string) => {
+    try {
+      const res = await fetch(`/api/quotation/${quotationId}`)
+      if (res.ok) {
+        const quotationData = await res.json()
+        if (quotationData.status === "accepted") {
+          router.push(`/quotation/${quotationId}/view`)
+        } else {
+          router.push(`/quotation/${quotationId}/edit`)
+        }
+        return
+      }
+      if (res.status === 404) {
+        toast.error("Linked quotation not found", {
+          description: "The quotation may have been deleted. Generate a new one?",
+          action: {
+            label: "Regenerate",
+            onClick: async () => {
+              try {
+                const genRes = await fetch(`/api/invoice/${invoiceId}/generate-quotation`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ invoiceId })
+                })
+                if (genRes.ok) {
+                  const newQuotation = await genRes.json()
+                  toast.success("Quotation generated")
+                  router.push(`/quotation/${newQuotation.id}/edit`)
+                } else {
+                  const data = await genRes.json()
+                  toast.error(data.error || "Failed to generate quotation")
+                }
+              } catch (e) {
+                console.error(e)
+                toast.error("Failed to generate quotation")
+              }
+            }
+          }
+        })
+        return
+      }
+      toast.error("Failed to load quotation")
+    } catch (error) {
+      console.error("Error fetching quotation:", error)
+      toast.error("Failed to load quotation")
     }
   }
 
@@ -422,6 +506,24 @@ function InvoicePageContent() {
                               <CheckCircle className="h-4 w-4" />
                             </Button>
                           )}
+                          {isInvoice && row.status !== "paid" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Generate Quotation"
+                              onClick={() => {
+                                if (row.generatedQuotationId) {
+                                  handleViewQuotation(row.id, row.generatedQuotationId)
+                                } else {
+                                  setGenerateQuotationDialogId(row.id)
+                                }
+                              }}
+                              disabled={generatingQuotation === row.id}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Link href={row.viewHref}>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <Eye className="h-4 w-4" />
@@ -542,6 +644,40 @@ function InvoicePageContent() {
                 </>
               ) : (
                 "Mark as Paid"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Generate Quotation Confirmation Dialog */}
+      <AlertDialog open={!!generateQuotationDialogId} onOpenChange={(open) => !generatingQuotation && !open && setGenerateQuotationDialogId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate Quotation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a new quotation based on this invoice. The quotation will be linked to this invoice.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!generatingQuotation}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (generateQuotationDialogId) {
+                  handleGenerateQuotation(generateQuotationDialogId)
+                  setGenerateQuotationDialogId(null)
+                }
+              }}
+              disabled={!!generatingQuotation}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              {generatingQuotation ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate Quotation"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

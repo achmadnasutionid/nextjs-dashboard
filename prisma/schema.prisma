@@ -111,6 +111,8 @@ model Quotation {
   status                 String               @default("draft")
   generatedInvoiceId     String?              @unique
   generatedInvoice       Invoice?             @relation("GeneratedFromQuotation")
+  sourceInvoiceId        String?              @unique
+  sourceInvoice          Invoice?             @relation("GeneratedFromInvoice", fields: [sourceInvoiceId], references: [id], onDelete: SetNull)
   deletedAt              DateTime?
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
@@ -126,6 +128,7 @@ model Quotation {
   @@index([status, updatedAt, deletedAt])
   @@index([companyName])
   @@index([generatedInvoiceId])
+  @@index([sourceInvoiceId])
   // NEW: Optimized indexes for dashboard queries
   @@index([status, productionDate, deletedAt]) // Pending/accepted quotations by year
   @@index([deletedAt, updatedAt])              // Recent activity queries
@@ -225,6 +228,8 @@ model Invoice {
   status                 String             @default("draft")
   sourceQuotationId      String?            @unique
   sourceQuotation        Quotation?         @relation("GeneratedFromQuotation", fields: [sourceQuotationId], references: [id], onDelete: SetNull)
+  generatedQuotationId   String?            @unique
+  generatedQuotation     Quotation?         @relation("GeneratedFromInvoice")
   deletedAt              DateTime?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
@@ -241,6 +246,7 @@ model Invoice {
   @@index([companyName])
   @@index([paidDate, status, deletedAt])
   @@index([sourceQuotationId])
+  @@index([generatedQuotationId])
   // NEW: Optimized indexes for dashboard queries
   @@index([status, productionDate, deletedAt]) // Pending/paid invoices by year
   @@index([deletedAt, updatedAt])              // Recent activity queries
