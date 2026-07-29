@@ -2,7 +2,7 @@ import React from "react"
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer"
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
-import { fitsBillingRemarksTerms, estimateItemHeight, estimateSummaryNoteHeight, PAGE_USABLE_HEIGHT_PT } from "@/lib/pdf-remarks-fit"
+import { fitsBillingRemarksTerms, estimateItemHeight, estimateItemsHeight, estimateSummaryNoteHeight, PAGE_USABLE_HEIGHT_PT, FIRST_PAGE_HEADER_OVERHEAD_PT } from "@/lib/pdf-remarks-fit"
 
 const styles = StyleSheet.create({
   page: {
@@ -774,7 +774,14 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
   const estimatedLastItemSummaryHeight = lastItem
     ? estimateItemHeight((lastItem.details || []).map((detail) => detail.detail || "")) + summaryRowCount * 20 + summaryNotesHeight + 60
     : 0
-  const keepLastItemWithSummary = !!lastItem && estimatedLastItemSummaryHeight <= PAGE_USABLE_HEIGHT_PT
+  // Only force the last item + Summary onto the same page as the rest of the table when
+  // EVERYTHING (header/grid overhead + all preceding items + the last item + Summary) fits on
+  // a single page -- if the preceding items alone already need to spill onto a second page,
+  // gluing the last item + Summary together as an unbreakable block can make react-pdf defer
+  // the whole Items table to that next page, leaving page 1 almost blank.
+  const nonLastItemsHeight = estimateItemsHeight(nonLastItems)
+  const keepLastItemWithSummary = !!lastItem &&
+    FIRST_PAGE_HEADER_OVERHEAD_PT + nonLastItemsHeight + estimatedLastItemSummaryHeight <= PAGE_USABLE_HEIGHT_PT
 
   const summaryContent = (
     <>

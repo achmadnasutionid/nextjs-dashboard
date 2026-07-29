@@ -9,6 +9,15 @@
 // A4 height minus the page's top/bottom padding (matches `styles.page` in the PDF templates).
 export const PAGE_USABLE_HEIGHT_PT = 841.89 - 30 - 60
 
+// Estimated height consumed on page 1 before the Items table's first row: the fixed header
+// (title + subtitle), the two-column Company/Invoice info grid, and the Items section title +
+// table header row. Used (together with the preceding items' own estimated height) to decide
+// whether the last item + Summary can safely be forced onto the same page as the rest of the
+// table via wrap={false} -- react-pdf can defer a disproportionate amount of content (sometimes
+// the entire Items table) to the next page when an unbreakable block doesn't fit the space left
+// after everything already on the page, leaving page 1 almost blank.
+export const FIRST_PAGE_HEADER_OVERHEAD_PT = 260
+
 const FONT_SIZE_PT = 8
 
 // Rough average glyph width as a fraction of font size for Helvetica.
@@ -123,6 +132,14 @@ export function estimateItemHeight(detailTexts: string[]): number {
     0
   )
   return headerRowHeight + detailRowsHeight
+}
+
+/** Total estimated height of a run of items' header + detail rows in the Items table. */
+export function estimateItemsHeight(items: Array<{ details?: Array<{ detail?: string | null }> | null }>): number {
+  return items.reduce(
+    (sum, item) => sum + estimateItemHeight((item.details || []).map((detail) => detail?.detail || "")),
+    0
+  )
 }
 
 /**
