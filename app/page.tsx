@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/footer"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Receipt, Wallet, TrendingUp } from "lucide-react"
+import { Search, Receipt, Wallet, TrendingUp, Table } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -27,8 +27,7 @@ const ALL_CARDS: DashboardCard[] = [
   // Quick Action
   { id: "quotation", section: "Quick Action", title: "Quotation", keywords: "quotation quote qtn", route: "/quotation", icon: "file-check" },
   { id: "invoice", section: "Quick Action", title: "Invoice", keywords: "invoice inv payment bill", route: "/invoice", icon: "receipt" },
-  { id: "production-tracker", section: "Quick Action", title: "Tracker", keywords: "tracker production entry actual", route: "/special-case/production-tracker", icon: "table" },
-  
+
   // Special Case
   { id: "paragon", section: "Special Case", title: "Paragon", keywords: "paragon special", route: "/special-case/paragon", icon: "building" },
   { id: "erha", section: "Special Case", title: "Erha", keywords: "erha special", route: "/special-case/erha", icon: "building" },
@@ -245,6 +244,18 @@ export default function Home() {
                     <p className="text-2xl font-semibold">
                       {profitTotals ? formatCurrency(profitDisplayAmount) : "—"}
                     </p>
+                  </div>
+                </Card>
+                <Card
+                  className="group cursor-pointer transition-all hover:shadow-lg hover:border-primary/50"
+                  onClick={() => handleNavigate("/special-case/production-tracker")}
+                >
+                  <div className="p-6">
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <Table className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">Tracker</h3>
+                    <p className="text-sm text-muted-foreground">Production tracker entries</p>
                   </div>
                 </Card>
                 {pendingProfitMissingIds.length > 0 && (
