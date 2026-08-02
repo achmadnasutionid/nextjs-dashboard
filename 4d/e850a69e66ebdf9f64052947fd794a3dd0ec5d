@@ -1,0 +1,24 @@
+components/dashboard/cards-section.tsx
+  s_7002483223cc63::t_c28cb5aa1c0963 22,25,27,29,31,33,35,37,41,43,45
+  s_7002483223cc63::t_cf63b9731a9a32 39,49
+  s_7002483223cc63::t_135154efa8effb 47,58-70,78-95
+app/page.tsx
+  s_7002483223cc63::t_78bd70d6a85869 10
+  s_7002483223cc63::t_72eebc75c15dfa 30,249-260
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "4de850a69e66ebdf9f64052947fd794a3dd0ec5d",
+  "prompts": {},
+  "sessions": {
+    "s_7002483223cc63": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97d6d443-b947-44e0-a846-91dbeb159624",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
