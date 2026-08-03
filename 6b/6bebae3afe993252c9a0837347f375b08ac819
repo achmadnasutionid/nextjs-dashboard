@@ -1,0 +1,31 @@
+app/special-case/barclay/page.tsx
+  s_7b6b0316da5f8a::t_9bc61c5a3a7c54 9,76
+app/special-case/erha/page.tsx
+  s_f0d6305563f3b5::t_12e109bd0ed728 9,14,75
+app/special-case/paragon/page.tsx
+  s_f0d6305563f3b5::t_8ed01ad5b0d616 9,76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "6b6bebae3afe993252c9a0837347f375b08ac819",
+  "prompts": {},
+  "sessions": {
+    "s_7b6b0316da5f8a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-ac486167053b53e66",
+        "model": "unknown"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    },
+    "s_f0d6305563f3b5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-afcaed05a5daaf511",
+        "model": "unknown"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
