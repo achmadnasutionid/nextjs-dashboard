@@ -553,29 +553,6 @@ export const ErhaQuotationPDF: React.FC<ErhaQuotationPDFProps> = ({ data, forSyn
           )
         )}
 
-        {/* Detailed Terms & Conditions (S&K) - view and sync separate (duplicate section in layout) */}
-        {data.termsAndConditions && (
-          forSync ? (
-            <View style={{ marginBottom: 15 }}>
-              <Text style={styles.remarksTitle}>Detailed S&K:</Text>
-              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
-                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
-                  <Text key={index} style={styles.termsBlock}>{block.text}</Text>
-                ))}
-              </View>
-            </View>
-          ) : (
-            <View style={{ marginBottom: 15 }}>
-              <Text style={styles.remarksTitle}>Detailed S&K:</Text>
-              <View style={{ fontSize: 8, lineHeight: 1.5 }}>
-                {parseHTMLToTextBlocks(data.termsAndConditions).map((block, index) => (
-                  <Text key={index} style={{ marginBottom: 4, ...block.style }}>{block.text}</Text>
-                ))}
-              </View>
-            </View>
-          )
-        )}
-
         {/* Footer with Signature */}
         <View style={styles.footer} wrap={false}>
           {/* Left: Empty or Client */}

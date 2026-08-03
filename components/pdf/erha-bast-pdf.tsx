@@ -262,9 +262,9 @@ export const ErhaBASTPDF: React.FC<ErhaBASTPDFProps> = ({ data, forSync = false 
 
   const formatDateFull = (dateString: string) => {
     const date = new Date(dateString)
-    const dayName = date.toLocaleDateString("en-US", { weekday: "long" })
+    const dayName = date.toLocaleDateString("id-ID", { weekday: "long" })
     const day = date.getDate()
-    const month = date.toLocaleDateString("en-US", { month: "long" })
+    const month = date.toLocaleDateString("id-ID", { month: "long" })
     const year = date.getFullYear()
     return `${dayName}, ${day} ${month} ${year}`
   }
