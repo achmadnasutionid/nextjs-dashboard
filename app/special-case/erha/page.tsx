@@ -6,12 +6,12 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Pencil, Trash2, Eye, Search, CheckCircle, FileText, Loader2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Eye, Search, CheckCircle, Loader2 } from "lucide-react"
 import { ListCardSkeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Pagination } from "@/components/ui/pagination"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import {
@@ -56,14 +56,12 @@ interface ErhaTicket {
   productionDate: string
   totalAmount: number
   status: string
-  generatedInvoiceId?: string
   createdAt: string
   updatedAt: string
   items?: ErhaTicketItem[]
 }
 
 function ErhaTicketPageContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [tickets, setTickets] = useState<ErhaTicket[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,10 +71,8 @@ function ErhaTicketPageContent() {
   const [searchQuery, setSearchQuery] = useState<string>("")
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
   const [accepting, setAccepting] = useState<string | null>(null)
-  const [generatingInvoice, setGeneratingInvoice] = useState<string | null>(null)
   const [finalizeDialogId, setFinalizeDialogId] = useState<string | null>(null)
-  const [generateInvoiceDialogId, setGenerateInvoiceDialogId] = useState<string | null>(null)
-  
+
   // Server-side pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -219,55 +215,6 @@ function ErhaTicketPageContent() {
       toast.error("Failed to finalize ticket")
     } finally {
       setAccepting(null)
-    }
-  }
-
-  const handleGenerateInvoice = async (ticketId: string) => {
-    setGeneratingInvoice(ticketId)
-    try {
-      const response = await fetch(`/api/erha/${ticketId}/generate-invoice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticketId })
-      })
-
-      if (response.ok) {
-        const newInvoice = await response.json()
-        toast.success("Invoice generated!", {
-          description: "Redirecting to invoice edit page..."
-        })
-        
-        // Redirect to invoice edit page
-        router.push(`/invoice/${newInvoice.id}/edit`)
-      } else {
-        const data = await response.json()
-        toast.error("Failed to generate invoice", {
-          description: data.error || "An error occurred."
-        })
-      }
-    } catch (error) {
-      console.error("Error generating invoice:", error)
-      toast.error("Failed to generate invoice", {
-        description: "An unexpected error occurred."
-      })
-    } finally {
-      setGeneratingInvoice(null)
-    }
-  }
-
-  const handleViewInvoice = async (invoiceId: string) => {
-    try {
-      const res = await fetch(`/api/invoice/${invoiceId}`)
-      const invoiceData = await res.json()
-      
-      if (invoiceData.status === "paid") {
-        router.push(`/invoice/${invoiceId}/view`)
-      } else {
-        router.push(`/invoice/${invoiceId}/edit`)
-      }
-    } catch (error) {
-      console.error("Error fetching invoice:", error)
-      toast.error("Failed to load invoice")
     }
   }
 
@@ -520,30 +467,6 @@ function ErhaTicketPageContent() {
                         </Button>
                       </div>
                     )}
-                    {ticket.status === "accepted" && (
-                      <div className="flex justify-end pt-2">
-                        {ticket.generatedInvoiceId ? (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewInvoice(ticket.generatedInvoiceId!)}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            View Invoice
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setGenerateInvoiceDialogId(ticket.id)}
-                            disabled={generatingInvoice === ticket.id}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            {generatingInvoice === ticket.id ? "Generating..." : "Generate Invoice"}
-                          </Button>
-                        )}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -615,40 +538,6 @@ function ErhaTicketPageContent() {
                 </>
               ) : (
                 "Finalize"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Generate Invoice Confirmation Dialog */}
-      <AlertDialog open={!!generateInvoiceDialogId} onOpenChange={(open) => !generatingInvoice && !open && setGenerateInvoiceDialogId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Generate Invoice?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will create a new invoice based on this ticket&apos;s quotation. The invoice will be linked to this ticket.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={!!generatingInvoice}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (generateInvoiceDialogId) {
-                  handleGenerateInvoice(generateInvoiceDialogId)
-                  setGenerateInvoiceDialogId(null)
-                }
-              }}
-              disabled={!!generatingInvoice}
-              className="bg-blue-600 text-white hover:bg-blue-700"
-            >
-              {generatingInvoice ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                "Generate Invoice"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
