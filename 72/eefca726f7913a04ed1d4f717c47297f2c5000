@@ -1,0 +1,19 @@
+components/pdf/erha-bast-pdf.tsx
+  s_5883d1d71f31bf::t_1bbda5cc758e05 265,267
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "72eefca726f7913a04ed1d4f717c47297f2c5000",
+  "prompts": {},
+  "sessions": {
+    "s_5883d1d71f31bf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a407cc36c10e5e2ac",
+        "model": "unknown"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
