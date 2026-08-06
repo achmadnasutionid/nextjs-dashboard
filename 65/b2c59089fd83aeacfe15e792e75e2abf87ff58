@@ -1,0 +1,21 @@
+components/pdf/invoice-pdf.tsx
+  s_b7abaa1143e27b::t_e7672b47f5f4aa 441,507,548,591,655
+components/pdf/quotation-pdf.tsx
+  s_b7abaa1143e27b::t_219cc66e2c3f33 442,508,549,592,656
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "65b2c59089fd83aeacfe15e792e75e2abf87ff58",
+  "prompts": {},
+  "sessions": {
+    "s_b7abaa1143e27b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aee2246e-c095-4ab8-9afd-096abd519764",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Achmad Nasution <achmadnasutionid@gmail.com>"
+    }
+  }
+}
