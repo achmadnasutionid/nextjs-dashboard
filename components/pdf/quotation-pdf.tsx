@@ -439,7 +439,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
                   {data.companyCity}, {data.companyProvince}
                 </Text>
                 <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
-                  {new Date(data.updatedAt).toLocaleDateString("id-ID")}
+                  {new Date(data.createdAt).toLocaleDateString("id-ID")}
                 </Text>
                 {forSync ? (
                   <View style={styles.signatureImagePlaceholder} />
@@ -505,7 +505,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
                     {data.companyCity}, {data.companyProvince}
                   </Text>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
-                    {new Date(data.updatedAt).toLocaleDateString("id-ID")}
+                    {new Date(data.createdAt).toLocaleDateString("id-ID")}
                   </Text>
                   {renderSigImage(sig, true)}
                 </View>
@@ -546,7 +546,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
                       {data.companyCity}, {data.companyProvince}
                     </Text>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
-                      {new Date(data.updatedAt).toLocaleDateString("id-ID")}
+                      {new Date(data.createdAt).toLocaleDateString("id-ID")}
                     </Text>
                     {renderSigImage(sig, true)}
                   </View>
@@ -589,7 +589,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
                       {data.companyCity}, {data.companyProvince}
                     </Text>
                     <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
-                      {new Date(data.updatedAt).toLocaleDateString("id-ID")}
+                      {new Date(data.createdAt).toLocaleDateString("id-ID")}
                     </Text>
                     {renderSigImage(sig, true)}
                   </View>
@@ -653,7 +653,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
                     {data.companyCity}, {data.companyProvince}
                   </Text>
                   <Text style={{ fontSize: 9, textAlign: "center", marginBottom: 5 }}>
-                    {new Date(data.updatedAt).toLocaleDateString("id-ID")}
+                    {new Date(data.createdAt).toLocaleDateString("id-ID")}
                   </Text>
                   {renderSigImage(sig, true)}
                 </View>
