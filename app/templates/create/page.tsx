@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/layout/page-header"
 import { Footer } from "@/components/layout/footer"
@@ -13,7 +13,7 @@ import { CurrencyInput } from "@/components/ui/currency-input"
 import { Save, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { formatProductName } from "@/lib/utils"
-import { scrollToFirstError } from "@/lib/form-utils"
+import { scrollToFirstError, findQtyPriceErrors } from "@/lib/form-utils"
 
 interface ItemDetail {
   id: string
@@ -42,6 +42,8 @@ export default function CreateTemplatePage() {
   const [items, setItems] = useState<Item[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [itemErrorsVisible, setItemErrorsVisible] = useState(false)
+  const detailRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
     fetchProducts()
@@ -160,6 +162,8 @@ export default function CreateTemplatePage() {
     }))
   }
 
+  const priceQtyErrors = findQtyPriceErrors(items)
+
   const handleSave = async () => {
     // Validation
     if (!name.trim()) {
@@ -176,6 +180,23 @@ export default function CreateTemplatePage() {
     const hasEmptyItems = items.some(item => !item.productName.trim())
     if (hasEmptyItems) {
       toast.error("Please fill in all product names")
+      return
+    }
+
+    if (Object.keys(priceQtyErrors).length > 0) {
+      setItemErrorsVisible(true)
+      const refMap: Record<string, { current: HTMLDivElement | null }> = {}
+      for (const item of items) {
+        for (const detail of item.details) {
+          if (priceQtyErrors[detail.id]) {
+            refMap[detail.id] = { current: detailRefs.current[detail.id] }
+          }
+        }
+      }
+      scrollToFirstError(priceQtyErrors, refMap)
+      toast.error("Some items have a unit price but no quantity filled in", {
+        description: "Fill in the quantity or clear the price."
+      })
       return
     }
 
@@ -305,49 +326,62 @@ export default function CreateTemplatePage() {
 
                                 {/* Details Rows */}
                                 <div className="space-y-2">
-                                  {item.details.map((detail) => (
-                                    <div key={detail.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 items-center">
-                                      <AutoExpandInput
-                                        value={detail.detail}
-                                        onChange={(e) =>
-                                          updateDetail(item.id, detail.id, "detail", e.target.value)
-                                        }
-                                        placeholder="Enter detail"
-                                      />
-                                      <CurrencyInput
-                                        value={detail.unitPrice}
-                                        onValueChange={(value) =>
-                                          updateDetail(item.id, detail.id, "unitPrice", value)
-                                        }
-                                        placeholder="Rp 0"
-                                      />
-                                      <Input
-                                        type="number"
-                                        value={detail.qty}
-                                        onChange={(e) =>
-                                          updateDetail(item.id, detail.id, "qty", e.target.value)
-                                        }
-                                        placeholder="0"
-                                      />
-                                      <div className="flex h-11 items-center rounded-md border px-3 text-sm font-medium bg-muted">
-                                        {new Intl.NumberFormat('id-ID', {
-                                          style: 'currency',
-                                          currency: 'IDR',
-                                          minimumFractionDigits: 0
-                                        }).format(detail.amount)}
+                                  {item.details.map((detail) => {
+                                    const detailError = itemErrorsVisible ? priceQtyErrors[detail.id] : undefined
+                                    return (
+                                    <div
+                                      key={detail.id}
+                                      ref={(el) => { detailRefs.current[detail.id] = el }}
+                                      className="space-y-1"
+                                    >
+                                      <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 items-center">
+                                        <AutoExpandInput
+                                          value={detail.detail}
+                                          onChange={(e) =>
+                                            updateDetail(item.id, detail.id, "detail", e.target.value)
+                                          }
+                                          placeholder="Enter detail"
+                                        />
+                                        <CurrencyInput
+                                          value={detail.unitPrice}
+                                          onValueChange={(value) =>
+                                            updateDetail(item.id, detail.id, "unitPrice", value)
+                                          }
+                                          placeholder="Rp 0"
+                                        />
+                                        <Input
+                                          type="number"
+                                          value={detail.qty}
+                                          onChange={(e) =>
+                                            updateDetail(item.id, detail.id, "qty", e.target.value)
+                                          }
+                                          placeholder="0"
+                                          error={!!detailError}
+                                        />
+                                        <div className="flex h-11 items-center rounded-md border px-3 text-sm font-medium bg-muted">
+                                          {new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0
+                                          }).format(detail.amount)}
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeDetail(item.id, detail.id)}
+                                          className="h-9 w-8 p-0"
+                                          title="Remove detail"
+                                        >
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
                                       </div>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeDetail(item.id, detail.id)}
-                                        className="h-9 w-8 p-0"
-                                        title="Remove detail"
-                                      >
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                      </Button>
+                                      {detailError && (
+                                        <p className="text-sm text-destructive">{detailError}</p>
+                                      )}
                                     </div>
-                                  ))}
+                                    )
+                                  })}
                                 </div>
                               </>
                             )}

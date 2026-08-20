@@ -41,7 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PPH_OPTIONS } from "@/lib/constants"
-import { scrollToFirstError } from "@/lib/form-utils"
+import { scrollToFirstError, findQtyPriceErrors } from "@/lib/form-utils"
 import { compressFinalWorkScreenshot } from "@/lib/image-utils"
 import { formatProductName } from "@/lib/utils"
 
@@ -131,7 +131,8 @@ export default function EditParagonTicketPage() {
   const lastUpdatedAtRef = useRef<string>("")
   const [showStaleDataDialog, setShowStaleDataDialog] = useState(false)
   const [showAdjustModal, setShowAdjustModal] = useState(false)
-  
+  const [itemErrorsVisible, setItemErrorsVisible] = useState(false)
+
   // Refs for error scrolling
   const companyRef = useRef<HTMLDivElement>(null)
   const productionDateRef = useRef<HTMLDivElement>(null)
@@ -142,6 +143,7 @@ export default function EditParagonTicketPage() {
   const contactPersonRef = useRef<HTMLDivElement>(null)
   const contactPositionRef = useRef<HTMLDivElement>(null)
   const signatureRef = useRef<HTMLDivElement>(null)
+  const detailRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   // Auto-save integration
   const { autoSaveStatus, triggerAutoSave, cancelAutoSave } = useSmartAutoSave({
@@ -645,6 +647,8 @@ export default function EditParagonTicketPage() {
     return subtotal + pphAmount
   }, [subtotal, pphAmount])
 
+  const priceQtyErrors = findQtyPriceErrors(items)
+
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -798,6 +802,23 @@ export default function EditParagonTicketPage() {
         if (itemsWithoutDetails.length > 0) {
           toast.warning(status === "final" ? "Cannot finalize ticket" : "Cannot save as pending", {
             description: "All products must have at least one detail."
+          })
+          return
+        }
+
+        if (Object.keys(priceQtyErrors).length > 0) {
+          setItemErrorsVisible(true)
+          const refMap: Record<string, { current: HTMLDivElement | null }> = {}
+          for (const item of items) {
+            for (const detail of item.details) {
+              if (priceQtyErrors[detail.id]) {
+                refMap[detail.id] = { current: detailRefs.current[detail.id] }
+              }
+            }
+          }
+          setTimeout(() => scrollToFirstError(priceQtyErrors, refMap), 0)
+          toast.warning(status === "final" ? "Cannot finalize ticket" : "Cannot save as pending", {
+            description: "Some items have a unit price but no quantity filled in."
           })
           return
         }
@@ -1359,6 +1380,8 @@ export default function EditParagonTicketPage() {
                                       onUpdate={updateDetail}
                                       onRemove={removeDetail}
                                       formatCurrency={formatCurrency}
+                                      error={itemErrorsVisible ? priceQtyErrors[detail.id] : undefined}
+                                      rowRef={(el) => { detailRefs.current[detail.id] = el }}
                                     />
                                   ))}
                                 </div>

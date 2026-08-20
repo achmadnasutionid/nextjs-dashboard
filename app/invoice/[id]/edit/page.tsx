@@ -38,7 +38,7 @@ import {
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
 import { formatProductName } from "@/lib/utils"
-import { scrollToFirstError } from "@/lib/form-utils"
+import { scrollToFirstError, findQtyPriceErrors } from "@/lib/form-utils"
 import { ReorderableSummary } from "@/components/ui/reorderable-summary"
 import { ReorderableRemarks } from "@/components/ui/reorderable-remarks"
 import { RemarkTemplateSelector } from "@/components/ui/remark-template-selector"
@@ -175,6 +175,7 @@ export default function EditInvoicePage() {
   const [showStaleDataDialog, setShowStaleDataDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [itemErrorsVisible, setItemErrorsVisible] = useState(false)
 
   // Refs for error scrolling
   const companyRef = useRef<HTMLDivElement>(null)
@@ -182,6 +183,7 @@ export default function EditInvoicePage() {
   const billToRef = useRef<HTMLDivElement>(null)
   const billingRef = useRef<HTMLDivElement>(null)
   const signatureRef = useRef<HTMLDivElement>(null)
+  const detailRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   // Auto-save setup
   const {
@@ -730,6 +732,8 @@ export default function EditInvoicePage() {
     return totalAmount * (pct / 100)
   }, [downPaymentPercentage, totalAmount])
 
+  const priceQtyErrors = findQtyPriceErrors(items)
+
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -846,6 +850,24 @@ export default function EditInvoicePage() {
       if (itemsWithoutDetails.length > 0) {
         toast.warning("Cannot save as pending", {
           description: "All products must have at least one detail."
+        })
+        setIsSavingManually(false)
+        return
+      }
+
+      if (Object.keys(priceQtyErrors).length > 0) {
+        setItemErrorsVisible(true)
+        const refMap: Record<string, { current: HTMLDivElement | null }> = {}
+        for (const item of items) {
+          for (const detail of item.details) {
+            if (priceQtyErrors[detail.id]) {
+              refMap[detail.id] = { current: detailRefs.current[detail.id] }
+            }
+          }
+        }
+        scrollToFirstError(priceQtyErrors, refMap)
+        toast.warning("Cannot save as pending", {
+          description: "Some items have a unit price but no quantity filled in."
         })
         setIsSavingManually(false)
         return
@@ -1403,6 +1425,8 @@ export default function EditInvoicePage() {
                                       onUpdate={updateDetail}
                                       onRemove={removeDetail}
                                       formatCurrency={formatCurrency}
+                                      error={itemErrorsVisible ? priceQtyErrors[detail.id] : undefined}
+                                      rowRef={(el) => { detailRefs.current[detail.id] = el }}
                                     />
                                   ))}
                                 </div>

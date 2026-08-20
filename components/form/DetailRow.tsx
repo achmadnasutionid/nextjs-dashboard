@@ -27,6 +27,8 @@ interface DetailRowProps {
   onUpdate: (itemId: string, detailId: string, field: string, value: string) => void
   onRemove: (itemId: string, detailId: string) => void
   formatCurrency: (amount: number) => string
+  error?: string
+  rowRef?: (el: HTMLDivElement | null) => void
 }
 
 /**
@@ -44,7 +46,9 @@ export function DetailRow({
   canRemove,
   onUpdate,
   onRemove,
-  formatCurrency
+  formatCurrency,
+  error,
+  rowRef
 }: DetailRowProps) {
   // Debounced inputs - updates UI instantly, delays state update
   const [localDetail, debouncedDetail, setLocalDetail] = useDebouncedInput(detail.detail, 300)
@@ -71,37 +75,43 @@ export function DetailRow({
   }, [debouncedQty, itemId, detail.id, detail.qty, onUpdate])
 
   return (
-    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 items-center">
-      <AutoExpandInput
-        value={localDetail}
-        onChange={(e) => setLocalDetail(e.target.value)}
-        placeholder="Enter detail"
-      />
-      <CurrencyInput
-        value={localPrice}
-        onValueChange={setLocalPrice}
-        placeholder="Rp 0"
-      />
-      <Input
-        type="number"
-        value={localQty}
-        onChange={(e) => setLocalQty(e.target.value)}
-        placeholder="0"
-      />
-      <div className="flex h-11 items-center rounded-md border px-3 text-sm font-medium bg-muted">
-        {formatCurrency(detail.amount)}
+    <div ref={rowRef} className="space-y-1">
+      <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 items-center">
+        <AutoExpandInput
+          value={localDetail}
+          onChange={(e) => setLocalDetail(e.target.value)}
+          placeholder="Enter detail"
+        />
+        <CurrencyInput
+          value={localPrice}
+          onValueChange={setLocalPrice}
+          placeholder="Rp 0"
+        />
+        <Input
+          type="number"
+          value={localQty}
+          onChange={(e) => setLocalQty(e.target.value)}
+          placeholder="0"
+          error={!!error}
+        />
+        <div className="flex h-11 items-center rounded-md border px-3 text-sm font-medium bg-muted">
+          {formatCurrency(detail.amount)}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(itemId, detail.id)}
+          className="h-9 w-8 p-0"
+          disabled={!canRemove}
+          title={!canRemove ? "Cannot remove the last detail" : "Remove detail"}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => onRemove(itemId, detail.id)}
-        className="h-9 w-8 p-0"
-        disabled={!canRemove}
-        title={!canRemove ? "Cannot remove the last detail" : "Remove detail"}
-      >
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
     </div>
   )
 }

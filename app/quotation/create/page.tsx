@@ -29,7 +29,7 @@ import {
 import { PPH_OPTIONS } from "@/lib/constants"
 import { calculatePphAmount as calculatePphAmountFromRate, calculateGrandTotal, applyPphToAmount } from "@/lib/pph-calc"
 import { formatProductName } from "@/lib/utils"
-import { scrollToFirstError } from "@/lib/form-utils"
+import { scrollToFirstError, findQtyPriceErrors } from "@/lib/form-utils"
 import { ReorderableSummary } from "@/components/ui/reorderable-summary"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import { ReorderableRemarks } from "@/components/ui/reorderable-remarks"
@@ -156,6 +156,7 @@ export default function CreateQuotationPage() {
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<any>({})
   const [hasInteracted, setHasInteracted] = useState(false)
+  const [itemErrorsVisible, setItemErrorsVisible] = useState(false)
 
   // Refs for error scrolling
   const companyRef = useRef<HTMLDivElement>(null)
@@ -163,6 +164,7 @@ export default function CreateQuotationPage() {
   const billToRef = useRef<HTMLDivElement>(null)
   const billingRef = useRef<HTMLDivElement>(null)
   const signatureRef = useRef<HTMLDivElement>(null)
+  const detailRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   // Fetch master data
   useEffect(() => {
@@ -495,6 +497,8 @@ export default function CreateQuotationPage() {
     return calculateTotalAmount() * (pct / 100)
   }
 
+  const priceQtyErrors = findQtyPriceErrors(items)
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -602,6 +606,23 @@ export default function CreateQuotationPage() {
       if (itemsWithoutDetails.length > 0) {
         toast.warning("Cannot save as pending", {
           description: "All products must have at least one detail."
+        })
+        return
+      }
+
+      if (Object.keys(priceQtyErrors).length > 0) {
+        setItemErrorsVisible(true)
+        const refMap: Record<string, { current: HTMLDivElement | null }> = {}
+        for (const item of items) {
+          for (const detail of item.details) {
+            if (priceQtyErrors[detail.id]) {
+              refMap[detail.id] = { current: detailRefs.current[detail.id] }
+            }
+          }
+        }
+        scrollToFirstError(priceQtyErrors, refMap)
+        toast.warning("Cannot save as pending", {
+          description: "Some items have a unit price but no quantity filled in."
         })
         return
       }
@@ -1051,46 +1072,59 @@ export default function CreateQuotationPage() {
 
                                 {/* Details Rows */}
                                 <div className="space-y-2">
-                                  {item.details.map((detail) => (
-                                    <div key={detail.id} className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 items-center">
-                                      <AutoExpandInput
-                                        value={detail.detail}
-                                        onChange={(e) =>
-                                          updateDetail(item.id, detail.id, "detail", e.target.value)
-                                        }
-                                        placeholder="Enter detail"
-                                      />
-                                      <CurrencyInput
-                                        value={detail.unitPrice}
-                                        onValueChange={(value) =>
-                                          updateDetail(item.id, detail.id, "unitPrice", value)
-                                        }
-                                        placeholder="Rp 0"
-                                      />
-                                      <Input
-                                        type="number"
-                                        value={detail.qty}
-                                        onChange={(e) =>
-                                          updateDetail(item.id, detail.id, "qty", e.target.value)
-                                        }
-                                        placeholder="0"
-                                      />
-                                      <div className="flex h-11 items-center rounded-md border px-3 text-sm font-medium bg-muted">
-                                        {formatCurrency(detail.amount)}
+                                  {item.details.map((detail) => {
+                                    const detailError = itemErrorsVisible ? priceQtyErrors[detail.id] : undefined
+                                    return (
+                                    <div
+                                      key={detail.id}
+                                      ref={(el) => { detailRefs.current[detail.id] = el }}
+                                      className="space-y-1"
+                                    >
+                                      <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 items-center">
+                                        <AutoExpandInput
+                                          value={detail.detail}
+                                          onChange={(e) =>
+                                            updateDetail(item.id, detail.id, "detail", e.target.value)
+                                          }
+                                          placeholder="Enter detail"
+                                        />
+                                        <CurrencyInput
+                                          value={detail.unitPrice}
+                                          onValueChange={(value) =>
+                                            updateDetail(item.id, detail.id, "unitPrice", value)
+                                          }
+                                          placeholder="Rp 0"
+                                        />
+                                        <Input
+                                          type="number"
+                                          value={detail.qty}
+                                          onChange={(e) =>
+                                            updateDetail(item.id, detail.id, "qty", e.target.value)
+                                          }
+                                          placeholder="0"
+                                          error={!!detailError}
+                                        />
+                                        <div className="flex h-11 items-center rounded-md border px-3 text-sm font-medium bg-muted">
+                                          {formatCurrency(detail.amount)}
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeDetail(item.id, detail.id)}
+                                          disabled={item.details.length === 1}
+                                          className="h-9 w-8 p-0"
+                                          title={item.details.length === 1 ? "Cannot remove the last detail" : "Remove detail"}
+                                        >
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
                                       </div>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeDetail(item.id, detail.id)}
-                                        disabled={item.details.length === 1}
-                                        className="h-9 w-8 p-0"
-                                        title={item.details.length === 1 ? "Cannot remove the last detail" : "Remove detail"}
-                                      >
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                      </Button>
+                                      {detailError && (
+                                        <p className="text-sm text-destructive">{detailError}</p>
+                                      )}
                                     </div>
-                                  ))}
+                                    )
+                                  })}
                                 </div>
                               </>
                             )}
