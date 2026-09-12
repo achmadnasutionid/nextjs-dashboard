@@ -295,7 +295,7 @@ export default function ViewInvoicePage() {
             { label: Invoice?.invoiceId || InvoiceId }
           ]} />
           {/* Header with download button */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-bold tracking-tight">
                 {Invoice.invoiceId} - {Invoice.billTo}
@@ -304,7 +304,7 @@ export default function ViewInvoicePage() {
                 Status: {Invoice.status.toUpperCase()}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {/* Mark as Paid button - shown only for pending (LEFTMOST) */}
               {Invoice.status === "pending" && (
                 <Button

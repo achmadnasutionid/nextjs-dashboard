@@ -164,7 +164,7 @@ export function FloatingCalculator() {
         <div
           className={cn(
             "fixed bottom-24 right-6 z-50",
-            "w-80 rounded-lg shadow-2xl",
+            "w-[calc(100vw-3rem)] max-w-[320px] rounded-lg shadow-2xl",
             "bg-card border border-border",
             "animate-in slide-in-from-bottom-5 duration-200"
           )}

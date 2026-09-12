@@ -121,7 +121,7 @@ export default function TemplatesPage() {
       
       <main className="flex flex-1 flex-col bg-gradient-to-br from-background via-background to-muted px-4 py-12">
         <div className="container mx-auto max-w-7xl space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl font-bold tracking-tight">Template List</h2>
             <Button onClick={() => router.push("/templates/create")} className="gap-2">
               <Plus className="h-4 w-4" />

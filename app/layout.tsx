@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -16,9 +16,23 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#2563eb",
+};
+
 export const metadata: Metadata = {
   title: "Financial Master Dashboard",
   description: "A comprehensive financial analytics and reporting dashboard",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Finance Dashboard",
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
   robots: {
     index: false,
     follow: false,

@@ -168,7 +168,7 @@ export function FloatingCalendar() {
           ref={calendarRef}
           className={cn(
             "fixed bottom-24 left-6 z-50",
-            "w-[400px] rounded-lg shadow-2xl",
+            "w-[calc(100vw-3rem)] max-w-[400px] rounded-lg shadow-2xl",
             "bg-card border border-border",
             "animate-in slide-in-from-bottom-5 duration-200"
           )}

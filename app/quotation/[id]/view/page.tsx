@@ -395,7 +395,7 @@ export default function ViewQuotationPage() {
             { label: quotation?.quotationId || quotationId }
           ]} />
           {/* Header with download button */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-bold tracking-tight">
                 {quotation.quotationId} - {quotation.billTo}
@@ -404,7 +404,7 @@ export default function ViewQuotationPage() {
                 Status: {quotation.status.toUpperCase()}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {/* Accept button - shown only for pending (LEFTMOST) */}
               {quotation.status === "pending" && (
                 <Button

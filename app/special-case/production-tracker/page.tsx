@@ -621,8 +621,8 @@ export default function ProductionTrackerPage() {
       <main className="flex flex-1 flex-col bg-gradient-to-br from-background via-background to-muted px-4 py-6">
         <div className="w-full max-w-[98vw] mx-auto space-y-4">
           {/* Controls */}
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search by Expense ID or Project..."
@@ -631,9 +631,9 @@ export default function ProductionTrackerPage() {
                 className="pl-9"
               />
             </div>
-            <div className="ml-auto flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 sm:ml-auto">
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[140px] sm:w-[180px]">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -646,7 +646,7 @@ export default function ProductionTrackerPage() {
                 </SelectContent>
               </Select>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[140px] sm:w-[180px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>

@@ -224,4 +224,13 @@ body {
   font-style: italic;
 }
 
+/* Reserve space at the bottom of every page on small screens so the fixed
+   floating calculator/calendar buttons never permanently cover the last
+   card or the footer text. */
+@media (max-width: 640px) {
+  body {
+    padding-bottom: 5.5rem;
+  }
+}
+
 
