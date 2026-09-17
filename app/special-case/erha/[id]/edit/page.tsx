@@ -1487,7 +1487,7 @@ export default function EditErhaTicketPage() {
                             ) : (
                               <>
                                 {/* Details Table Header */}
-                                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 px-3 py-2 bg-muted rounded-md text-xs font-bold">
+                                <div className="hidden sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 px-3 py-2 bg-muted rounded-md text-xs font-bold">
                                   <div>Detail</div>
                                   <div>Unit Price</div>
                                   <div>Qty</div>
