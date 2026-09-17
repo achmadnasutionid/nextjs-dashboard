@@ -824,7 +824,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ data, forSync = false })
         <View style={styles.header} fixed>
           <Text style={styles.title}>INVOICE</Text>
           <Text style={styles.subtitle}>
-            {data.invoiceId} - {new Date(data.createdAt).toLocaleDateString("id-ID")}
+            {data.invoiceId} - {new Date(data.updatedAt).toLocaleDateString("id-ID")}
           </Text>
         </View>
 

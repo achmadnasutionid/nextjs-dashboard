@@ -386,7 +386,7 @@ export const QuotationBackupPDF: React.FC<{ data: QuotationBackupPDFData }> = ({
         <View style={styles.header} fixed>
           <Text style={styles.title}>QUOTATION</Text>
           <Text style={styles.subtitle}>
-            {data.quotationId} - {new Date(data.createdAt).toLocaleDateString("id-ID")}
+            {data.quotationId} - {new Date(data.updatedAt).toLocaleDateString("id-ID")}
           </Text>
         </View>
 

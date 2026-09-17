@@ -825,7 +825,7 @@ export const QuotationPDF: React.FC<QuotationPDFProps> = ({ data, forSync = fals
         <View style={styles.header} fixed>
           <Text style={styles.title}>QUOTATION</Text>
           <Text style={styles.subtitle}>
-            {data.quotationId} - {new Date(data.createdAt).toLocaleDateString("id-ID")}
+            {data.quotationId} - {new Date(data.updatedAt).toLocaleDateString("id-ID")}
           </Text>
         </View>
 

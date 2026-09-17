@@ -386,7 +386,7 @@ export const InvoiceBackupPDF: React.FC<{ data: InvoiceBackupPDFData }> = ({ dat
         <View style={styles.header} fixed>
           <Text style={styles.title}>INVOICE</Text>
           <Text style={styles.subtitle}>
-            {data.invoiceId} - {new Date(data.createdAt).toLocaleDateString("id-ID")}
+            {data.invoiceId} - {new Date(data.updatedAt).toLocaleDateString("id-ID")}
           </Text>
         </View>
 
